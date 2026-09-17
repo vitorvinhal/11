@@ -83,8 +83,8 @@ export function isWithinRoot(target: string, roots: string[] = ALLOWED_ROOTS): b
 }
 
 /** Alias mantido para compatibilidade com o route. */
-export function isUnderRoot(target: string): boolean {
-  return isWithinRoot(target);
+export function isUnderRoot(target: string, roots?: string[]): boolean {
+  return isWithinRoot(target, roots);
 }
 
 /** Nome-base do comando (sem diretório, sem args). */
@@ -93,7 +93,7 @@ export function baseCommand(cmd: string): string {
   return first.split(/[\\/]/).pop() ?? first;
 }
 
-export function validate(command: string, cwd: string): { ok: boolean; error?: string } {
+export function validate(command: string, cwd: string, allowedRoots?: string[]): { ok: boolean; error?: string } {
   if (!command.trim()) return { ok: false, error: 'Comando vazio' };
   if (command.length > 4000) return { ok: false, error: 'Comando muito longo' };
   for (const d of DANGEROUS) {
@@ -104,7 +104,7 @@ export function validate(command: string, cwd: string): { ok: boolean; error?: s
   if (!allowed) {
     return { ok: false, error: `Comando não permitido: ${base}` };
   }
-  if (!isUnderRoot(cwd)) {
+  if (!isUnderRoot(cwd, allowedRoots)) {
     return { ok: false, error: 'Diretório fora das raízes permitidas' };
   }
   return { ok: true };

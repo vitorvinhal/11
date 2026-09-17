@@ -7,7 +7,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export interface SidebarChat { id: string; title: string; preview?: string; }
 
-export type NavTab = 'conversas' | 'projetos' | 'skills' | 'code' | 'neural' | 'artifacts' | 'connectors' | 'plugins' | 'media' | 'agent';
+export type NavTab = 'conversas' | 'projetos' | 'skills' | 'code' | 'coder' | 'neural' | 'artifacts' | 'connectors' | 'plugins' | 'media' | 'agent';
 
 interface SidebarProps {
   chats: SidebarChat[];
@@ -54,6 +54,7 @@ export function Sidebar({ chats, activeChat, onSelectChat, onNewChat, onDeleteCh
     { id: 'projetos', label: 'Projects', icon: FolderGit2 },
     { id: 'artifacts', label: 'Artifacts', icon: FileText },
     { id: 'code', label: 'Code & Terminal', icon: Code2 },
+    { id: 'coder', label: 'Eleven Coder', icon: Terminal },
     { id: 'neural', label: 'Rede Neural', icon: Brain },
     { id: 'skills', label: 'Skills', icon: Blocks, section: 'Customize' },
     { id: 'connectors', label: 'Connectors', icon: Plug2 },

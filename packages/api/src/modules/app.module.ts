@@ -3,10 +3,11 @@ import { AuthModule } from './auth/auth.module';
 import { BridgeModule } from './bridge/bridge.module';
 import { StoreModule } from './store/store.module';
 import { DeployModule } from './deploy/deploy.module';
+import { TerminalModule } from './terminal/terminal.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
-  imports: [AuthModule, BridgeModule, StoreModule, DeployModule],
+  imports: [AuthModule, BridgeModule, StoreModule, DeployModule, TerminalModule],
   controllers: [HealthController],
   providers: [],
 })

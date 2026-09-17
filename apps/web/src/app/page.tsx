@@ -13,6 +13,7 @@ import ConnectorsPanel from '../components/ConnectorsPanel';
 import { PluginsPanel } from '../components/PluginsPanel';
 import { ArtifactsPanel } from '../components/ArtifactsPanel';
 import CodeWorkspace from '../components/CodeWorkspace';
+import ElevenCoder from '../components/ElevenCoder';
 import { MediaGallery } from '../components/MediaGallery';
 import { MobileAgent } from '../components/MobileAgent';
 import { useAuth } from '../lib/auth';
@@ -88,6 +89,11 @@ export default function Home() {
               {activeNav === 'code' && (
                 <div className="h-full">
                   <CodeWorkspace />
+                </div>
+              )}
+              {activeNav === 'coder' && (
+                <div className="h-full">
+                  <ElevenCoder />
                 </div>
               )}
               {activeNav === 'media' && <div className="mx-auto max-w-2xl pt-8"><MediaGallery /></div>}

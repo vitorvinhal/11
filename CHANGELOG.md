@@ -6,17 +6,50 @@ O versionamento segue: `v0.{MAIOR}.{MENOR}-{canal}` (alpha → rc → estável).
 Versão atual em `apps/web/public/version.json`. Bump automático:
 
 ```bash
-pnpm version:patch   # v0.3.0-alpha → v0.3.1-alpha
-pnpm version:minor   # v0.3.0-alpha → v0.4.0-alpha
-pnpm version:major   # v0.3.0-alpha → v1.0.0-alpha
+pnpm version:patch   # v0.4.0-alpha → v0.4.1-alpha
+pnpm version:minor   # v0.4.0-alpha → v0.5.0-alpha
+pnpm version:major   # v0.4.0-alpha → v1.0.0-alpha
 pnpm version:rc      # patch e troca canal para rc
 ```
 
 Bump com notas de release:
 
 ```bash
-node scripts/version.js minor --change "Memória multi-usuário" --change "Eleven Code: sandbox com aprovação"
+node scripts/version.js minor --change "Eleven Coder: terminal interativo PTY" --change "NeuralGraph redesenhado"
 ```
+
+---
+
+## v0.4.0-alpha — 2026-09-17
+
+### 🖥️ Eleven Coder (Terminal Interativo)
+- **PTY Session Manager**: sessões PTY reais com node-pty, suporte a bash/zsh/powershell/cmd
+- **WebSocket Gateway**: NestJS WebSocket com autenticação JWT Supabase, eventos create-session/input/output/resize/kill
+- **Frontend xterm.js**: UI IDE-style com:
+  - Tabs de sessão com indicadores de status (conectado/desconectado)
+  - HUD footer com info de conexão e contagem de sessões
+  - Ações: copiar seleção, colar, limpar terminal, reconectar
+  - Tema OLED (#05050A) com cyan/magenta accents
+  - Fonte JetBrains Mono, cursor bar com blink
+  - Suporte a web links clicáveis
+- **Sidebar**: aba "Eleven Coder" integrada à navegação principal
+
+### 🧠 Rede Neural (NeuralGraph)
+- **Redesign completo**: visual futurista OLED (#05050A), glassmorphism panels
+- **Partículas animadas**: sistema de partículas no fundo com movimento orgânico
+- **Energy beams**: conexões entre nós com gradiente cyan→magenta e animação
+- **Layout em clusters**: nós agrupados por tipo (core, ia, memory, integration)
+- **HUD overlays**: contadores animados, legenda por tipo de nó
+- **Search filter**: filtro por label com highlighting de matches
+- **Node detail panel**: sidebar com info detalhada do nó selecionado
+
+### 🔧 Infra & Correções
+- **socket.io-client**: adicionado ao frontend para WebSocket
+- **@nestjs/websockets + socket.io**: adicionados ao packages/api
+- **node-pty**: PTY nativo para sessões de terminal reais
+- **next.config.js**: fallbacks webpack para módulos Node.js (fs, net, crypto, etc.)
+- **terminal-validate**: função `validate` agora aceita `allowedRoots` customizáveis
+- **Testes**: 17/17 passando (validação de comandos, path containment, baseCommand)
 
 ---
 

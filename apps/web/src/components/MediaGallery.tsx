@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Trash2, Loader2, Image as ImageIcon, Film, Music, File, RefreshCw } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { MediaUpload } from './MediaUpload';
@@ -113,8 +114,8 @@ export function MediaGallery() {
                     selected?.id === item.id ? 'border-primary' : 'border-border hover:border-white/20'
                   }`}>
                   {item.kind === 'image' && item.url ? (
-                    <div className="aspect-square bg-muted/30">
-                      <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
+                    <div className="aspect-square bg-muted/30 relative">
+                      <Image src={item.url} alt={item.filename} fill className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
                     </div>
                   ) : (
                     <div className="aspect-square bg-muted/30 flex items-center justify-center">
@@ -142,7 +143,9 @@ export function MediaGallery() {
         <div className="border-t border-border p-4">
           <div className="flex items-start gap-3">
             {selected.kind === 'image' && selected.url ? (
-              <img src={selected.url} alt={selected.filename} className="h-20 w-20 rounded-lg object-cover" />
+              <div className="h-20 w-20 rounded-lg relative overflow-hidden">
+                <Image src={selected.url} alt={selected.filename} fill className="object-cover" sizes="80px" />
+              </div>
             ) : (
               <div className="h-20 w-20 rounded-lg bg-muted/30 flex items-center justify-center">
                 {(() => { const Icon = kindIcon(selected.kind); return <Icon className="h-6 w-6 text-muted-foreground" />; })()}
