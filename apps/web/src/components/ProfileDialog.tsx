@@ -120,7 +120,7 @@ export function ProfileDialog({ open: externalOpen, onOpenChange }: { open?: boo
   useEffect(() => {
     if (open) {
       void loadSettings();
-      fetch('/version.json').then((r) => r.json()).then((v) => { setAppVersion(v.version ?? ''); setChangelog(v.changelog ?? []); }).catch(() => {});
+      fetch('/api/version').then((r) => r.json()).then((v) => { setAppVersion(v.version ?? ''); setChangelog(v.changelog ?? []); }).catch(() => {});
       if (settingsTab === 'memory' && user) void loadMemories();
     }
   }, [open, settingsTab, user, loadSettings, loadMemories]);

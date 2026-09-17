@@ -21,7 +21,7 @@ export function VersionBadge() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/version.json')
+    fetch('/api/version')
       .then((r) => r.json())
       .then((d) => setInfo(d as VersionInfo))
       .catch(() => {});

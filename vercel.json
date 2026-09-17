@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm build && cp -r apps/web/public/* apps/web/.next/",
+  "buildCommand": "pnpm build",
   "framework": "nextjs",
   "outputDirectory": "apps/web/.next"
 }
