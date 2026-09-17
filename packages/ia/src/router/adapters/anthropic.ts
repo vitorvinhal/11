@@ -45,7 +45,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       usage: {
         inputTokens: data.usage?.input_tokens ?? 0,
         outputTokens: data.usage?.output_tokens ?? 0,
-        costUnits: 0, // calculado no circuit breaker por provedor
+        costUnits: (data.usage?.input_tokens ?? 0) * 3 + (data.usage?.output_tokens ?? 0) * 15,
       },
     };
   }

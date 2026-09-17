@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   try {
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
     );
     const url = new URL(req.url);
     const code = url.searchParams.get('code');

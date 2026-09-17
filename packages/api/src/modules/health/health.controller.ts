@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 @Controller()
 export class HealthController {
   private readonly supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? 'https://uacqekmejviqddrbnfhg.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? ''
   );
 

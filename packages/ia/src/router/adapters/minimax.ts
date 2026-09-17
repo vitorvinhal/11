@@ -37,7 +37,11 @@ export class MiniMaxAdapter implements ProviderAdapter {
       provider: 'minimax',
       model,
       message: { role: 'assistant', content: parseContentBlocks(text) },
-      usage: { inputTokens: data.inputTokenCount ?? 0, outputTokens: data.outputTokenCount ?? 0, costUnits: 0 },
+      usage: { 
+        inputTokens: data.inputTokenCount ?? 0, 
+        outputTokens: data.outputTokenCount ?? 0, 
+        costUnits: (data.inputTokenCount ?? 0) * 2 + (data.outputTokenCount ?? 0) * 10,
+      },
     };
   }
 }

@@ -1,19 +1,39 @@
-# .gitignore
+# Dependencies
 node_modules/
+
+# Environment
 .env
-.next/
-out/
-.dist/
-build/
-coverage/
-.DS_Store
-npm-debug.log
-pnpm-debug.log
-yarn-error.log
-
-.vercel
-
-# Env files (todas as camadas)
 **/.env
 **/.env.*
 !.env.example
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Expo
+.expo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Vercel
+.vercel
+
+# Coverage
+coverage/
+
+# Test artifacts
+.nyc_output/

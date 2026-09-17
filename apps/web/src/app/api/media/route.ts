@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 interface MediaItem {
   id: string;
@@ -25,7 +25,7 @@ interface MediaItem {
 
 function getSupabase(authHeader?: string) {
   const token = authHeader?.replace('Bearer ', '') || '';
-  return createClient(SUPABASE_URL, SERVICE_KEY, {
+  return createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: token ? { Authorization: `Bearer ${token}` } : {} },
   });
 }

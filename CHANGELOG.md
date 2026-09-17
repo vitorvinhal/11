@@ -43,13 +43,32 @@ node scripts/version.js minor --change "Eleven Coder: terminal interativo PTY" -
 - **Search filter**: filtro por label com highlighting de matches
 - **Node detail panel**: sidebar com info detalhada do nó selecionado
 
+### 🔐 Segurança (CRITICAL)
+- **Service role key fallback removido** em 12 arquivos — user-facing clients agora usam apenas `NEXT_PUBLIC_SUPABASE_ANON_KEY`, admin clients usam `SUPABASE_SERVICE_ROLE_KEY`
+- **Hardcoded Supabase URL removida** de `health.controller.ts`
+- **CORS wildcard corrigido** — `main.ts` agora usa `ALLOWED_ORIGINS` env var (comma-separated)
+- **Settings route** — verificação de ownership: userId autenticado deve coincidir com userId solicitado
+- **Media route** — service role key substituída por anon key no client user-facing
+- **Orphaned `exec.controller.js`** removido do tracking (execução arbitrária sem auth/validação)
+
+### 🧹 Limpeza do Repositório
+- `.gitignore` reescrito com regras para `dist/`, `*.tsbuildinfo`, `.expo/`, `*.log`
+- `dist/` removido de todos os packages do git tracking (~100+ arquivos)
+- `.tsbuildinfo` removido de todos os packages
+- `.expo/` removido do tracking
+- `packages/tsconfig.json` duplicado removido
+- `.eslintignore` redundante removido
+- `@types/*` movidos de `dependencies` para `devDependencies` no root
+- `workspaces` key removida do root `package.json`
+
 ### 🔧 Infra & Correções
 - **socket.io-client**: adicionado ao frontend para WebSocket
 - **@nestjs/websockets + socket.io**: adicionados ao packages/api
-- **node-pty**: PTY nativo para sessões de terminal reais
+- **node-pty**: PTY nativo para sessões de terminal reais, movido para `optionalDependencies`
 - **next.config.js**: fallbacks webpack para módulos Node.js (fs, net, crypto, etc.)
 - **terminal-validate**: função `validate` agora aceita `allowedRoots` customizáveis
 - **Testes**: 17/17 passando (validação de comandos, path containment, baseCommand)
+- **Todos os package.json** sincronizados em `0.4.0-alpha`
 
 ---
 

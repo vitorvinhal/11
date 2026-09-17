@@ -17,6 +17,10 @@ export async function GET(req: Request) {
     const userId = url.searchParams.get('userId');
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
     const s = sb(req);
+    const { data: authData } = await s.auth.getUser();
+    if (!authData?.user || authData.user.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { data, error } = await s.from('user_settings').select('settings').eq('user_id', userId).single();
     if (error) {
       // Table might not exist yet, return empty
@@ -35,6 +39,10 @@ export async function POST(req: Request) {
     const { userId, settings } = body;
     if (!userId || !settings) return NextResponse.json({ error: 'userId and settings required' }, { status: 400 });
     const s = sb(req);
+    const { data: authData } = await s.auth.getUser();
+    if (!authData?.user || authData.user.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { error } = await s.from('user_settings').upsert({
       user_id: userId,
       settings,

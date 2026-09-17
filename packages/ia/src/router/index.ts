@@ -74,6 +74,18 @@ export class ModelGateway {
     return '9router';
   }
 
+  /** Estimativa conservadora de costUnits baseada no tamanho do prompt (chars/4 ≈ tokens). */
+  private estimateCost(messages: CanonicalMessage[]): number {
+    let chars = 0;
+    for (const m of messages) {
+      for (const c of m.content) chars += (c.text?.length ?? 0);
+    }
+    const tokens = Math.ceil(chars / 4);
+    const inTokens = Math.ceil(tokens * 0.5);
+    const outTokens = tokens - inTokens;
+    return inTokens * 3 + outTokens * 15;
+  }
+
   private async invokeWithFallback(
     providerId: string,
     sessionId: string,
@@ -91,12 +103,14 @@ export class ModelGateway {
     const adapter = this.registry.get(providerId);
     if (!adapter) throw new Error(`provedor desconhecido: ${providerId}`);
 
-    if (adapter.isPaid && !costBreaker.canAfford(0)) {
+    // Estimativa conservadora de custo para provedores pagos (baseado em tamanho do prompt).
+    const estimatedCost = adapter.isPaid ? this.estimateCost(messages) : 0;
+    if (adapter.isPaid && !costBreaker.canAfford(estimatedCost)) {
       throw new Error('orçamento de provedores pagos esgotado');
     }
 
     const result = await adapter.complete(messages, { sessionId });
-    await costBreaker.track(0, adapter.id, sessionId);
+    await costBreaker.track(result.usage.costUnits, adapter.id, sessionId);
     if (fallbackReason) result.fallbackReason = fallbackReason;
 
     const last = messages[messages.length - 1];

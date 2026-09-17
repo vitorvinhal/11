@@ -1,5 +1,18 @@
 import { providerPinning } from './provider-pinning';
 
+// Mock supabase client with minimal chainable methods used in hydrate
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: null })
+        })
+      })
+    })
+  })
+}));
+
 describe('ProviderPinning utilities', () => {
   test('pin stores provider in memory', async () => {
     await providerPinning.pin('sess1', 'kr/glm-5', 'test');
@@ -17,5 +30,7 @@ describe('ProviderPinning utilities', () => {
     expect((providerPinning as any).pinMemory.has('none')).toBe(false);
   });
 });
+
+
 
 

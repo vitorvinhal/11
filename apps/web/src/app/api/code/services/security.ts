@@ -72,7 +72,8 @@ export function sanitizeCommand(command: string): string {
 
 export function sanitizeArgs(args: string[]): string[] {
   return args.map(arg => arg
-    .replace(/[;&|`$(){}[\]]/g, '')
+    .replace(/[;&|`$(){}[\]]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
   );
 }

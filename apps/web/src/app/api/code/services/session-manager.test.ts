@@ -1,6 +1,5 @@
-import { createSession, getSession, deleteSession, approveAndExecuteSession } from '../../services/session-manager';
-import { generateSessionId } from '../../services/security';
-jest.mock('../../services/command-executor', () => ({
+import { createSession, getSession, deleteSession, approveAndExecuteSession } from './session-manager';
+jest.mock('./command-executor', () => ({
   executeCommand: jest.fn(() => Promise.resolve({ stdout: 'ok', stderr: '' }))
 }));
 
@@ -28,3 +27,5 @@ describe('session-manager', () => {
     expect(getSession(sess.id)).toBeUndefined();
   });
 });
+
+

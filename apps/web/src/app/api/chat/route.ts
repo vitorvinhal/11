@@ -67,7 +67,7 @@ async function persistChat(
   try {
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
     );
     const last = messages[messages.length - 1];
     const ops: Promise<unknown>[] = [
@@ -136,7 +136,7 @@ function sseChatResponse(reply: string, provider: string): Response {
 async function injectMemory(messages: ChatMsg[], userId: string): Promise<ChatMsg[]> {
   const sb = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
   );
   const { data } = await sb
     .from('memories')

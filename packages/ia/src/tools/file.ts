@@ -1,9 +1,16 @@
+import { existsSync, realpathSync } from 'fs';
 import { readFile, writeFile, access, mkdir } from 'fs/promises';
-import { resolve, dirname, normalize } from 'path';
+import { resolve, dirname, relative, isAbsolute } from 'path';
+
 /**
- * FileTool — leitura/escrita/refatoração de código local com whitelist.
- * Opera no filesystem do host (desktop/API) apenas dentro de ALLOWED_ROOTS.
+ * FileTool — leitura/escrita/refatoração de código local com whitelist segura.
+ *
+ * Correção de segurança: `isWithinRoot` usa `path.relative` (+ case-insensitive
+ * no Windows + realpath) em vez de `startsWith`, que aceitava prefixos irmãos
+ * (ex.: `C:\Users\Administrator2` passava na raiz `C:\Users\Administrator`).
  */
+
+const IS_WINDOWS = process.platform === 'win32';
 
 const ALLOWED_ROOTS = (process.env.TOOL_ALLOWED_ROOTS ?? process.env.BRIDGE_ALLOWED_DIRS ?? '')
   .split(';')
@@ -11,13 +18,33 @@ const ALLOWED_ROOTS = (process.env.TOOL_ALLOWED_ROOTS ?? process.env.BRIDGE_ALLO
   .filter(Boolean)
   .map((p) => resolve(p));
 
+/** Resolve symlinks quando o caminho existe (best-effort). */
+function realOr(p: string): string {
+  try {
+    return existsSync(p) ? realpathSync(p) : p;
+  } catch {
+    return p;
+  }
+}
+
+/**
+ * true se `target` está dentro de alguma raiz permitida.
+ * Usa path.relative (+ case-insensitive no Windows) + realpath.
+ */
+export function isWithinRoot(target: string, roots: string[] = ALLOWED_ROOTS): boolean {
+  if (!roots.length) return true;
+  const abs = realOr(resolve(target));
+  const cmp = IS_WINDOWS ? (s: string) => s.toLowerCase() : (s: string) => s;
+  return roots.some((root) => {
+    const rootAbs = cmp(realOr(resolve(root)));
+    const rel = relative(rootAbs, cmp(abs));
+    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+  });
+}
+
 function resolveSafe(p: string): string {
   const abs = resolve(p);
-  const ok = ALLOWED_ROOTS.length === 0 || ALLOWED_ROOTS.some((root) => {
-    const rel = normalize(abs).startsWith(normalize(root));
-    return rel;
-  });
-  if (!ok) throw new Error(`Acesso rejeitado (fora da whitelist): ${p}`);
+  if (!isWithinRoot(abs)) throw new Error(`Acesso rejeitado (fora da whitelist): ${p}`);
   return abs;
 }
 
