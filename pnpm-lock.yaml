@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@inferencesh/sdk':
-        specifier: ^0.6.48
-        version: 0.6.48(express@5.2.1)
       axios:
         specifier: ^1.20.0
         version: 1.20.0
@@ -2096,31 +2093,6 @@ packages:
     resolution: {integrity: sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==}
     deprecated: Use @eslint/object-schema instead
     dev: true
-
-  /@inferencesh/sdk@0.6.48(express@5.2.1):
-    resolution: {integrity: sha512-S3cO9JiEykDOnAxL5nv+NHqjSAJA5FZfcrN2Hv2ILuVtXdAxxyK5aMwwKvwap1qPIdMetWEp4l3nZ7uIgtAMXQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      '@sveltejs/kit': '>=2.0.0'
-      express: '>=4.0.0'
-      hono: '>=4.0.0'
-      next: '>=13.0.0'
-      react: '>=18.0.0'
-    peerDependenciesMeta:
-      '@sveltejs/kit':
-        optional: true
-      express:
-        optional: true
-      hono:
-        optional: true
-      next:
-        optional: true
-      react:
-        optional: true
-    dependencies:
-      eventsource: 4.1.1
-      express: 5.2.1
-    dev: false
 
   /@ionic/cli-framework-output@2.2.8:
     resolution: {integrity: sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g==}
@@ -7074,18 +7046,6 @@ packages:
   /etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
-
-  /eventsource-parser@3.1.1:
-    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
-    engines: {node: '>=18.0.0'}
-    dev: false
-
-  /eventsource@4.1.1:
-    resolution: {integrity: sha512-D6bTRWh6KahHTK/m4WnjPQyEinNPf9eFLEZSEoj7d6fTibspnAVYfzHvirL7u/aoX5d9YYfIkBVAhmigUELk9w==}
-    engines: {node: '>=20.0.0'}
-    dependencies:
-      eventsource-parser: 3.1.1
-    dev: false
 
   /execa@5.1.1:
     resolution: {integrity: sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==}
