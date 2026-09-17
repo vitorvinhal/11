@@ -4,6 +4,40 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v0.6.0-alpha — 2026-09-17
+
+### Multi-Tenancy & Isolamento (FASE 2)
+
+#### Auditoria de Isolamento
+- Auditoria completa de 12 rotas API: 8 FAIL, 4 PASS
+- Rotas que passavam: `/api/settings`, `/api/code`, `/api/account`, `/api/media`
+- Rotas que falhavam: `/api/chat`, `/api/memories`, `/api/projects`, `/api/plugins`, `/api/skills`, `/api/connectors`, `/api/artifacts`, `/api/terminal/exec`
+
+#### Helper de Auth Reutilizável
+- **`apps/web/src/lib/auth-helpers.ts`** — `requireUser(req)` extrai JWT do header Authorization, valida com Supabase e retorna `{ sb, userId }`
+- **`requireUserOrUnauthorized(req)`** — wrapper que retorna 401 automaticamente
+- **`assertRowOwnership(sb, table, rowId, userId)`** — verifica que o registro pertence ao usuário
+
+#### Rotas Corrigidas (8 arquivos)
+| Rota | Mudança |
+|------|---------|
+| `/api/chat` | Auth obrigatória via `requireUser()`, userId derivado do JWT (antes: corpo da requisição, sem auth) |
+| `/api/memories` | Auth em GET/POST/DELETE, userId do JWT, DELETE com `.eq('user_id', userId)` |
+| `/api/projects` | Auth em GET/POST/PATCH/DELETE, ownership check via `assertRowOwnership` em PATCH/DELETE |
+| `/api/plugins` | Auth em GET/POST/PATCH/DELETE, ownership check em PATCH/DELETE, bug do query builder corrigido |
+| `/api/skills` | Auth em GET/POST/PATCH/DELETE, ownership check em PATCH/DELETE |
+| `/api/connectors` | Auth em GET/POST/DELETE, ownership check em DELETE por id |
+| `/api/artifacts` | Auth em GET/POST/DELETE, ownership check em DELETE, bug do query builder corrigido |
+| `/api/connectors/test` | Migrada de `getAuthClient` para `requireUser()` |
+
+#### Padrão de Segurança Estabelecido
+- Todas as rotas agora extraem `userId` do JWT (nunca do body/query params)
+- DELETE e PATCH verificam ownership antes de executar
+- Rotas OAuth (Google/GitHub) mantêm query param `userId` (redirect do browser não envia JWT)
+- Front-end não precisa alterar: `userId` nos params é ignorado, JWT é a fonte de verdade
+
+---
+
 ## v0.5.0-alpha — 2026-09-17
 
 ### Segurança Crítica (FASE 1)

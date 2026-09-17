@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { loadRootEnv } from '../../../lib/server-env';
+import { requireUser } from '../../../lib/auth-helpers';
 import { parseCompletionContent } from '../../../lib/parse-completion';
 
 loadRootEnv();
@@ -29,15 +30,21 @@ interface ChatBody {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+    const { userId } = auth;
+
     const body = (await req.json()) as ChatBody;
-    const { messages, sessionId, userId, provider } = body;
+    const { messages, sessionId, provider } = body;
     if (!messages?.length || !sessionId) {
       return NextResponse.json({ error: 'messages e sessionId sÃ£o obrigatÃ³rios' }, { status: 400 });
     }
 
     const withFiles = contextualize(messages, body.files ?? []);
     const withSearch = await contextualizeWebSearch(withFiles, body.webSearch);
-    const withMemory = body.memory && userId ? await injectMemory(withSearch, userId) : withSearch;
+    const withMemory = body.memory ? await injectMemory(withSearch, userId) : withSearch;
     const selected = (provider ?? 'astra').toLowerCase();
     const reply = await routeByProvider(selected, withMemory, body);
 

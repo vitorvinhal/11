@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
 import { loadRootEnv } from '../../../lib/server-env';
-import { getAuthClient } from '../../../lib/server-supabase';
+import { requireUser, assertRowOwnership } from '../../../lib/auth-helpers';
 
 loadRootEnv();
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function sb(req: Request) {
-  return getAuthClient(req);
-}
-
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
-    const s = sb(req);
-    let q = s.from('connectors').select('*').order('created_at', { ascending: false });
-    if (userId) q = q.eq('user_id', userId);
-    const { data, error } = await q;
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
+    const { data, error } = await sb
+      .from('connectors')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return NextResponse.json(data ?? []);
   } catch (e) {
@@ -28,10 +26,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const body = await req.json();
-    const s = sb(req);
-    const { data, error } = await s.from('connectors').upsert({
-      user_id: body.userId,
+    const { data, error } = await sb.from('connectors').upsert({
+      user_id: userId,
       provider: body.provider,
       access_token: body.access_token,
       refresh_token: body.refresh_token,
@@ -48,17 +48,24 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const url = new URL(req.url);
     const id = url.searchParams.get('id');
     const provider = url.searchParams.get('provider');
-    const userId = url.searchParams.get('userId');
-    const s = sb(req);
-    let q = s.from('connectors').delete();
-    if (id) q = q.eq('id', id);
-    else if (provider && userId) q = q.eq('provider', provider).eq('user_id', userId);
-    else return NextResponse.json({ error: 'id or provider+userId required' }, { status: 400 });
-    const { error } = await q;
-    if (error) throw error;
+    if (!id && !provider) {
+      return NextResponse.json({ error: 'id or provider required' }, { status: 400 });
+    }
+    if (id) {
+      const owned = await assertRowOwnership(sb, 'connectors', id, userId);
+      if (!owned) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+      const { error } = await sb.from('connectors').delete().eq('id', id).eq('user_id', userId);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('connectors').delete().eq('provider', provider).eq('user_id', userId);
+      if (error) throw error;
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

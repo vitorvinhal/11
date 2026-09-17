@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
 import { loadRootEnv } from '../../../lib/server-env';
-import { getAuthClient } from '../../../lib/server-supabase';
+import { requireUser, assertRowOwnership } from '../../../lib/auth-helpers';
 
 loadRootEnv();
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function sb(req: Request) {
-  return getAuthClient(req);
-}
-
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
-    const s = sb(req);
-    let q = s.from('skills').select('*').order('created_at', { ascending: false });
-    if (userId) q = q.eq('user_id', userId);
-    const { data, error } = await q;
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
+    const { data, error } = await sb
+      .from('skills')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return NextResponse.json(data ?? []);
   } catch (e) {
@@ -28,10 +26,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const body = await req.json();
-    const s = sb(req);
-    const { data, error } = await s.from('skills').insert({
-      user_id: body.userId,
+    const { data, error } = await sb.from('skills').insert({
+      user_id: userId,
       name: body.name,
       description: body.description ?? '',
       icon: body.icon ?? '⚡',
@@ -47,10 +47,15 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const body = await req.json();
-    const s = sb(req);
     const { id, ...updates } = body;
-    const { error } = await s.from('skills').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id);
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+    const owned = await assertRowOwnership(sb, 'skills', id, userId);
+    if (!owned) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+    const { error } = await sb.from('skills').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', userId);
     if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (e) {
@@ -60,11 +65,15 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const url = new URL(req.url);
     const id = url.searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-    const s = sb(req);
-    const { error } = await s.from('skills').delete().eq('id', id);
+    const owned = await assertRowOwnership(sb, 'skills', id, userId);
+    if (!owned) return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
+    const { error } = await sb.from('skills').delete().eq('id', id).eq('user_id', userId);
     if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (e) {

@@ -6,17 +6,61 @@ O versionamento segue: `v0.{MAIOR}.{MENOR}-{canal}` (alpha → rc → estável).
 Versão atual em `apps/web/public/version.json`. Bump automático:
 
 ```bash
-pnpm version:patch   # v0.4.0-alpha → v0.4.1-alpha
-pnpm version:minor   # v0.4.0-alpha → v0.5.0-alpha
-pnpm version:major   # v0.4.0-alpha → v1.0.0-alpha
+pnpm version:patch   # v0.6.0-alpha → v0.6.1-alpha
+pnpm version:minor   # v0.6.0-alpha → v0.7.0-alpha
+pnpm version:major   # v0.6.0-alpha → v1.0.0-alpha
 pnpm version:rc      # patch e troca canal para rc
 ```
 
 Bump com notas de release:
 
 ```bash
-node scripts/version.js minor --change "Eleven Coder: terminal interativo PTY" --change "NeuralGraph redesenhado"
+node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + ownership checks"
 ```
+
+---
+
+## v0.6.0-alpha — 2026-09-17
+
+### 🔐 Multi-Tenancy & Isolamento (FASE 2)
+- **Helper `requireUser()`** criado em `lib/auth-helpers.ts` — extrai JWT do header, valida com Supabase, retorna userId server-side
+- **Todas as 12 rotas API** agora usam JWT-based auth (antes: 4 faziam, 8 dependiam de RLS ou não tinham auth)
+- **Ownership checks** em PATCH/DELETE para projects, skills, plugins, connectors, artifacts, memories
+- **Chat route**: autenticação obrigatória (antes era aberta sem auth); userId derivado do JWT
+- **Connectors test route**: migrada para `requireUser()` (antes usava userId do body)
+- **Bugs corrigidos**: query builder em plugins e artifacts não reatribuava `q` (filtro podia falhar)
+
+### 📊 Rotas corrigidas
+| Rota | Antes | Depois |
+|------|-------|--------|
+| `/api/chat` | Sem auth, userId do body | JWT obrigatório, userId do token |
+| `/api/memories` | RLS-only, userId opcional | JWT obrigatório, userId do token |
+| `/api/projects` | Sem ownership em PATCH/DELETE | `assertRowOwnership` em PATCH/DELETE |
+| `/api/plugins` | Sem ownership, bug query builder | Ownership + bug fix |
+| `/api/skills` | Sem ownership em PATCH/DELETE | `assertRowOwnership` em PATCH/DELETE |
+| `/api/connectors` | userId do body em POST/DELETE | JWT obrigatório, ownership em DELETE |
+| `/api/artifacts` | userId do body, bug query builder | JWT + ownership + bug fix |
+| `/api/connectors/test` | userId do body | JWT obrigatório |
+
+### 🛠️ Arquivos criados
+| Arquivo | Descrição |
+|---------|-----------|
+| `apps/web/src/lib/auth-helpers.ts` | Helper de auth reutilizável (requireUser, assertRowOwnership) |
+
+### 📊 Arquivos modificados
+| Arquivo | Mudança |
+|---------|---------|
+| `apps/web/src/app/api/chat/route.ts` | Auth obrigatória via requireUser |
+| `apps/web/src/app/api/memories/route.ts` | Auth + ownership em DELETE |
+| `apps/web/src/app/api/projects/route.ts` | Auth + ownership em PATCH/DELETE |
+| `apps/web/src/app/api/plugins/route.ts` | Auth + ownership + bug fix |
+| `apps/web/src/app/api/skills/route.ts` | Auth + ownership em PATCH/DELETE |
+| `apps/web/src/app/api/connectors/route.ts` | Auth + ownership em DELETE |
+| `apps/web/src/app/api/connectors/test/route.ts` | Migrada para requireUser |
+| `apps/web/src/app/api/artifacts/route.ts` | Auth + ownership + bug fix |
+| `package.json` | Versão 0.6.0-alpha |
+| `apps/web/public/version.json` | Versão 0.6.0-alpha |
+| `docs/TLOG.md` | Entrada v0.6.0-alpha |
 
 ---
 

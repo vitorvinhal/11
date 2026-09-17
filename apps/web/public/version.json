@@ -1,23 +1,15 @@
 {
-  "version": "0.5.0-alpha",
-  "versionCode": 4,
+  "version": "0.6.0-alpha",
+  "versionCode": 5,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Deploy Vercel CI/CD completo com secrets configurados",
-    "Variáveis de ambiente Vercel (Production/Development/Preview) configuradas",
-    "Git integration com Vercel para deploy automático",
-    "Testes de terminal-validate desbloqueados e implementados (18 testes)",
-    "MediaGallery migrado para next/image (performance LCP)",
-    "Imports não usados removidos (file.ts, test files)",
-    "Unificação de Node 24 em todos os workflows CI",
-    "Token Vercel validado e funcionando",
-    "Eleven Coder: terminal interativo PTY com xterm.js + WebSocket",
-    "PTY Session Manager: gerenciamento de sessões PTY reais",
-    "WebSocket Gateway NestJS: autenticação JWT Supabase",
-    "Frontend ElevenCoder: UI IDE-style com tabs, HUD e ações",
-    "NeuralGraph redesenhado: OLED, glassmorphism, partículas",
-    "Sidebar com aba 'Eleven Coder' integrada"
+    "Multi-tenancy: todas as 12 rotas API now use JWT-based auth (requireUser helper)",
+    "Ownership checks em PATCH/DELETE para projects, skills, plugins, connectors, artifacts, memories",
+    "Chat route: autenticação obrigatória (antes era aberta), userId derivado do JWT",
+    "Connectors test route: migrada para requireUser (antes usava userId do body)",
+    "Helper auth-helpers.ts criado: requireUser, requireUserOrUnauthorized, assertRowOwnership",
+    "Front-end não precisa alterar: userId nos params é ignorado, JWT é a fonte de verdade"
   ],
   "apkUrl": "https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/app-release.apk",
   "desktopUrl": "https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/11-desktop_0.4.0_x64-setup.exe"
