@@ -1,10 +1,10 @@
 {
   "name": "11",
-  "version": "0.8.0-alpha",
+  "version": "0.8.1-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
-    "node": "24.x"
+    "node": ">=18"
   },
   "scripts": {
     "build": "pnpm --filter @11/shared build && pnpm --filter @11/web build",
