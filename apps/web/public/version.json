@@ -1,15 +1,14 @@
 {
-  "version": "0.6.0-alpha",
-  "versionCode": 5,
+  "version": "0.7.0-alpha",
+  "versionCode": 6,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Multi-tenancy: todas as 12 rotas API now use JWT-based auth (requireUser helper)",
-    "Ownership checks em PATCH/DELETE para projects, skills, plugins, connectors, artifacts, memories",
-    "Chat route: autenticação obrigatória (antes era aberta), userId derivado do JWT",
-    "Connectors test route: migrada para requireUser (antes usava userId do body)",
-    "Helper auth-helpers.ts criado: requireUser, requireUserOrUnauthorized, assertRowOwnership",
-    "Front-end não precisa alterar: userId nos params é ignorado, JWT é a fonte de verdade"
+    "Deploy fix: removido routes do vercel.json que sobrepunha routing automático do Next.js",
+    "CostBreaker: contabilização real de custos com parse de tokens do 9Router e persistência sempre que houver chamada",
+    "9Router adapter: parse de usage tokens (prompt_tokens, completion_tokens) da resposta OpenAI-compatível",
+    "Router: fallback para estimateCost() quando adapter retorna costUnits=0",
+    "Auditoria FASE 3: 7/8 itens já fixados (1.1-1.5, 1.7-1.8), 1.6 corrigido agora"
   ],
   "apkUrl": "https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/app-release.apk",
   "desktopUrl": "https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/11-desktop_0.4.0_x64-setup.exe"

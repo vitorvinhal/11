@@ -4,6 +4,23 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v0.7.0-alpha — 2026-09-17
+
+### Deploy Fix
+- **`vercel.json`** — Removido `routes` que sobrepunha o routing automático do Next.js no Vercel
+
+### CostBreaker — Contabilização Real
+- **`packages/ia/src/router/cost-breaker.ts`** — `track()` agora aceita `inputTokens` e `outputTokens`; `persist()` sempre grava (antes só gravava quando `spent > 0`)
+- **`packages/ia/src/router/index.ts`** — Fallback para `estimateCost()` quando adapter retorna `costUnits=0`; passa token counts para `track()`
+- **`packages/ia/src/router/adapters/9router.ts`** — `parseUsage()` extrai `prompt_tokens` e `completion_tokens` da resposta OpenAI-compatível (JSON puro e SSE)
+- **`packages/ia/src/router/adapters/gemini.ts`** — Já retornava token counts; agora são persistidos via track()
+
+### Auditoria FASE 3
+- 7/8 itens já estavam fixados (FASE 1): router9 auth, PC Agent auth, JWT_SECRET fail-fast, terminal auth, embeddings 768, bridge seguro, CLI/Mobile/Envs
+- 1.6 CostBreaker corrigido nesta versão
+
+---
+
 ## v0.6.0-alpha — 2026-09-17
 
 ### Multi-Tenancy & Isolamento (FASE 2)

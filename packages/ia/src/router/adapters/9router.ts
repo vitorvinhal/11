@@ -51,11 +51,12 @@ export class NineRouterAdapter implements ProviderAdapter {
           const text = await res.text();
           const content = parseCompletionContent(text);
           if (content) {
+            const usage = parseUsage(text);
             return {
               provider: '9router',
               model: modelId,
               message: { role: 'assistant', content: [{ type: 'text', text: content }] },
-              usage: { inputTokens: 0, outputTokens: 0, costUnits: 0 },
+              usage: { inputTokens: usage.input, outputTokens: usage.output, costUnits: 0 },
             };
           }
         } catch (err) {
@@ -105,5 +106,35 @@ function parseCompletionContent(body: string): string | null {
     return typeof text === 'string' && text ? text : null;
   } catch {
     return null;
+  }
+}
+
+/** Extrai contagem de tokens da resposta OpenAI-compatível. */
+function parseUsage(body: string): { input: number; output: number } {
+  try {
+    // Para JSON puro
+    if (!body.includes('data:')) {
+      const data = JSON.parse(body) as any;
+      return {
+        input: data.usage?.prompt_tokens ?? 0,
+        output: data.usage?.completion_tokens ?? 0,
+      };
+    }
+    // Para SSE — procura no último chunk com usage
+    let last: any = null;
+    for (const line of body.split(/\r?\n/)) {
+      const m = line.match(/^data:\s*(.*)$/);
+      if (!m || m[1] === '[DONE]') continue;
+      try {
+        const chunk = JSON.parse(m[1]);
+        if (chunk.usage) last = chunk;
+      } catch { /* ignore */ }
+    }
+    return {
+      input: last?.usage?.prompt_tokens ?? 0,
+      output: last?.usage?.completion_tokens ?? 0,
+    };
+  } catch {
+    return { input: 0, output: 0 };
   }
 }

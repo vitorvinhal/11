@@ -24,11 +24,11 @@ export class CostBreaker {
     return this._supabase;
   }
 
-  async track(spent: number, provider: string, sessionId: string): Promise<void> {
+  async track(spent: number, provider: string, sessionId: string, inputTokens = 0, outputTokens = 0): Promise<void> {
     if (spent > 0) this.spentPaid += spent;
     if (Date.now() - this.lastFlush > 60_000) {
       this.lastFlush = Date.now();
-      void this.persist(sessionId, provider, spent);
+      void this.persist(sessionId, provider, spent, inputTokens, outputTokens);
     }
   }
 
@@ -46,13 +46,13 @@ export class CostBreaker {
     console.warn(`[cost-breaker] fallback para 9Router: ${reason}`);
   }
 
-  private async persist(sessionId: string, provider: string, spent: number): Promise<void> {
+  private async persist(sessionId: string, provider: string, spent: number, inputTokens: number, outputTokens: number): Promise<void> {
     try {
       await this.supa().from('model_usage').insert({
         session_id: sessionId,
         provider,
-        input_tokens: 0,
-        output_tokens: 0,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
         cost_units: spent,
       });
     } catch {

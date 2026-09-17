@@ -110,7 +110,8 @@ export class ModelGateway {
     }
 
     const result = await adapter.complete(messages, { sessionId });
-    await costBreaker.track(result.usage.costUnits, adapter.id, sessionId);
+    const cost = result.usage.costUnits || (adapter.isPaid ? this.estimateCost(messages) : 0);
+    await costBreaker.track(cost, adapter.id, sessionId, result.usage.inputTokens, result.usage.outputTokens);
     if (fallbackReason) result.fallbackReason = fallbackReason;
 
     const last = messages[messages.length - 1];

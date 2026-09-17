@@ -20,6 +20,23 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v0.7.0-alpha — 2026-09-17
+
+### 🚀 Deploy Fix
+- **vercel.json**: Removido `routes` que sobrepunha o routing automático do Next.js — causa do deploy não atualizar o sistema
+
+### 💰 CostBreaker — Contabilização Real
+- **`cost-breaker.ts`**: `track()` agora aceita `inputTokens` e `outputTokens`; `persist()` sempre grava uso (antes só gravava quando `spent > 0`)
+- **`router/index.ts`**: Fallback para `estimateCost()` quando adapter retorna `costUnits=0`; passa token counts para `track()`
+- **`9router.ts`**: `parseUsage()` extrai `prompt_tokens` e `completion_tokens` da resposta OpenAI-compatível (JSON puro e SSE)
+- **`gemini.ts`**: Token counts já eram retornados; agora são persistidos corretamente
+
+### 📊 Auditoria FASE 3
+- 7/8 itens já fixados na FASE 1 (1.1-1.5, 1.7-1.8)
+- 1.6 CostBreaker corrigido nesta versão
+
+---
+
 ## v0.6.0-alpha — 2026-09-17
 
 ### 🔐 Multi-Tenancy & Isolamento (FASE 2)

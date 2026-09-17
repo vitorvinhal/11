@@ -3,8 +3,5 @@
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm build",
   "framework": "nextjs",
-  "outputDirectory": "apps/web/.next",
-  "routes": [
-    { "src": "/(.*)", "dest": "apps/web/$1" }
-  ]
+  "outputDirectory": "apps/web/.next"
 }
