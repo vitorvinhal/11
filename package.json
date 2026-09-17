@@ -56,5 +56,10 @@
     "node-wol": "^0.1.1",
     "sqlite3": "^6.0.1",
     "ws": "^8.21.3"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": ["node-pty"]
+    }
   }
 }
