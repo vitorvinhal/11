@@ -1,0 +1,19 @@
+{
+  "name": "@11/ia",
+  "version": "0.3.0-alpha",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node ../../scripts/copy-assets.js src dist",
+    "lint": "eslint . --ext .ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "officegen": "^0.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20"
+  }
+}

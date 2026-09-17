@@ -1,0 +1,7 @@
+dist
+node_modules
+.next
+coverage
+*.config.js
+**/dist/**
+**/node_modules/**

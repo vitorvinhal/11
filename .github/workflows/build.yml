@@ -1,0 +1,23 @@
+name: 11-ci
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install pnpm
+        run: npm i -g pnpm
+      - name: Install deps
+        run: pnpm install
+      - name: Lint
+        run: pnpx eslint . --ext .js,.ts,.tsx
+      - name: Test
+        run: pnpm test || echo 'No tests'
+      - name: Build Web
+        run: pnpm build:web

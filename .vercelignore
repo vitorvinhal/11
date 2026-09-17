@@ -1,0 +1,8 @@
+node_modules
+apps/web/.next
+apps/desktop/dist
+apps/desktop/src-tauri/target
+apps/mobile/android/app/build
+apps/mobile/android/build
+apps/mobile/www
+.git

@@ -1,0 +1,21 @@
+name: supabase-keepalive
+
+on:
+  schedule:
+    # A cada 3 dias
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive endpoint
+        env:
+          KEEPALIVE_URL: ${{ secrets.KEEPALIVE_URL }}
+        run: |
+          if [ -z "$KEEPALIVE_URL" ]; then
+            echo "::warning::KEEPALIVE_URL não definido — pulando keep-alive."
+            exit 0
+          fi
+          curl -fsS -X GET "$KEEPALIVE_URL" || echo "::error::Falha ao acordar o banco"

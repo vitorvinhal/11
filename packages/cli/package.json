@@ -1,0 +1,23 @@
+{
+  "name": "@11/cli",
+  "version": "0.3.0-alpha",
+  "private": true,
+  "bin": {
+    "11-cli": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node ../../scripts/copy-assets.js src dist",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "commander": "^11",
+    "handlebars": "^4",
+    "js-yaml": "^4"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

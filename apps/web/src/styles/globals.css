@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #00d1ff;
+  --accent: #c084fc;
+  --magenta: #ff00dd;
+  --background: #030309;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-border: transparent;
+  --text-primary: #ececf1;
+  --text-muted: rgba(236, 236, 241, 0.55);
+  --text-dim: rgba(236, 236, 241, 0.32);
+}
+
+/* Tema claro (appearance: light) */
+html.light {
+  --background: #f7f7f8;
+  --surface: rgba(0, 0, 0, 0.03);
+  --text-primary: #1a1a1e;
+  --text-muted: rgba(26, 26, 30, 0.6);
+  --text-dim: rgba(26, 26, 30, 0.4);
+}
+
+html.light body {
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+html.light .aurora-bg {
+  background:
+    radial-gradient(42% 55% at 18% 8%, rgba(0, 209, 255, 0.1), transparent 60%),
+    radial-gradient(38% 48% at 86% 12%, rgba(192, 132, 252, 0.08), transparent 62%),
+    #f7f7f8;
+}
+
+html.light .vignette {
+  background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 60%, rgba(255, 255, 255, 0.4) 100%);
+}
+
+html.light main,
+html.light p,
+html.light h1,
+html.light h2,
+html.light h3,
+html.light span,
+html.light button,
+html.light div {
+  text-shadow: none;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Leitura sobre fundo galáxia: text-shadow sutil no corpo */
+main, p, h1, h2, h3, span, button, div {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+
+::selection {
+  background: rgba(0, 209, 255, 0.25);
+  color: #fff;
+}
+
+/* ── Camadas de fundo fixas ─────────────────────── */
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(42% 55% at 18% 8%, rgba(0, 209, 255, 0.16), transparent 60%),
+    radial-gradient(38% 48% at 86% 12%, rgba(192, 132, 252, 0.13), transparent 62%),
+    radial-gradient(55% 60% at 50% 105%, rgba(255, 0, 221, 0.08), transparent 65%),
+    #030309;
+}
+
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(0, 209, 255, 0.06), transparent 40%),
+    radial-gradient(circle at 75% 60%, rgba(192, 132, 252, 0.06), transparent 42%);
+  filter: blur(60px);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 70% at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ── Glass – sem bordas ──────────────────────────── */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+.glass-card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+}
+
+.glass-chip {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Inputs ───────────────────────────────────────── */
+.input-dark {
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+}
+.input-dark:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Animações ────────────────────────────────────── */
+@keyframes aurora-drift {
+  0% { transform: translate3d(-3%, -2%, 0) scale(1); opacity: 0.85; }
+  100% { transform: translate3d(4%, 3%, 0) scale(1.06); opacity: 1; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.anim-fade-up { animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.pulse-dot { animation: pulse-dot 2.2s ease-in-out infinite; }
+
+@layer utilities {
+  .grad-cyan-magenta {
+    background: linear-gradient(100deg, #7dd3fc, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .text-glow-soft { text-shadow: 0 0 30px rgba(125, 211, 252, 0.35); }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}

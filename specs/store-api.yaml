@@ -1,0 +1,55 @@
+# Example OpenAPI spec for a simple API
+openapi: 3.0.0
+info:
+  title: Exemplo API
+  version: 1.0.0
+paths:
+  /store/products:
+    get:
+      summary: Lista produtos
+      responses:
+        '200':
+          description: Lista de produtos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      summary: Cria produto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Produto criado
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        image_url:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+    ProductInput:
+      type: object
+      required:
+        - image_url
+        - description
+        - price
+      properties:
+        image_url:
+          type: string
+        description:
+          type: string
+        price:
+          type: number

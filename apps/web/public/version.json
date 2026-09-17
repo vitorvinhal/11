@@ -1,0 +1,21 @@
+{
+  "version": "0.3.0-alpha",
+  "versionCode": 3,
+  "name": "11 — Inteligência Autônoma",
+  "channel": "alpha",
+  "changelog": [
+    "Chat com streaming SSE (efeito digitando) e web search real",
+    "Segurança: /api/code aceita JWT do Supabase; media com ownership; PKCE em localhost",
+    "Plugins e Artifacts persistidos no Supabase (RLS por usuário)",
+    "9Router resiliente: combos padrão/fallback, parser JSON+SSE",
+    "Health check do 9Router em /api/health/router (local + túnel)",
+    "Terminal real estilo VSCode (xterm.js) com abas e streaming, cwd persistente",
+    "Perfil funcional: Account, Privacy, Capabilities, Reflect, Pomodoro",
+    "Favicon e ícones refeitos (web, PWA, Android, iOS, Tauri)",
+    "UI estilo GPT/ELEVEN: empty state, cards de sugestão, composer arredondado",
+    "Build de produção corrigido para Node 22+/24 (hashFunction sha256)",
+    "Versões reconciliadas para 0.3.0-alpha"
+  ],
+  "apkUrl": "https://github.com/user/11/releases/download/v0.3.0-alpha/app-release.apk",
+  "desktopUrl": "https://github.com/user/11/releases/download/v0.3.0-alpha/11-desktop_0.3.0_x64-setup.exe"
+}

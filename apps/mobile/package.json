@@ -1,0 +1,28 @@
+{
+  "name": "@11/mobile",
+  "version": "0.3.0-alpha",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "latest",
+    "expo": "latest",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-native": "latest",
+    "react-native-webview": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "^18",
+    "typescript": "^5"
+  }
+}
