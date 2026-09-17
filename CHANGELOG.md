@@ -20,7 +20,13 @@ node scripts/version.js minor --change "Eleven Coder: terminal interativo PTY" -
 
 ---
 
-## v0.4.0-alpha — 2026-09-17
+## v0.4.1-alpha — 2026-09-17
+
+### 🛠️ Correção lockfile
+- `pnpm install --no-frozen-lockfile` sincroniza lockfile com package.json, impede erro `ERR_PNPM_OUTDATED_LOCKFILE`.
+- Deploy Vercel agora reflete alterações de código.
+
+
 
 ### 🖥️ Eleven Coder (Terminal Interativo)
 - **PTY Session Manager**: sessões PTY reais com node-pty, suporte a bash/zsh/powershell/cmd
