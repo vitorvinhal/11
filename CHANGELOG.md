@@ -20,6 +20,24 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v0.8.0-alpha — 2026-09-17
+
+### 🔐 Consistência de Auth
+- **Settings route** migrada para `requireUser()` — todas as 13 rotas API agora usam o mesmo padrão
+
+### 🧹 Limpeza
+- **`@inferencesh/sdk`** removido do root `package.json` (dependência fantasma, nunca importada)
+
+### 📊 Auditoria do Checklist
+- 15 itens verificados: 8 DONE, 5 PARTIAL (cosmético), 1 NOT DONE (relatório)
+- Migrations SQL completas em `infra/supabase/migrations/`
+
+### 🚀 Deploy
+- `vercel.json` sem `routes` — routing automático do Next.js habilitado
+- **IMPORTANTE:** Verifique o Vercel Dashboard → Settings → Root Directory deve ser `.` (repo root)
+
+---
+
 ## v0.7.0-alpha — 2026-09-17
 
 ### 🚀 Deploy Fix

@@ -1,6 +1,6 @@
 {
   "name": "11",
-  "version": "0.7.0-alpha",
+  "version": "0.8.0-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
@@ -24,7 +24,6 @@
     "version:show": "node -e \"const j=require('./apps/web/public/version.json');console.log(j.version)\""
   },
   "dependencies": {
-    "@inferencesh/sdk": "^0.6.48",
     "axios": "^1.20.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",

@@ -4,6 +4,24 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v0.8.0-alpha — 2026-09-17
+
+### Consistência de Auth
+- **`apps/web/src/app/api/settings/route.ts`** — Migrada de `getAuthClient()` + manual `getUser()` para `requireUser()`. Agora todas as rotas usam o mesmo padrão.
+
+### Limpeza
+- **`package.json`** — `@inferencesh/sdk` removido (era dependência fantasma: listada mas nunca importada)
+
+### Auditoria Completa do Checklist
+- 15 itens verificados: 8 DONE, 5 PARTIAL (cosmético), 1 NOT DONE (relatório de testes)
+- Deploy v0.2.0-alpha identificado como problema de configuração Vercel (Root Directory)
+
+### Migrations SQL
+- 11 arquivos em `infra/supabase/migrations/` cobrindo: users, messages, embeddings, sessions, memories, skills, projects, media, connectors, artifacts, plugins, user_settings
+- `apply-migrations.js` para aplicar via RPC
+
+---
+
 ## v0.7.0-alpha — 2026-09-17
 
 ### Deploy Fix

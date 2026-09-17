@@ -1,29 +1,19 @@
 import { NextResponse } from 'next/server';
 import { loadRootEnv } from '../../../lib/server-env';
-import { getAuthClient } from '../../../lib/server-supabase';
+import { requireUser } from '../../../lib/auth-helpers';
 
 loadRootEnv();
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function sb(req: Request) {
-  return getAuthClient(req);
-}
-
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
-    if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
-    const s = sb(req);
-    const { data: authData } = await s.auth.getUser();
-    if (!authData?.user || authData.user.id !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const { data, error } = await s.from('user_settings').select('settings').eq('user_id', userId).single();
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
+    const { data, error } = await sb.from('user_settings').select('settings').eq('user_id', userId).single();
     if (error) {
-      // Table might not exist yet, return empty
       if (error.code === '42P01' || error.message?.includes('does not exist')) return NextResponse.json({});
       if (error.code !== 'PGRST116') throw error;
     }
@@ -35,23 +25,20 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
     const body = await req.json();
-    const { userId, settings } = body;
-    if (!userId || !settings) return NextResponse.json({ error: 'userId and settings required' }, { status: 400 });
-    const s = sb(req);
-    const { data: authData } = await s.auth.getUser();
-    if (!authData?.user || authData.user.id !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const { error } = await s.from('user_settings').upsert({
+    const { settings } = body;
+    if (!settings) return NextResponse.json({ error: 'settings required' }, { status: 400 });
+    const { error } = await sb.from('user_settings').upsert({
       user_id: userId,
       settings,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
     if (error) {
-      // If table doesn't exist, try to create it
       if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        const { error: createErr } = await s.rpc('exec_sql', {
+        const { error: createErr } = await sb.rpc('exec_sql', {
           query: `CREATE TABLE IF NOT EXISTS user_settings (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
@@ -63,8 +50,7 @@ export async function POST(req: Request) {
           CREATE POLICY "user_settings_isolated" ON user_settings FOR ALL USING (auth.uid() = user_id);`
         });
         if (!createErr) {
-          // Retry the upsert
-          const { error: retryErr } = await s.from('user_settings').upsert({
+          const { error: retryErr } = await sb.from('user_settings').upsert({
             user_id: userId,
             settings,
             updated_at: new Date().toISOString(),
