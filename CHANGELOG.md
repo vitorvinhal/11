@@ -20,6 +20,30 @@ node scripts/version.js minor --change "Eleven Coder: terminal interativo PTY" -
 
 ---
 
+## v0.5.0-alpha — 2026-09-17
+
+### 🔐 Segurança Crítica (FASE 1)
+- **Router9 protegido**: JWT authentication obrigatória + path sandbox com `fs.realpath` e validação de symlink
+- **PC Agent protegido**: `authMiddleware` adicionado em `PATCH /cancel` e `DELETE` (antes expostos)
+- **JWT_SECRET fail-fast**: Servidor recusa iniciar sem `JWT_SECRET` definido (remove fallback `dev-secret-change-in-production`)
+- **CORS corrigido**: Wildcard `*` substituído por `ALLOWED_ORIGINS` em ambos os servidores
+- **Terminal auth obrigatória**: Bloqueado em produção sem Supabase configurado
+- **Bridge seguro**: `ops/run-command` removido do allowlist (impedia execução arbitrária)
+
+### 🛠️ Deploy
+- **vercel.json**: Removido `builds` que sobrepunha Project Settings; adicionado `--no-frozen-lockfile`
+- Deploy agora reflete alterações de código corretamente
+
+### 📊 Arquivos modificados
+| Arquivo | Mudança |
+|---------|---------|
+| `apps/desktop/src/server.ts` | JWT auth + helmet + CORS + rate limit |
+| `apps/desktop/src/router9/index.ts` | Auth middleware + ROOT_DIR sandbox + fs.realpath |
+| `apps/desktop/src/pc-agent/server.ts` | authMiddleware em todas as rotas + JWT fail-fast + CORS fix |
+| `apps/web/src/app/api/terminal/exec/route.ts` | Auth obrigatória em produção |
+| `packages/ia/src/tools/bridge.ts` | ops/run-command removido do allowlist |
+| `vercel.json` | builds removido, installCommand com --no-frozen-lockfile |
+
 ## v0.4.1-alpha — 2026-09-17
 
 ### 🛠️ Correção lockfile

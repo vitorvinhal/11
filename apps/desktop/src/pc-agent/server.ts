@@ -6,7 +6,13 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+// FAIL FAST: JWT_SECRET obrigatório — sem fallback inseguro
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET não definido. PC Agent não pode iniciar.');
+  process.exit(1);
+}
+
 const PORT = parseInt(process.env.PC_AGENT_PORT || '3001');
 
 interface PCSession {
@@ -35,7 +41,7 @@ const wsClients = new Map<string, WebSocket>();
 
 function verifyToken(token: string): { userId: string; email: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    return jwt.verify(token, JWT_SECRET!) as { userId: string; email: string };
   } catch {
     return null;
   }
@@ -51,7 +57,10 @@ function broadcastToUser(userId: string, message: any) {
 // HTTP Server Setup
 const app = express();
 app.use(helmet());
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*', credentials: true }));
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') ?? 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 }));
 
@@ -74,8 +83,8 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
 
 // Health check
 app.get('/health', (_, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     sessions: sessionStore.size,
     wsClients: wsClients.size,
@@ -83,7 +92,7 @@ app.get('/health', (_, res) => {
   });
 });
 
-// Session endpoints
+// Session endpoints — TODOS protegidos com authMiddleware
 app.get('/api/sessions', authMiddleware, (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
   const sessions = Array.from(sessionStore.values()).filter(s => s.userId === userId);
@@ -93,15 +102,15 @@ app.get('/api/sessions', authMiddleware, (req: Request, res: Response) => {
 app.get('/api/sessions/:id', authMiddleware, (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
   const session = sessionStore.get(req.params.id);
-  
+
   if (!session) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  
+
   if (session.userId !== userId) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  
+
   res.json(session);
 });
 
@@ -115,7 +124,7 @@ app.post('/api/sessions', authMiddleware, async (req: Request, res: Response) =>
 
   // Sanitize command
   const sanitizedCommand = command.replace(/[;&|`$(){}[\]]/g, '').trim();
-  const sanitizedArgs = (args || []).map((arg: string) => 
+  const sanitizedArgs = (args || []).map((arg: string) =>
     arg.replace(/[;&|`$(){}[\]]/g, '').trim()
   );
 
@@ -187,7 +196,8 @@ app.put('/api/sessions/:id/approve', authMiddleware, async (req: Request, res: R
   res.json(session);
 });
 
-app.patch('/api/sessions/:id/cancel', async (req: Request, res: Response) => {
+// FIX CRÍTICO: authMiddleware adicionado nestas duas rotas
+app.patch('/api/sessions/:id/cancel', authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
   const session = sessionStore.get(req.params.id);
 
@@ -216,7 +226,8 @@ app.patch('/api/sessions/:id/cancel', async (req: Request, res: Response) => {
   res.json(session);
 });
 
-app.delete('/api/sessions/:id', async (req: Request, res: Response) => {
+// FIX CRÍTICO: authMiddleware adicionado nesta rota
+app.delete('/api/sessions/:id', authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
   const session = sessionStore.get(req.params.id);
 
@@ -243,7 +254,7 @@ async function executeSession(sessionId: string) {
 
   try {
     const { spawn } = await import('child_process');
-    
+
     const child = spawn(session.command, session.args, {
       cwd: session.workingDir || process.cwd(),
       env: { ...process.env, ...session.env },
@@ -272,7 +283,6 @@ async function executeSession(sessionId: string) {
         output += chunk;
       }
 
-      // Stream output via WebSocket
       broadcastToUser(session.userId, {
         type: 'session_output',
         payload: { sessionId: session.id, output: chunk, isError: false }
@@ -294,15 +304,15 @@ async function executeSession(sessionId: string) {
     });
 
     child.on('error', (err: Error) => {
-      const session = sessionStore.get(sessionId);
-      if (session) {
-        session.status = 'failed';
-        session.error = `${error}\n${err.message}`;
-        session.completedAt = new Date().toISOString();
-        session.updatedAt = new Date().toISOString();
-        sessionStore.set(sessionId, session);
-        
-        broadcastToUser(session.userId, {
+      const s = sessionStore.get(sessionId);
+      if (s) {
+        s.status = 'failed';
+        s.error = `${error}\n${err.message}`;
+        s.completedAt = new Date().toISOString();
+        s.updatedAt = new Date().toISOString();
+        sessionStore.set(sessionId, s);
+
+        broadcastToUser(s.userId, {
           type: 'session_status',
           payload: { sessionId, status: 'failed', error: err.message }
         });
@@ -311,32 +321,32 @@ async function executeSession(sessionId: string) {
 
     child.on('exit', (code: number | null) => {
       clearTimeout(timeoutId);
-      const session = sessionStore.get(sessionId);
-      if (session) {
-        session.output = output;
-        session.error = error || undefined;
-        session.exitCode = code || undefined;
-        session.status = code === 0 ? 'completed' : 'failed';
-        session.completedAt = new Date().toISOString();
-        session.updatedAt = new Date().toISOString();
-        sessionStore.set(sessionId, session);
+      const s = sessionStore.get(sessionId);
+      if (s) {
+        s.output = output;
+        s.error = error || undefined;
+        s.exitCode = code || undefined;
+        s.status = code === 0 ? 'completed' : 'failed';
+        s.completedAt = new Date().toISOString();
+        s.updatedAt = new Date().toISOString();
+        sessionStore.set(sessionId, s);
 
-        broadcastToUser(session.userId, {
+        broadcastToUser(s.userId, {
           type: 'session_status',
-          payload: { sessionId, status: session.status, exitCode: code }
+          payload: { sessionId, status: s.status, exitCode: code }
         });
       }
     });
   } catch (error) {
-    const session = sessionStore.get(sessionId);
-    if (session) {
-      session.status = 'failed';
-      session.error = (error as Error).message;
-      session.completedAt = new Date().toISOString();
-      session.updatedAt = new Date().toISOString();
-      sessionStore.set(sessionId, session);
+    const s = sessionStore.get(sessionId);
+    if (s) {
+      s.status = 'failed';
+      s.error = (error as Error).message;
+      s.completedAt = new Date().toISOString();
+      s.updatedAt = new Date().toISOString();
+      sessionStore.set(sessionId, s);
 
-      broadcastToUser(session.userId, {
+      broadcastToUser(s.userId, {
         type: 'session_status',
         payload: { sessionId, status: 'failed', error: (error as Error).message }
       });
@@ -415,7 +425,7 @@ wss.on('connection', (ws: WebSocket) => {
         case 'session_cancel': {
           if (!userId) break;
           const sessionToCancel = sessionStore.get(message.payload.sessionId);
-          if (sessionToCancel && sessionToCancel.userId === userId && 
+          if (sessionToCancel && sessionToCancel.userId === userId &&
               (sessionToCancel.status === 'running' || sessionToCancel.status === 'pending')) {
             sessionToCancel.status = 'cancelled';
             sessionToCancel.completedAt = new Date().toISOString();

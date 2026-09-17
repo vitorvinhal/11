@@ -1,13 +1,79 @@
 import axios from 'axios';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { existsSync, realpathSync } from 'fs';
 import sqlite3 from 'sqlite3';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - node-wol não tem tipos próprios
 import wol from 'node-wol';
+import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 
-// SQLite log store
+// ─── Configuração de Segurança ───────────────────────────────────────────────
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET não definido. Router9 não pode iniciar.');
+  process.exit(1);
+}
+
+/**
+ * ROOT_DIR — diretório raiz para operações de arquivo.
+ * Todas as operações fileOp são restritas a este diretório e seus filhos.
+ */
+const ROOT_DIR = path.resolve(
+  process.env.BRIDGE_ALLOWED_DIRS?.split(';')[0] ?? process.cwd()
+);
+
+// ─── Auth Middleware ─────────────────────────────────────────────────────────
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: token ausente' });
+  }
+
+  const token = authHeader.substring(7);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET!) as { userId: string; email: string };
+    (req as any).user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized: token inválido' });
+  }
+}
+
+// ─── Path Sandbox ────────────────────────────────────────────────────────────
+
+/**
+ * Resolve um caminho de forma segura, verificando que está dentro de ROOT_DIR.
+ * Usa fs.realpath para resolver symlinks reais e impedir escape.
+ */
+function safePath(targetPath: string): string | null {
+  const absPath = path.resolve(ROOT_DIR, targetPath ?? '.');
+  try {
+    // Se o path existe, resolve o symlink real
+    if (existsSync(absPath)) {
+      const real = realpathSync(absPath);
+      const realRoot = realpathSync(ROOT_DIR);
+      if (!real.startsWith(realRoot)) return null;
+      return real;
+    }
+    // Se não existe, verifica que o path pai está dentro do root
+    const parentDir = path.dirname(absPath);
+    if (existsSync(parentDir)) {
+      const realParent = realpathSync(parentDir);
+      const realRoot = realpathSync(ROOT_DIR);
+      if (!realParent.startsWith(realRoot)) return null;
+    }
+    return absPath;
+  } catch {
+    return null;
+  }
+}
+
+// ─── SQLite log store ────────────────────────────────────────────────────────
+
 const db = new sqlite3.Database(path.join(__dirname, 'router9.db'));
 db.run(`CREATE TABLE IF NOT EXISTS logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +92,8 @@ function logAction(type: string, payload: any, result: any) {
   );
 }
 
-// STT via ElevenLabs Scribe
+// ─── STT via ElevenLabs Scribe ──────────────────────────────────────────────
+
 async function stt(payload: any) {
   const { audioUrl } = payload ?? {};
   const res = await axios.post(
@@ -39,43 +106,58 @@ async function stt(payload: any) {
   return result;
 }
 
-// File system operations
+// ─── File system operations (SANDBOXED) ──────────────────────────────────────
+
 async function fileOp(payload: any) {
   const { action, targetPath, content } = payload ?? {};
-  const absPath = path.resolve(targetPath ?? '.');
+
+  // Validação de caminho — CRÍTICO
+  const safe = safePath(targetPath);
+  if (!safe) {
+    const result = { error: 'Acesso negado: caminho fora do diretório permitido' };
+    logAction('file', { ...payload, targetPath: '[BLOCKED]' }, result);
+    return result;
+  }
+
   let result: any = {};
   try {
     if (action === 'list') {
-      const entries = await fs.readdir(absPath, { withFileTypes: true });
+      const entries = await fs.readdir(safe, { withFileTypes: true });
       result = entries.map((e) => ({ name: e.name, isFile: e.isFile(), isDirectory: e.isDirectory() }));
     } else if (action === 'read') {
-      const data = await fs.readFile(absPath, 'utf8');
+      const data = await fs.readFile(safe, 'utf8');
       result = { content: data };
     } else if (action === 'write') {
-      await fs.writeFile(absPath, content ?? '', 'utf8');
+      await fs.writeFile(safe, content ?? '', 'utf8');
       result = { status: 'written' };
     } else {
       result = { error: 'unknown action' };
     }
-  } catch (e: any) {
-    result = { error: e?.message ?? String(e) };
+  } catch {
+    result = { error: 'operacao falhou' }; // Não expor path interno
   }
   logAction('file', payload, result);
   return result;
 }
 
-// Wake-on-LAN (power on remote machine)
+// ─── Wake-on-LAN ─────────────────────────────────────────────────────────────
+
 async function remoteOp(payload: any) {
   const { action, mac } = payload ?? {};
   let result: any = {};
   if (action === 'wake') {
-    try {
-      await new Promise<void>((resolve, reject) => {
-        wol.wake(mac, {}, (err: any) => (err ? reject(err) : resolve()));
-      });
-      result = { status: 'magic packet sent' };
-    } catch (e: any) {
-      result = { error: e?.message ?? String(e) };
+    // Validação básica de MAC address
+    if (!/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(mac)) {
+      result = { error: 'MAC address inválido' };
+    } else {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          wol.wake(mac, {}, (err: any) => (err ? reject(err) : resolve()));
+        });
+        result = { status: 'magic packet sent' };
+      } catch {
+        result = { error: 'falha ao enviar magic packet' };
+      }
     }
   } else {
     result = { error: 'unsupported remote action' };
@@ -84,7 +166,8 @@ async function remoteOp(payload: any) {
   return result;
 }
 
-// Media analysis (image/video) via 9Router LLM gateway
+// ─── Media analysis via 9Router ──────────────────────────────────────────────
+
 async function mediaOp(payload: any) {
   const { prompt, imageUrl } = payload ?? {};
   let result: any = { received: { prompt, imageUrl } };
@@ -119,14 +202,15 @@ async function mediaOp(payload: any) {
       }
       result = { analysis: analysis ?? 'sem resposta' };
     }
-  } catch (e: any) {
-    result = { error: e?.message ?? String(e) };
+  } catch {
+    result = { error: 'media analysis falhou' };
   }
   logAction('media', payload, result);
   return result;
 }
 
-// Main dispatch: maps { action } to handler
+// ─── Main dispatch ───────────────────────────────────────────────────────────
+
 export async function routerHandler(req: Request, res: Response) {
   try {
     const body = req.body ?? {};
@@ -145,8 +229,8 @@ export async function routerHandler(req: Request, res: Response) {
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
     return res.status(200).json(result);
-  } catch (err: any) {
-    return res.status(500).json({ error: err?.message ?? String(err) });
+  } catch {
+    return res.status(500).json({ error: 'Erro interno' }); // Não expor stack trace
   }
 }
 
@@ -158,4 +242,4 @@ export async function handler(req: Request, res: Response, next: NextFunction) {
 export default handler;
 
 // Re-export para uso programático
-export { db };
+export { db, ROOT_DIR, authMiddleware, safePath };

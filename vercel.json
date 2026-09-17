@@ -1,12 +1,9 @@
 {
   "version": 2,
-  "installCommand": "pnpm install",
-  "builds": [
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/next"
-    }
-  ],
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "framework": "nextjs",
+  "outputDirectory": "apps/web/.next",
   "routes": [
     { "src": "/(.*)", "dest": "apps/web/$1" }
   ]

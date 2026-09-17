@@ -1,7 +1,7 @@
 ﻿import { spawn } from 'child_process';
 import { existsSync, statSync } from 'fs';
 import { loadRootEnv } from '../../../../lib/server-env';
-import { getAuthClient, getServerClient } from '../../../../lib/server-supabase';
+import { getAuthClient } from '../../../../lib/server-supabase';
 import {
   ALLOWED_ROOTS,
   IS_WINDOWS,
@@ -13,7 +13,9 @@ loadRootEnv();
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// â”€â”€ SessÃµes (cwd persistente por sessÃ£o) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ─── Sessões (cwd persistente por sessão) ───────────────────────────────────
+
 type Sess = { cwd: string; history: string[]; createdAt: number };
 const sessions = new Map<string, Sess>();
 
@@ -27,10 +29,10 @@ function resolveCwd(sessionId: string, requested?: string): string {
   const base = sessions.get(sessionId)?.cwd ?? defaultCwd();
   if (!requested) return base;
   if (requested.startsWith('~')) requested = requested.replace('~', defaultCwd());
-  const path = requested.startsWith('/') || /^[a-zA-Z]:/.test(requested)
+  const p = requested.startsWith('/') || /^[a-zA-Z]:/.test(requested)
     ? requested
     : `${base}\\${requested}`.replace(/[\\/]+/g, '\\');
-  return path;
+  return p;
 }
 
 interface ExecBody {
@@ -49,40 +51,46 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as ExecBody;
   } catch {
-    return new Response(JSON.stringify({ error: 'JSON invÃ¡lido' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'JSON inválido' }), { status: 400 });
   }
 
   const { command = '', sessionId = 'default' } = body;
   if (!command.trim()) return new Response(JSON.stringify({ error: 'Comando vazio' }), { status: 400 });
 
-  // AutenticaÃ§Ã£o: aceita Supabase JWT. Sem Supabase configurado (dev local), libera.
+  // FIX CRÍTICO: Autenticação SEMPRE obrigatória
+  // Em produção: exigir Supabase JWT válido
+  // Em dev: ainda assim exigir auth se Supabase estiver configurado
   const hasSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (hasSupabase) {
-    const admin = getServerClient();
     const auth = getAuthClient(req);
     const { data } = await auth.auth.getUser();
-    if (!data?.user && admin) {
-      // Sem usuÃ¡rio vÃ¡lido â†’ nega (o app exige login).
-      return new Response(JSON.stringify({ error: 'NÃ£o autenticado' }), { status: 401 });
+    if (!data?.user) {
+      return new Response(JSON.stringify({ error: 'Não autenticado' }), { status: 401 });
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    // Em produção SEM Supabase configurado = BLOQUEADO
+    return new Response(
+      JSON.stringify({ error: 'Terminal indisponível: autenticação não configurada' }),
+      { status: 503 }
+    );
   }
 
   const sess = sessions.get(sessionId) ?? { cwd: defaultCwd(), history: [], createdAt: Date.now() };
   sessions.set(sessionId, sess);
 
-  // Comando especial: cd â†’ troca o cwd da sessÃ£o sem spawn.
+  // Comando especial: cd → troca o cwd da sessão sem spawn.
   const trimmed = command.trim();
   const cdMatch = trimmed.match(/^cd\s+(.+)$/i);
   if (cdMatch || /^cd$/i.test(trimmed)) {
     const target = cdMatch ? resolveCwd(sessionId, cdMatch[1].trim().replace(/^"|"$/g, '')) : defaultCwd();
     if (existsSync(target) && statSync(target).isDirectory()) {
       if (!isUnderRoot(target)) {
-        return sseResponse([`cd: acesso negado (fora das raÃ­zes permitidas)\n`], 1);
+        return sseResponse([`cd: acesso negado (fora das raízes permitidas)\n`], 1);
       }
       sess.cwd = target;
       return sseResponse([`${target}\n`], 0);
     }
-    return sseResponse([`cd: diretÃ³rio nÃ£o encontrado: ${target}\n`], 1);
+    return sseResponse([`cd: diretório não encontrado: ${target}\n`], 1);
   }
 
   const check = validate(trimmed, sess.cwd);
@@ -107,8 +115,6 @@ export async function POST(req: Request) {
 
         let child;
         try {
-          // Windows: PowerShell (igual VSCode) â€” dÃ¡ pwd, ls, cat, cd, pipes, etc.
-          // Outros: bash -lc.
           if (IS_WINDOWS) {
             child = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', trimmed], {
               cwd: sess.cwd,
@@ -128,7 +134,7 @@ export async function POST(req: Request) {
         }
 
         const timeout = setTimeout(() => {
-          send('stderr', '\n[tempo esgotado â€” processo encerrado]\n');
+          send('stderr', '\n[tempo esgotado — processo encerrado]\n');
           try { child?.kill(); } catch { /* ignore */ }
         }, 120_000);
 
@@ -175,7 +181,7 @@ function sseResponse(lines: string[], code: number): Response {
 
 /**
  * GET /api/terminal/exec?sessionId=...
- * Retorna o cwd atual e o histÃ³rico da sessÃ£o.
+ * Retorna o cwd atual e o histórico da sessão.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);

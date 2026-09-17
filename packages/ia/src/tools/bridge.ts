@@ -4,16 +4,27 @@ import { handleMessage } from '../router/AgentRouter';
 /**
  * Bridge tool — executa comandos remotos nomeados via API (ops/*) e
  * delega conversa ao ModelGateway. Não executa shell arbitrário aqui.
+ *
+ * FIX CRÍTICO: ops/run-command REMOVIDO do allowlist — permite execução
+ * arbitrária de comandos. Operações restantes são seguras (somente leitura
+ * ou build controlado).
  */
-const ALLOWED_OPS = new Set(['ops/list-files', 'ops/read-file', 'ops/run-build', 'ops/run-command', 'ops/run-tests']);
+const ALLOWED_OPS = new Set(['ops/list-files', 'ops/read-file', 'ops/run-build', 'ops/run-tests']);
 const API_BASE = process.env.API_BASE_URL ?? (typeof window !== 'undefined' ? '' : 'http://localhost:4000');
 
 async function callOpsApi(command: string, args: string[] = [], options: Record<string, unknown> = {}) {
   const base = API_BASE.replace(/\/+$/, '');
   const url = `${base}/api/${command}`;
+
+  // Incluir JWT do usuário se disponível (autenticado)
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...(options.headers as Record<string, string> ?? {}),
+  };
+
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...(options.headers ?? {}) },
+    headers,
     body: JSON.stringify({ ...args, ...options }),
     signal: AbortSignal.timeout(60_000),
   });
@@ -26,7 +37,7 @@ async function callOpsApi(command: string, args: string[] = [], options: Record<
 
 /**
  * Executa operação remota nomeada via API.
- * Exemplos: ops/list-files { path }, ops/read-file { path }, ops/run-build { path, script? }
+ * Seguro: apenas leitura e build controlado.
  */
 export async function handleBridgeCommand(command: string, args: string[] = [], options: Record<string, unknown> = {}) {
   if (!ALLOWED_OPS.has(command)) {

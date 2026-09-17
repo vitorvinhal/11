@@ -4,6 +4,24 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v0.5.0-alpha — 2026-09-17
+
+### Segurança Crítica (FASE 1)
+- **`apps/desktop/src/router9/index.ts`** — Auth middleware JWT + path sandbox com `fs.realpath` + validação de symlink + `ROOT_DIR` fixo
+- **`apps/desktop/src/server.ts`** — JWT_SECRET fail-fast + helmet + CORS com `ALLOWED_ORIGINS` + rate limit
+- **`apps/desktop/src/pc-agent/server.ts`** — `authMiddleware` em `PATCH /cancel` e `DELETE` + JWT fail-fast + CORS fix
+- **`apps/web/src/app/api/terminal/exec/route.ts`** — Auth obrigatória em produção (bloqueia sem Supabase)
+- **`packages/ia/src/tools/bridge.ts`** — `ops/run-command` removido do allowlist
+
+### Deploy
+- **`vercel.json`** — `builds` removido, `installCommand` com `--no-frozen-lockfile`, `framework: nextjs`
+
+### Auditoria
+- **`docs/audit/baseline.md`** — Documento de baseline criado (FASE 0)
+- **`.task_state.md`** — Rastro de estado para recuperação automática
+
+---
+
 ## v0.4.0-alpha — 2026-09-17
 
 ### Eleven Coder (Terminal Interativo)
