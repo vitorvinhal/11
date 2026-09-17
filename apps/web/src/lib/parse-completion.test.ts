@@ -1,4 +1,4 @@
-import { parseCompletionContent } from '../../lib/parse-completion';
+import { parseCompletionContent } from './parse-completion';
 
 describe('parseCompletionContent', () => {
   test('SSE with multiple data lines', () => {

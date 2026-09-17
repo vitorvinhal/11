@@ -102,17 +102,17 @@ export const SKILL_CATALOG: SkillCatalogItem[] = [
   // ═══════════════════════════════════════════════════════════════
   { id: 'inf-ai-music', name: 'AI Music Generation', description: 'Gera música com ElevenLabs, Diffrythm, Tencent Song Generation.', category: 'Áudio', icon: '🎵', author: 'Inference.sh', popular: true },
   { id: 'inf-voice-cloning', name: 'AI Voice Cloning', description: 'Geração de voz, TTS e síntese de voz com múltiplos modelos.', category: 'Áudio', icon: '🎤', author: 'Inference.sh', popular: true },
-  { id: 'inf-dialogue-audio', name: 'Dialogue Audio', description: 'Áudio multi-falante com ElevenLabs e Dia TTS, controle de emoção.', category: 'Áudio', icon: '🗣️', author: 'Inference.sh' },
+  { id: 'inf-dialogue-audio', name: 'Dialogue Audio', description: 'Áudio multi-falante com Fish Audio S2.1 Pro, controle de emoção.', category: 'Áudio', icon: '🗣️', author: 'Fish Audio' },
   { id: 'inf-elevenlabs-dialogue', name: 'ElevenLabs Dialogue', description: 'Diálogo multi-falante com vozes diferentes em um único áudio.', category: 'Áudio', icon: '🗣️', author: 'Inference.sh' },
   { id: 'inf-dubbing', name: 'ElevenLabs Dubbing', description: 'Dublagem automática — traduz e dubla áudio/vídeo em 29 idiomas.', category: 'Áudio', icon: '🌍', author: 'Inference.sh' },
   { id: 'inf-elevenlabs-music', name: 'ElevenLabs Music', description: 'Geração de música original a partir de prompts de texto, até 10 min.', category: 'Áudio', icon: '🎶', author: 'Inference.sh' },
   { id: 'inf-sound-effects', name: 'ElevenLabs Sound Effects', description: 'Gera efeitos sonoros de IA a partir de descrições de texto.', category: 'Áudio', icon: '🔊', author: 'Inference.sh' },
   { id: 'inf-stt', name: 'ElevenLabs STT', description: 'Speech-to-text com Scribe — 98%+ acurácia, 90+ idiomas.', category: 'Áudio', icon: '📝', author: 'Inference.sh' },
-  { id: 'inf-elevenlabs-tts', name: 'ElevenLabs TTS', description: 'Text-to-speech com 22+ vozes premium, suporte multilíngue.', category: 'Áudio', icon: '🔊', author: 'Inference.sh' },
-  { id: 'inf-voice-changer', name: 'ElevenLabs Voice Changer', description: 'Transforma qualquer voz em outra preservando conteúdo e emoção.', category: 'Áudio', icon: '🔀', author: 'Inference.sh' },
-  { id: 'inf-voice-isolator', name: 'ElevenLabs Voice Isolator', description: 'Remove ruído de fundo e isola vocais de áudio.', category: 'Áudio', icon: '🔇', author: 'Inference.sh' },
+  { id: 'inf-fish-audio-tts', name: 'Fish Audio TTS', description: 'Text-to-speech com vozes premium, 80+ idiomas, latência ~100ms.', category: 'Áudio', icon: '🐟', author: 'Fish Audio', popular: true },
+  { id: 'inf-voice-changer', name: 'Voice Changer', description: 'Transforma qualquer voz em outra preservando conteúdo e emoção.', category: 'Áudio', icon: '🔀', author: 'Inference.sh' },
+  { id: 'inf-voice-isolator', name: 'Voice Isolator', description: 'Remove ruído de fundo e isola vocais de áudio.', category: 'Áudio', icon: '🔇', author: 'Inference.sh' },
   { id: 'inf-speech-to-text', name: 'Speech-to-Text', description: 'Transcreve áudio para texto com Scribe e Whisper.', category: 'Áudio', icon: '📋', author: 'Inference.sh' },
-  { id: 'inf-tts', name: 'Text-to-Speech', description: 'Converte texto em fala natural — Inworld, ElevenLabs, DIA, Kokoro.', category: 'Áudio', icon: '🔊', author: 'Inference.sh' },
+  { id: 'inf-tts', name: 'Text-to-Speech', description: 'Converte texto em fala natural — Fish Audio, Inworld, DIA, Kokoro.', category: 'Áudio', icon: '🔊', author: 'Inference.sh' },
 
   // ═══════════════════════════════════════════════════════════════
   // INFERENCE.SH — IMAGE
