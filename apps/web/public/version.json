@@ -1,13 +1,13 @@
 {
-  "version": "1.5.0-alpha",
+  "version": "1.6.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 11 Complete",
+  "phase": "FASE 12 Complete",
   "features": [
-    "Health endpoints (FASE 11A)",
-    "Health dashboard page (FASE 11B)",
-    "/api/health (aggregated)",
-    "/api/health/router",
-    "/api/health/plugins",
-    "/api/health/skills"
+    "Metrics API endpoint (FASE 12A)",
+    "Version API endpoint",
+    "Admin dashboard page (FASE 12B)",
+    "System health overview",
+    "Agent metrics visualization",
+    "Plugin/Skill management UI"
   ]
 }

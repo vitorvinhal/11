@@ -20,6 +20,21 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.6.0-alpha — 2026-09-17
+
+### 📊 FASE 12 — Admin Dashboard
+- **`/api/metrics`**: GET para resumo de métricas do agente, DELETE para limpar
+- **`/api/version`**: GET com versão atual do sistema
+- **`/admin`**: Dashboard administrativo com:
+  - Overview de versão e features
+  - System health status
+  - Agent metrics (requests, tokens, latency, error rate, tool calls by risk)
+  - Lista de plugins instalados
+  - Lista de skills instaladas
+  - Auto-refresh 30s
+
+---
+
 ## v1.5.0-alpha — 2026-09-17
 
 ### 🏥 FASE 11 — Health & Monitoring

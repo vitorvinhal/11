@@ -4,6 +4,18 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v1.6.0-alpha — 2026-09-17
+
+### FASE 12 — Admin Dashboard
+- **`apps/web/src/app/api/metrics/route.ts`** — GET/DELETE /api/metrics
+- **`apps/web/src/app/api/version/route.ts`** — GET /api/version
+- **`apps/web/src/app/admin/page.tsx`** — Admin dashboard com métricas, health, plugins, skills
+
+### Testes
+- 296 testes passando (254 IA + 42 web)
+
+---
+
 ## v1.5.0-alpha — 2026-09-17
 
 ### FASE 11 — Health & Monitoring
