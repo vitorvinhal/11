@@ -20,6 +20,30 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.3.0-alpha — 2026-09-17
+
+### 🔌 FASE 9A — Plugin Registry
+- **`PluginRegistry`**: sistema de registro e discovery de plugins/tools
+- Plugins registram tools + risk rules automaticamente
+- `executeTool()`: executa handlers de plugins com contexto
+- Suporte a persistência via Supabase
+
+### 🎯 FASE 9B — Skill System
+- **`SkillManager`**: 4 built-in skills:
+  - **Code Writer**: especialista em código limpo (TypeScript)
+  - **Researcher**: pesquisador read-only
+  - **DevOps Engineer**: deploy com restrições de segurança
+  - **Documentation Writer**: documentação read-only
+- `buildSystemPrompt()`: combina prompts de skills habilitadas
+- `validateAction()`: verifica restrições (read-only, no-terminal, forbidden)
+- 32 testes unitários
+
+### 📊 Testes
+- 296 testes passando (254 IA + 42 web)
+- 13 suites de teste no pacote IA
+
+---
+
 ## v1.2.0-alpha — 2026-09-17
 
 ### 🖥️ FASE 8A — Frontend AgentCore Integration
