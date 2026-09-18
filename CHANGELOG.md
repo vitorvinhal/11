@@ -20,6 +20,23 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.9.0-alpha — 2026-09-17
+
+### 🚀 FASE 22-30 — Infrastructure & DevOps
+
+- **FASE 22 — CORS**: `cors.ts` — Configuração CORS (origins, methods, headers, preflight, credentials)
+- **FASE 23 — IP Rate Limiting**: `ip-rate-limiter.ts` — Rate limiting global por IP com whitelist e auto-block
+- **FASE 24 — Error Logger**: `server-error-logger.ts` — Logger estruturado para erros 5xx com contexto do servidor
+- **FASE 25 — Backup**: `backup.ts` — Sistema de backup automático de dados Supabase com cleanup
+- **FASE 26 — API Versioning**: `api-versioning.ts` — Versionamento v1/v2 com headers de deprecação
+- **FASE 27 — OpenAPI**: `openapi.ts` + `/api/docs` — Documentação OpenAPI 3.0 completa
+- **FASE 28 — Webhooks**: `webhooks.ts` + `/api/webhooks` — Sistema de webhooks com HMAC signing, retry e delivery history
+- **FASE 29 — Job Queue**: `job-queue.ts` — Fila de jobs com prioridade, concorrência e backoff retry
+- **FASE 30 — Load Tests**: `load-tests/load-test.js` — Testes de carga k6 (smoke, ramp, stress)
+- **41 novos testes** (CORS, IP limiter, API versioning, webhooks, job queue)
+
+---
+
 ## v2.8.0-alpha — 2026-09-17
 
 ### 🔒 FASE 21 — Security Hardening

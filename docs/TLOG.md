@@ -4,6 +4,29 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v2.9.0-alpha — 2026-09-17
+
+### FASE 22-30 — Infrastructure & DevOps
+
+- **`apps/web/src/lib/cors.ts`** — CORS middleware (configurable origins, preflight, credentials)
+- **`apps/web/src/lib/ip-rate-limiter.ts`** — Global IP rate limiter (whitelist, auto-block, blocked IPs)
+- **`apps/web/src/lib/server-error-logger.ts`** — Structured 5xx error logger (server context, memory, timing)
+- **`apps/web/src/lib/backup.ts`** — Automated backup system (Supabase, auto-cleanup, history)
+- **`apps/web/src/lib/api-versioning.ts`** — API versioning v1/v2 (deprecation headers, detection)
+- **`apps/web/src/lib/openapi.ts`** — OpenAPI 3.0 spec generator
+- **`apps/web/src/app/api/docs/route.ts`** — `/api/docs` endpoint
+- **`apps/web/src/lib/webhooks.ts`** — Webhook system (HMAC signing, retry, delivery history)
+- **`apps/web/src/app/api/webhooks/route.ts`** — `/api/webhooks` CRUD endpoint
+- **`apps/web/src/lib/job-queue.ts`** — Job queue (priority, concurrency, backoff retry, builtin handlers)
+- **`apps/web/load-tests/load-test.js`** — k6 load tests (smoke, ramp, stress scenarios)
+- **41 novos testes** unitários
+
+### Testes
+
+- 130 web unit tests passando
+
+---
+
 ## v2.8.0-alpha — 2026-09-17
 
 ### FASE 21 — Security Hardening

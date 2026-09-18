@@ -1,10 +1,17 @@
 {
-  "version": "2.8.0-alpha",
+  "version": "2.9.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 21 Complete",
+  "phase": "FASE 22-30 Complete",
   "features": [
-    "Input validation utilities (validation.ts)",
-    "Security headers middleware (CSP, HSTS, X-Frame-Options)",
-    "16 new unit tests for validation"
+    "CORS middleware (configurable origins, preflight)",
+    "Global IP rate limiting (whitelist, auto-block)",
+    "Structured 5xx error logging (server context, memory)",
+    "Automated backup system (Supabase, auto-cleanup)",
+    "API versioning (v1/v2, deprecation headers)",
+    "OpenAPI/Swagger docs (/api/docs)",
+    "Webhook system (HMAC signing, retry, delivery history)",
+    "Job queue (priority, concurrency, backoff retry)",
+    "Load tests (k6: smoke, ramp, stress scenarios)",
+    "41 new unit tests"
   ]
 }
