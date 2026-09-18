@@ -70,7 +70,8 @@ export class Cache<T = unknown> {
    */
   invalidatePrefix(prefix: string): number {
     let count = 0;
-    for (const key of this.store.keys()) {
+    const keys = Array.from(this.store.keys());
+    for (const key of keys) {
       if (key.startsWith(prefix)) {
         this.store.delete(key);
         count++;
@@ -92,7 +93,8 @@ export class Cache<T = unknown> {
   cleanup(): number {
     const now = Date.now();
     let count = 0;
-    for (const [key, entry] of this.store.entries()) {
+    const entries = Array.from(this.store.entries());
+    for (const [key, entry] of entries) {
       if (now > entry.expiresAt) {
         this.store.delete(key);
         count++;
