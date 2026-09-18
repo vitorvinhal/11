@@ -20,6 +20,18 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.0-alpha — 2026-09-18
+
+- OpenRouter provider + perfis de roteamento cost/latency/quality
+- Modo comparacao lado a lado /api/compare (ate 3 modelos)
+- Memoria auditavel: supersede + memory_events + paginas /memoria /contexto
+- /reverter: rollback de checkpoints com before_state
+- FinOps: /api/finops + CostBreaker com custos reais por provedor
+- Migrations 20240927: action_risk_rules, tenant_vault, memories origin/scope/superseded
+- PWA offline: SW + fila IndexedDB + Background Sync + banner GATEWAY_UNAVAILABLE
+- UI Astra: fundo #05050A, glassmorphism, sidebar por data, rotas /coder /canvas /neural /memoria
+- Ajustes: vector(768) unificado, CLI templates, mobile noEmit, .env OPENROUTER_*
+
 ## v2.9.0-alpha — 2026-09-17
 
 ### 🚀 FASE 22-30 — Infrastructure & DevOps

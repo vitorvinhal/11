@@ -1,17 +1,17 @@
 {
-  "version": "2.9.0-alpha",
-  "buildDate": "2026-09-17",
-  "phase": "FASE 22-30 Complete",
-  "features": [
-    "CORS middleware (configurable origins, preflight)",
-    "Global IP rate limiting (whitelist, auto-block)",
-    "Structured 5xx error logging (server context, memory)",
-    "Automated backup system (Supabase, auto-cleanup)",
-    "API versioning (v1/v2, deprecation headers)",
-    "OpenAPI/Swagger docs (/api/docs)",
-    "Webhook system (HMAC signing, retry, delivery history)",
-    "Job queue (priority, concurrency, backoff retry)",
-    "Load tests (k6: smoke, ramp, stress scenarios)",
-    "41 new unit tests"
+  "version": "2.10.0-alpha",
+  "versionCode": 1,
+  "name": "11 — Inteligência Autônoma",
+  "channel": "alpha",
+  "changelog": [
+    "OpenRouter provider + perfis de roteamento cost/latency/quality",
+    "Modo comparacao lado a lado /api/compare (ate 3 modelos)",
+    "Memoria auditavel: supersede + memory_events + paginas /memoria /contexto",
+    "/reverter: rollback de checkpoints com before_state",
+    "FinOps: /api/finops + CostBreaker com custos reais por provedor",
+    "Migrations 20240927: action_risk_rules, tenant_vault, memories origin/scope/superseded",
+    "PWA offline: SW + fila IndexedDB + Background Sync + banner GATEWAY_UNAVAILABLE",
+    "UI Astra: fundo #05050A, glassmorphism, sidebar por data, rotas /coder /canvas /neural /memoria",
+    "Ajustes: vector(768) unificado, CLI templates, mobile noEmit, .env OPENROUTER_*"
   ]
 }

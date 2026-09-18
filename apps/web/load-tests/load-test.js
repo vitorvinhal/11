@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /**
  * FASE 30 — Load Tests (k6)
  *

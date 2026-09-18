@@ -7,5 +7,5 @@
     "moduleResolution": "node",
     "noEmit": false
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/server.ts", "src/pc-agent/**/*.ts", "src/router9/**/*.ts"]
 }

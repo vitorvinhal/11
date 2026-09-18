@@ -4,6 +4,58 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v2.10.0-alpha — 2026-09-18
+
+### Modo Astra — UI/UX, OpenRouter, Salvaguardas e Resiliência Offline
+
+#### Core de IA (`packages/ia`)
+
+- **`src/router/adapters/openrouter.ts`** — novo adapter OpenRouter (custo real por tokens, fallback entre modelos permitidos)
+- **`src/router/adapters/index.ts`** — registry com OpenRouter (9Router → Gemini → OpenRouter → Anthropic → MiniMax)
+- **`src/router/index.ts`** — perfis de roteamento `cost`/`latency`/`quality`, método `compare()` (até 3 provedores em paralelo), export `costBreaker`
+- **`src/router/types.ts`** — `ProviderAdapter.id` inclui `'openrouter'`; tipos `RoutingProfile`
+- **`src/agent/memory.ts`** — `supersedeMemory` (consolidação sem DELETE físico), `logMemoryEvent`, `getMemoryAudit`
+- **`src/agent/index.ts`** — novos exports de auditoria de memória
+
+#### Segurança & Config
+
+- **`infra/supabase/migrations/20240927_audit_vault_memory.sql`** — `action_risk_rules`, `tenant_vault`, colunas `origin`/`scope`/`status`/`superseded_by`/`superseded_at` em `memories`, trilha append-only `memory_events`
+- **`infra/supabase/migrations/20240919_skills_projects.sql`** — `memories.embedding` unificado em `vector(768)` (fonte única: Gemini text-embedding-004)
+- **`packages/cli/templates/{web,api,mobile}/main.hbs`** — templates criados (codegen.ts sem crash)
+- **`apps/mobile/tsconfig.json`** — `noEmit: false` para build via tsc
+- **`.env.example`** — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_ALLOWED_MODELS`, `PAID_MODEL_DAILY_BUDGET`
+- **`apps/web/package.json`** — dev server em porta fixa `3000`
+
+#### Web — UI Astra + Rotas
+
+- **`src/components/AppShell.tsx`** — shell autenticado extraído (sidebar + painéis)
+- **`src/app/{coder,canvas,neural,memoria}/page.tsx`** — rotas dedicadas
+- **`src/components/{CanvasPanel,MemoriaPanel,FinOpsPanel}.tsx`** — playground generativo, auditoria de memória, dashboard FinOps
+- **`src/components/Sidebar.tsx`** — histórico agrupado por data, nav Canvas/Memória/FinOps
+- **`src/components/ChatPanel.tsx`** — seletor de perfil de roteamento, botão/mod modal Comparar, banner `GATEWAY_UNAVAILABLE`, fila offline
+- **`src/styles/globals.css`** — fundo absoluto `#05050A`, utilitários `glassmorph`/`glassmorph-strong`
+- **`src/components/ServiceWorkerRegister.tsx`** + **`public/sw.js`** + **`src/lib/offline-queue.ts`** — PWA offline-first (cache shell, fila IndexedDB, Background Sync)
+
+#### APIs
+
+- **`src/app/api/compare/route.ts`** — comparação lado a lado via ModelGateway
+- **`src/app/api/reverter/route.ts`** — listar/restaurar checkpoints
+- **`src/app/api/memoria/route.ts`** — trilha de auditoria + consolidação de memórias
+- **`src/app/api/finops/route.ts`** — consumo real de tokens/custos por provedor + estado do CostBreaker
+- **`src/app/api/chat/route.ts`** — roteamento respeita `profile` (fallback em cascata)
+
+#### Correções de lint/typecheck (pré-existentes)
+
+- `web/src/lib/{cache,event-emitter,job-queue}.test.ts`, `packages/ia/src/safety/risk-engine.test.ts`, `packages/api/src/modules/terminal/pty-manager.service.ts`, `apps/desktop/src/router9/index.ts` (duplicidade de export), `apps/web/load-tests/load-test.js` (globals k6), `apps/desktop/tsconfig.json` (escopo vite/node)
+
+#### Testes
+
+- 254 IA + 130 web + 1 shared — 385 testes passando
+- Typecheck web/api/desktop/mobile OK
+- Lint 0 erros (warnings pré-existentes)
+
+---
+
 ## v2.9.0-alpha — 2026-09-17
 
 ### FASE 22-30 — Infrastructure & DevOps

@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import * as os from 'os';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import * as os from "os";
 
 export interface PtySession {
   id: string;
@@ -25,10 +25,16 @@ export class PtyManagerService implements OnModuleDestroy {
     setInterval(() => this.cleanupStaleSessions(), 60_000);
   }
 
-  async createSession(userId: string, id: string, opts?: { cols?: number; rows?: number; cwd?: string }): Promise<PtySession> {
+  async createSession(
+    userId: string,
+    id: string,
+    opts?: { cols?: number; rows?: number; cwd?: string },
+  ): Promise<PtySession> {
     const existing = this.userSessions.get(userId);
     if (existing && existing.size >= this.MAX_SESSIONS_PER_USER) {
-      throw new Error(`Limite de ${this.MAX_SESSIONS_PER_USER} sessoes atingido`);
+      throw new Error(
+        `Limite de ${this.MAX_SESSIONS_PER_USER} sessoes atingido`,
+      );
     }
 
     const shell = this.getShell();
@@ -39,37 +45,54 @@ export class PtyManagerService implements OnModuleDestroy {
     const pty = await this.spawnPty(shell, cwd, cols, rows);
 
     const session: PtySession = {
-      id, userId, pty, cwd, cols, rows,
+      id,
+      userId,
+      pty,
+      cwd,
+      cols,
+      rows,
       createdAt: Date.now(),
       lastActivity: Date.now(),
       command: shell,
     };
 
     this.sessions.set(id, session);
-    if (!this.userSessions.has(userId)) this.userSessions.set(userId, new Set());
+    if (!this.userSessions.has(userId))
+      this.userSessions.set(userId, new Set());
     this.userSessions.get(userId)!.add(id);
 
-    this.logger.log(`PTY created: ${id} user=${userId} shell=${shell} cwd=${cwd}`);
+    this.logger.log(
+      `PTY created: ${id} user=${userId} shell=${shell} cwd=${cwd}`,
+    );
     return session;
   }
 
-  private async spawnPty(shell: string, cwd: string, cols: number, rows: number): Promise<any> {
+  private async spawnPty(
+    shell: string,
+    cwd: string,
+    cols: number,
+    rows: number,
+  ): Promise<any> {
     try {
-      const nodePty = await import('node-pty');
-      const isWin = os.platform() === 'win32';
-      const ptyShell = isWin ? (shell || 'powershell.exe') : (shell || '/bin/bash');
-      const ptyArgs = isWin
-        ? ['-NoLogo', '-NoProfile']
-        : ['--login'];
+      const nodePty = await import("node-pty");
+      const isWin = os.platform() === "win32";
+      const ptyShell = isWin ? shell || "powershell.exe" : shell || "/bin/bash";
+      const ptyArgs = isWin ? ["-NoLogo", "-NoProfile"] : ["--login"];
 
       return nodePty.spawn(ptyShell, ptyArgs, {
-        name: 'xterm-256color',
-        cols, rows, cwd,
-        env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' } as any,
+        name: "xterm-256color",
+        cols,
+        rows,
+        cwd,
+        env: {
+          ...process.env,
+          TERM: "xterm-256color",
+          COLORTERM: "truecolor",
+        } as any,
       });
     } catch (err) {
       this.logger.error(`node-pty spawn failed: ${(err as Error).message}`);
-      throw new Error('PTY indisponivel: instale node-pty');
+      throw new Error("PTY indisponivel: instale node-pty");
     }
   }
 
@@ -80,7 +103,9 @@ export class PtyManagerService implements OnModuleDestroy {
   getUserSessions(userId: string): PtySession[] {
     const ids = this.userSessions.get(userId);
     if (!ids) return [];
-    return Array.from(ids).map((id) => this.sessions.get(id)).filter(Boolean) as PtySession[];
+    return Array.from(ids)
+      .map((id) => this.sessions.get(id))
+      .filter(Boolean) as PtySession[];
   }
 
   writeToSession(id: string, data: string): boolean {
@@ -97,14 +122,22 @@ export class PtyManagerService implements OnModuleDestroy {
     session.cols = cols;
     session.rows = rows;
     session.lastActivity = Date.now();
-    try { session.pty.resize(cols, rows); } catch { /* ignore */ }
+    try {
+      session.pty.resize(cols, rows);
+    } catch {
+      /* ignore */
+    }
     return true;
   }
 
   killSession(id: string): boolean {
     const session = this.sessions.get(id);
     if (!session) return false;
-    try { session.pty.kill(); } catch { /* ignore */ }
+    try {
+      session.pty.kill();
+    } catch {
+      /* ignore */
+    }
     this.sessions.delete(id);
     this.userSessions.get(session.userId)?.delete(id);
     this.logger.log(`PTY killed: ${id}`);
@@ -129,28 +162,44 @@ export class PtyManagerService implements OnModuleDestroy {
       session.lastActivity = Date.now();
       callback(data);
     });
-    return () => { try { disposable.dispose(); } catch { /* ignore */ } };
+    return () => {
+      try {
+        disposable.dispose();
+      } catch {
+        /* ignore */
+      }
+    };
   }
 
   onSessionExit(id: string, callback: (exitCode: number) => void): () => void {
     const session = this.sessions.get(id);
     if (!session) return () => {};
-    const disposable = session.pty.onExit(({ exitCode }) => {
-      callback(exitCode);
-      this.sessions.delete(id);
-      this.userSessions.get(session.userId)?.delete(id);
-    });
-    return () => { try { disposable.dispose(); } catch { /* ignore */ } };
+    const disposable = session.pty.onExit(
+      ({ exitCode }: { exitCode: number }) => {
+        callback(exitCode);
+        this.sessions.delete(id);
+        this.userSessions.get(session.userId)?.delete(id);
+      },
+    );
+    return () => {
+      try {
+        disposable.dispose();
+      } catch {
+        /* ignore */
+      }
+    };
   }
 
   private getShell(): string {
-    if (os.platform() === 'win32') return process.env.COMSPEC || 'powershell.exe';
-    return process.env.SHELL || '/bin/bash';
+    if (os.platform() === "win32")
+      return process.env.COMSPEC || "powershell.exe";
+    return process.env.SHELL || "/bin/bash";
   }
 
   private getDefaultCwd(): string {
-    if (os.platform() === 'win32') return process.env.USERPROFILE || 'C:\\Users\\Administrator';
-    return process.env.HOME || '/root';
+    if (os.platform() === "win32")
+      return process.env.USERPROFILE || "C:\\Users\\Administrator";
+    return process.env.HOME || "/root";
   }
 
   private cleanupStaleSessions(): void {

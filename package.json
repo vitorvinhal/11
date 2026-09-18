@@ -1,6 +1,6 @@
 {
   "name": "11",
-  "version": "2.0.0-alpha",
+  "version": "2.10.0-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
@@ -22,8 +22,7 @@
     "version:minor": "node scripts/version.js minor",
     "version:major": "node scripts/version.js major",
     "version:rc": "node scripts/version.js patch --release rc",
-    "version:show": "node -e \"const j=require('./apps/web/public/version.json');console.log(j.version)\"",
-    "prepare": "husky"
+    "version:show": "node -e \"const j=require('./apps/web/public/version.json');console.log(j.version)\""
   },
   "dependencies": {
     "axios": "^1.20.0",
