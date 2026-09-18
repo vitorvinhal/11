@@ -1,25 +1,26 @@
 /**
  * FASE 10A — Plugins API
  *
- * GET  /api/plugins — listar plugins instalados
- * POST /api/plugins — instalar/desinstalar plugin
+ * GET    /api/plugins — listar plugins instalados
+ * POST   /api/plugins — instalar/desinstalar plugin
+ * PATCH  /api/plugins — batch operations (enable/disable)
  */
 
-import { NextResponse } from 'next/server';
-import { requireUser } from '../../../lib/auth-helpers';
-import { loadRootEnv } from '../../../lib/server-env';
-import { createClient } from '@supabase/supabase-js';
-import { PluginRegistry } from '@11/ia';
-import type { PluginDefinition } from '@11/ia';
+import { NextResponse } from "next/server";
+import { requireUser } from "../../../lib/auth-helpers";
+import { loadRootEnv } from "../../../lib/server-env";
+import { createClient } from "@supabase/supabase-js";
+import { PluginRegistry } from "@11/ia";
+import type { PluginDefinition } from "@11/ia";
 
 loadRootEnv();
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 interface PluginBody {
   pluginId: string;
-  action: 'install' | 'uninstall';
+  action: "install" | "uninstall";
   config?: Record<string, unknown>;
 }
 
@@ -30,20 +31,22 @@ export async function GET(req: Request) {
   try {
     const auth = await requireUser(req);
     if (!auth) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
     const { userId } = auth;
 
     const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     );
 
     const { data, error } = await sb
-      .from('plugins')
-      .select('id, name, description, version, author, enabled, config, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .from("plugins")
+      .select(
+        "id, name, description, version, author, enabled, config, created_at",
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -57,12 +60,15 @@ export async function GET(req: Request) {
         version: p.version,
         author: p.author,
         enabled: p.enabled,
-        config: JSON.parse(p.config ?? '{}'),
+        config: JSON.parse(p.config ?? "{}"),
         createdAt: p.created_at,
       })),
     });
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 },
+    );
   }
 }
 
@@ -73,7 +79,7 @@ export async function POST(req: Request) {
   try {
     const auth = await requireUser(req);
     if (!auth) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
     const { userId } = auth;
 
@@ -82,41 +88,41 @@ export async function POST(req: Request) {
 
     if (!pluginId || !action) {
       return NextResponse.json(
-        { error: 'pluginId e action são obrigatórios' },
-        { status: 400 }
+        { error: "pluginId e action são obrigatórios" },
+        { status: 400 },
       );
     }
 
     const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     );
 
-    if (action === 'install') {
+    if (action === "install") {
       // Verificar se já está instalado
       const { data: existing } = await sb
-        .from('plugins')
-        .select('id')
-        .eq('id', pluginId)
-        .eq('user_id', userId)
+        .from("plugins")
+        .select("id")
+        .eq("id", pluginId)
+        .eq("user_id", userId)
         .single();
 
       if (existing) {
         // Já instalado — apenas habilitar
         await sb
-          .from('plugins')
+          .from("plugins")
           .update({ enabled: true, config: JSON.stringify(config ?? {}) })
-          .eq('id', pluginId)
-          .eq('user_id', userId);
+          .eq("id", pluginId)
+          .eq("user_id", userId);
       } else {
         // Novo plugin
-        await sb.from('plugins').insert({
+        await sb.from("plugins").insert({
           id: pluginId,
           user_id: userId,
           name: pluginId,
           description: `Plugin ${pluginId}`,
-          version: '1.0.0',
-          author: 'community',
+          version: "1.0.0",
+          author: "community",
           enabled: true,
           config: JSON.stringify(config ?? {}),
         });
@@ -127,34 +133,107 @@ export async function POST(req: Request) {
         id: pluginId,
         name: pluginId,
         description: `Plugin ${pluginId}`,
-        version: '1.0.0',
-        author: 'community',
-        category: 'community',
+        version: "1.0.0",
+        author: "community",
+        category: "community",
         tools: [],
         config,
       };
       PluginRegistry.register(definition);
 
-      return NextResponse.json({ success: true, action: 'installed', pluginId });
+      return NextResponse.json({
+        success: true,
+        action: "installed",
+        pluginId,
+      });
     }
 
-    if (action === 'uninstall') {
+    if (action === "uninstall") {
       await sb
-        .from('plugins')
+        .from("plugins")
         .update({ enabled: false })
-        .eq('id', pluginId)
-        .eq('user_id', userId);
+        .eq("id", pluginId)
+        .eq("user_id", userId);
 
       PluginRegistry.unregister(pluginId);
 
-      return NextResponse.json({ success: true, action: 'uninstalled', pluginId });
+      return NextResponse.json({
+        success: true,
+        action: "uninstalled",
+        pluginId,
+      });
     }
 
     return NextResponse.json(
       { error: 'action deve ser "install" ou "uninstall"' },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * PATCH /api/plugins — Batch enable/disable plugins
+ */
+export async function PATCH(req: Request) {
+  try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+    const { userId } = auth;
+
+    const body = (await req.json()) as {
+      pluginIds: string[];
+      enabled: boolean;
+    };
+
+    if (
+      !body.pluginIds ||
+      !Array.isArray(body.pluginIds) ||
+      body.pluginIds.length === 0
+    ) {
+      return NextResponse.json(
+        { error: "pluginIds é obrigatório e deve ser um array" },
+        { status: 400 },
+      );
+    }
+
+    if (typeof body.enabled !== "boolean") {
+      return NextResponse.json(
+        { error: "enabled deve ser um boolean" },
+        { status: 400 },
+      );
+    }
+
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    );
+
+    const { error } = await sb
+      .from("plugins")
+      .update({ enabled: body.enabled })
+      .eq("user_id", userId)
+      .in("id", body.pluginIds);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      updated: body.pluginIds.length,
+      enabled: body.enabled,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 },
+    );
   }
 }

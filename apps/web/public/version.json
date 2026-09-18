@@ -1,10 +1,10 @@
 {
-  "version": "2.1.0-alpha",
+  "version": "2.2.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 17 Complete",
+  "phase": "FASE 17B Complete",
   "features": [
-    "Data export API (JSON/Markdown)",
-    "System info endpoint",
-    "3 new E2E tests"
+    "Batch operations for plugins (PATCH /api/plugins)",
+    "Batch operations for skills (PATCH /api/skills)",
+    "4 new E2E tests"
   ]
 }
