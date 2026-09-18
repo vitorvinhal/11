@@ -4,6 +4,30 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v1.0.0-alpha — 2026-09-17
+
+### FASE 4 — Safety Engine
+- **`packages/ia/src/safety/risk-engine.ts`** — 50+ regras de classificação (SAFE/REVERSIBLE/DESTRUCTIVE). Default deny: ação desconhecida = DESTRUCTIVE.
+- **`packages/ia/src/safety/dry-run.ts`** — Simulação real: SQL via SELECT, CLI via --dry-run, filesystem via verificação de path.
+- **`packages/ia/src/safety/checkpoint.ts`** — createCheckpoint(), restoreCheckpoint(), createPendingAction(), approveAction(), rejectAction().
+- **`infra/supabase/migrations/20240926_checkpoints_pending_actions.sql`** — Tabelas `checkpoints` + `pending_actions` com RLS.
+
+### FASE 5 — Agent Core
+- **`packages/ia/src/agent/agent-core.ts`** — agentLoop(): loop LLM → tool_calls → safety → execute → repeat.
+- **`packages/ia/src/agent/tool-executor.ts`** — executeTool(): pipeline completo com classify → dry-run → checkpoint → execute → rollback.
+- **`packages/ia/src/agent/session-manager.ts`** — createSession(), addMessage(), getMessages(), expireOldSessions().
+
+### FASE 6 — API + Memory
+- **`apps/web/src/app/api/agent/route.ts`** — Endpoint /api/agent para AgentCore com autenticação.
+- **`packages/ia/src/agent/memory.ts`** — saveMemory(), searchMemories() por similaridade, getRecentMemories(), deleteMemory().
+
+### Testes
+- 234 testes passando (205 IA + 29 web)
+- 10 suites de teste no pacote IA
+- 17 testes de integração Safety → Agent → Memory
+
+---
+
 ## v0.9.0-alpha — 2026-09-17
 
 ### Security Fix — IDOR em Connectors Google

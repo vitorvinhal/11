@@ -20,6 +20,32 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.0.0-alpha — 2026-09-17
+
+### 🛡️ FASE 4 — Safety Engine
+- **Risk Engine**: 50+ regras de classificação (SAFE/REVERSIBLE/DESTRUCTIVE) para filesystem, terminal, git, SQL, network, deploy, AI, memory, user, plugin, skill
+- **Dry-Run Engine**: simulação real antes de executar — SQL via SELECT, CLI via --dry-run, filesystem via verificação de path
+- **Checkpoint & Rollback**: createCheckpoint() antes de ações REVERSIBLE, restoreCheckpoint() em caso de falha
+- **Pending Actions**: fila de aprovação para ações DESTRUCTIVE
+- Migration SQL: `checkpoints` + `pending_actions` com RLS
+
+### 🤖 FASE 5 — Agent Core
+- **AgentCore**: loop LLM → tool_calls → safety check → execute → repeat (max 10 iterações)
+- **ToolExecutor**: pipeline completo com classify → dry-run → checkpoint → execute → rollback
+- **Session Manager**: persistência de sessões com TTL (24h), token usage tracking
+- 7 tools: file_read, file_write, file_delete, terminal_exec, git_status, git_diff, git_commit
+
+### 🔌 FASE 6 — API + Memory
+- **Agent API** (`/api/agent`): endpoint para AgentCore com autenticação
+- **Memory Module**: saveMemory(), searchMemories() por similaridade, getRecentMemories()
+- **Integration Tests**: 17 testes de integração Safety → Agent → Memory
+
+### 📊 Testes
+- 234 testes passando (205 IA + 29 web)
+- 10 suites de teste no pacote IA
+
+---
+
 ## v0.9.0-alpha — 2026-09-17
 
 ### 🔐 Security Fix — IDOR em Connectors Google

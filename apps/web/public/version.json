@@ -1,14 +1,17 @@
 {
-  "version": "0.9.0-alpha",
-  "versionCode": 9,
+  "version": "1.0.0-alpha",
+  "versionCode": 10,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Security: IDOR fix em Google connectors (drive/gmail/calendar) — requireUser() obrigatório",
-    "Deploy: domínio 11-five-umber.vercel.app vinculado ao projeto correto",
-    "Cleanup: 11 PNGs de mockup + build artifacts removidos do tracking",
-    "Auditoria completa: 13 rotas connectors + 16 tabelas Supabase RLS verificadas"
+    "FASE 4: Safety Engine — Risk Classification, Dry-Run, Checkpoint/Rollback",
+    "FASE 5: Agent Core — AgentLoop, ToolExecutor, Session Manager",
+    "FASE 6: Agent API (/api/agent), Memory Module, Integration Tests",
+    "100+ safety rules: filesystem, terminal, git, SQL, network, deploy, AI",
+    "Pipeline completo: classify → dry-run → checkpoint → execute → rollback",
+    "Memory: save/search/retrieve memórias de longo prazo",
+    "234 testes passando (205 IA + 29 web)"
   ],
-  "apkUrl": "https://github.com/vitorvinhal/11/releases/download/v0.9.0-alpha/app-release.apk",
-  "desktopUrl": "https://github.com/vitorvinhal/11/releases/download/v0.9.0-alpha/11-desktop_0.9.0_x64-setup.exe"
+  "apkUrl": "https://github.com/vitorvinhal/11/releases/download/v1.0.0-alpha/app-release.apk",
+  "desktopUrl": "https://github.com/vitorvinhal/11/releases/download/v1.0.0-alpha/11-desktop_1.0.0_x64-setup.exe"
 }
