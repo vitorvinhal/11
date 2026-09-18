@@ -4,6 +4,20 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v2.8.0-alpha — 2026-09-17
+
+### FASE 21 — Security Hardening
+
+- **`apps/web/src/lib/validation.ts`** — Input validation utilities (required, string, email, number, array, object, validate)
+- **`apps/web/src/middleware.ts`** — Security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy, etc.)
+- 16 unit tests for validation rules
+
+### Testes
+
+- 352 testes passando (288 IA + 44 E2E/web)
+
+---
+
 ## v2.0.0-alpha — 2026-09-17
 
 ### FASE 16 — Monitoring & Observability

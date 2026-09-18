@@ -20,6 +20,16 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.8.0-alpha — 2026-09-17
+
+### 🔒 FASE 21 — Security Hardening
+
+- **`validation.ts`**: Input validation utilities — `validate`, `required`, `string`, `email`, `number`, `array`, `object` with constraints (minLength, maxLength, pattern, min, max, integer, minItems, maxItems)
+- **`middleware.ts`**: Security headers middleware — CSP, HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy
+- 16 unit tests for validation rules
+
+---
+
 ## v2.0.0-alpha — 2026-09-17
 
 ### 📊 FASE 16 — Monitoring & Observability
