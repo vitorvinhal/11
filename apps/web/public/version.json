@@ -1,11 +1,10 @@
 {
-  "version": "2.0.0-alpha",
+  "version": "2.1.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 16 Complete",
+  "phase": "FASE 17 Complete",
   "features": [
-    "Structured logging (FASE 16A)",
-    "Error tracking (FASE 16B)",
-    "Performance monitoring (FASE 16C)",
-    "13 new tests for monitoring modules"
+    "Data export API (JSON/Markdown)",
+    "System info endpoint",
+    "3 new E2E tests"
   ]
 }
