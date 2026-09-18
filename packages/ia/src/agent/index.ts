@@ -1,5 +1,5 @@
 /**
- * Agent Core — FASE 5-6
+ * Agent Core — FASE 5-7
  *
  * Loop de execução do agente com integração ao Safety Engine.
  */
@@ -21,6 +21,16 @@ export {
   getRecentMemories,
   deleteMemory,
 } from './memory';
+export {
+  recordMetric,
+  recordLatency,
+  recordToolCalls,
+  recordError,
+  recordTokens,
+  getMetricSummary,
+  getRawMetrics,
+  clearMetrics,
+} from './metrics';
 
 export type {
   AgentContext,
@@ -52,3 +62,9 @@ export type {
   MemorySearchResult,
   MemoryKind,
 } from './memory';
+
+export type {
+  AgentMetric,
+  MetricType,
+  MetricSummary,
+} from './metrics';
