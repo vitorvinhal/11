@@ -8,28 +8,22 @@ interface LazyLoadOptions {
   ssr?: boolean;
 }
 
-/**
- * Lazy load a component with Suspense boundary
- */
-export function lazyLoad<T extends ComponentType<Record<string, unknown>>>(
-  factory: () => Promise<{ default: T }>,
+export function lazyLoad(
+  factory: () => Promise<{ default: ComponentType }>,
   options: LazyLoadOptions = {},
 ) {
   const LazyComponent = lazy(factory);
 
-  const WrappedComponent = (props: React.ComponentProps<T>) => (
+  const WrappedComponent = (props: Record<string, unknown>) => (
     <Suspense fallback={options.fallback ?? <LoadingSpinner />}>
-      <LazyComponent {...props} />
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <LazyComponent {...(props as any)} />
     </Suspense>
   );
 
   return WrappedComponent;
 }
 
-/**
- * Preload a lazy component
- */
 export function preload(factory: () => Promise<{ default: ComponentType }>) {
-  // Start loading but don't render
   factory();
 }

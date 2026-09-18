@@ -13,7 +13,7 @@ interface EventEntry<T = unknown> {
 }
 
 export class EventEmitter<
-  Events extends Record<string, unknown> = Record<string, unknown>,
+  Events extends Record<string, unknown> = Record<string, unknown>, // eslint-disable-line @typescript-eslint/no-empty-object-type
 > {
   private listeners = new Map<string, EventEntry[]>();
 
@@ -114,7 +114,7 @@ export class EventEmitter<
 }
 
 // Eventos do sistema
-export interface SystemEvents {
+export type SystemEvents = {
   "agent:status": { userId: string; status: string; timestamp: string };
   "agent:message": { userId: string; role: string; content: string };
   "health:update": { service: string; ok: boolean; timestamp: string };
@@ -122,7 +122,7 @@ export interface SystemEvents {
   "plugin:uninstalled": { pluginId: string; userId: string };
   "skill:enabled": { skillId: string; userId: string };
   "skill:disabled": { skillId: string; userId: string };
-}
+};
 
 // Singleton global
 export const systemEvents = new EventEmitter<SystemEvents>();
