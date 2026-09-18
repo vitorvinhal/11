@@ -1,10 +1,10 @@
 {
-  "version": "2.4.0-alpha",
+  "version": "2.5.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 18B Complete",
+  "phase": "FASE 18C Complete",
   "features": [
-    "Event Emitter for real-time pub/sub",
-    "SSE endpoint /api/events for live updates",
-    "7 new unit tests for event emitter"
+    "Bulk data import API (POST /api/import)",
+    "Import memories, plugins, skills",
+    "1 new E2E test for import"
   ]
 }
