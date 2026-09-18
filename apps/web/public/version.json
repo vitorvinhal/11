@@ -1,11 +1,10 @@
 {
-  "version": "2.6.0-alpha",
+  "version": "2.7.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 19A Complete",
+  "phase": "FASE 20 Complete",
   "features": [
-    "Dark mode toggle with system preference support",
-    "ThemeProvider with localStorage persistence",
-    "Loading components (Spinner, Card, Page)",
-    "CSS variables for dark/light themes"
+    "Lazy loading utilities (LazyLoad.tsx)",
+    "Performance metrics endpoint (/api/performance)",
+    "1 new E2E test for performance"
   ]
 }

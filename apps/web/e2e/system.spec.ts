@@ -16,6 +16,13 @@ test.describe("Import API", () => {
   });
 });
 
+test.describe("Performance API", () => {
+  test("requires auth", async ({ request }) => {
+    const response = await request.get("/api/performance");
+    expect(response.status()).toBe(401);
+  });
+});
+
 test.describe("System API", () => {
   test("returns system info", async ({ request }) => {
     const response = await request.get("/api/system");
