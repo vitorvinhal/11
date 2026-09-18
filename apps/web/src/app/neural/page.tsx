@@ -2,15 +2,15 @@ import { AppShell } from "../../components/AppShell";
 import { AuthGate } from "../../components/AuthGate";
 
 export const metadata = {
-  title: "Eleven Coder — 11",
+  title: "Rede Neural — 11",
 };
 
 export const dynamic = "force-dynamic";
 
-export default function CoderPage() {
+export default function NeuralPage() {
   return (
     <AuthGate>
-      <AppShell initialNav="coder" />
+      <AppShell initialNav="neural" />
     </AuthGate>
   );
 }

@@ -3,10 +3,10 @@
  * Todos os provedores convertem para este formato (role + content blocks + tool_calls).
  */
 
-export type Role = 'system' | 'user' | 'assistant' | 'tool';
+export type Role = "system" | "user" | "assistant" | "tool";
 
 export interface ContentBlock {
-  type: 'text' | 'image' | 'audio' | 'file';
+  type: "text" | "image" | "audio" | "file";
   text?: string;
   data?: string; // base64
   mimeType?: string;
@@ -62,10 +62,10 @@ export const DEFAULT_LONG_CONTEXT: LongContextPolicy = {
 };
 
 export interface ProviderAdapter {
-  readonly id: '9router' | 'anthropic' | 'gemini' | 'minimax';
+  readonly id: "9router" | "anthropic" | "gemini" | "minimax" | "openrouter";
   readonly isPaid: boolean;
   complete(
     messages: CanonicalMessage[],
-    opts: { sessionId: string; model?: string }
+    opts: { sessionId: string; model?: string },
   ): Promise<GatewayCompletionResult>;
 }

@@ -4,8 +4,8 @@
  * Loop de execução do agente com integração ao Safety Engine.
  */
 
-export { agentLoop } from './agent-core';
-export { executeTool } from './tool-executor';
+export { agentLoop } from "./agent-core";
+export { executeTool } from "./tool-executor";
 export {
   createSession,
   getSession,
@@ -14,13 +14,16 @@ export {
   addMessage,
   getMessages,
   expireOldSessions,
-} from './session-manager';
+} from "./session-manager";
 export {
   saveMemory,
   searchMemories,
   getRecentMemories,
   deleteMemory,
-} from './memory';
+  supersedeMemory,
+  logMemoryEvent,
+  getMemoryAudit,
+} from "./memory";
 export {
   recordMetric,
   recordLatency,
@@ -30,7 +33,7 @@ export {
   getMetricSummary,
   getRawMetrics,
   clearMetrics,
-} from './metrics';
+} from "./metrics";
 
 export type {
   AgentContext,
@@ -39,13 +42,13 @@ export type {
   AgentToolCall,
   AgentToolResult,
   AgentMessage,
-} from './agent-core';
+} from "./agent-core";
 
 export type {
   ExecutionContext,
   ExecutionResult,
   ExecutionStatus,
-} from './tool-executor';
+} from "./tool-executor";
 
 export type {
   AgentSession,
@@ -53,7 +56,7 @@ export type {
   CreateSessionInput,
   AddMessageInput,
   SessionStatus,
-} from './session-manager';
+} from "./session-manager";
 
 export type {
   Memory,
@@ -61,10 +64,8 @@ export type {
   SearchMemoryInput,
   MemorySearchResult,
   MemoryKind,
-} from './memory';
+  MemoryOrigin,
+  MemoryEventInput,
+} from "./memory";
 
-export type {
-  AgentMetric,
-  MetricType,
-  MetricSummary,
-} from './metrics';
+export type { AgentMetric, MetricType, MetricSummary } from "./metrics";

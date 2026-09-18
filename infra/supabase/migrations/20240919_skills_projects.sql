@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS memories (
   kind TEXT NOT NULL DEFAULT 'note',
   title TEXT NOT NULL,
   content TEXT DEFAULT '',
-  embedding vector(1536),
+  embedding vector(768),
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()

@@ -4,7 +4,8 @@
     "module": "Node16",
     "outDir": "dist",
     "jsx": "react-native",
-    "moduleResolution": "Node16"
+    "moduleResolution": "Node16",
+    "noEmit": false
   },
   "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

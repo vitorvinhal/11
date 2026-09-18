@@ -45,7 +45,7 @@ describe("Cache", () => {
   it("should invalidate by prefix", () => {
     cache.set("health:router", "ok");
     cache.set("health:plugins", "ok");
-    cache.set("metrics:requests", 100);
+    cache.set("metrics:requests", 100 as unknown as string);
 
     const invalidated = cache.invalidatePrefix("health:");
     expect(invalidated).toBe(2);

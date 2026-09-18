@@ -61,7 +61,7 @@ describe("JobQueue", () => {
   });
 
   it("should process a job successfully", async () => {
-    queue.registerHandler("success", async (payload) => {
+    queue.registerHandler("success", async (payload: { value: number }) => {
       return `result: ${payload.value}`;
     });
 

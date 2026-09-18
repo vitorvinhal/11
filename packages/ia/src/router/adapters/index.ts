@@ -1,13 +1,14 @@
-import { ProviderAdapter } from '../types';
-import { nineRouterAdapter } from './9router';
-import { anthropicAdapter } from './anthropic';
-import { geminiAdapter } from './gemini';
-import { minimaxAdapter } from './minimax';
+import { ProviderAdapter } from "../types";
+import { nineRouterAdapter } from "./9router";
+import { anthropicAdapter } from "./anthropic";
+import { geminiAdapter } from "./gemini";
+import { minimaxAdapter } from "./minimax";
+import { openRouterAdapter } from "./openrouter";
 
 /**
  * Registry de adapters por provedor.
  * Ordem de preferência default no Modo Auto:
- *   9Router (free) → Gemini (free) → Anthropic (pago) → MiniMax (pago)
+ *   9Router (free) → Gemini (free) → OpenRouter (pago) → Anthropic (pago) → MiniMax (pago)
  */
 export class AdapterRegistry {
   private readonly adapters = new Map<string, ProviderAdapter>();
@@ -15,6 +16,7 @@ export class AdapterRegistry {
   constructor() {
     this.register(nineRouterAdapter());
     this.register(geminiAdapter());
+    this.register(openRouterAdapter());
     this.register(anthropicAdapter());
     this.register(minimaxAdapter());
   }
@@ -29,7 +31,7 @@ export class AdapterRegistry {
 
   /** Ordem de fallback no Modo Auto. */
   fallbackOrder(): ProviderAdapter[] {
-    return [nineRouterAdapter(), geminiAdapter()];
+    return [nineRouterAdapter(), geminiAdapter(), openRouterAdapter()];
   }
 }
 

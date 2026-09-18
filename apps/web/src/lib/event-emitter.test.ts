@@ -1,15 +1,15 @@
 import { EventEmitter } from "./event-emitter";
 
-interface TestEvents {
+type TestEvents = {
   "test:event": { value: string };
   "test:other": { count: number };
-}
+} & Record<string, unknown>;
 
 describe("EventEmitter", () => {
   let emitter: EventEmitter<TestEvents>;
 
   beforeEach(() => {
-    emitter = new EventEmitter();
+    emitter = new EventEmitter<TestEvents>();
   });
 
   it("should emit and receive events", () => {
