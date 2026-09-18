@@ -1,5 +1,5 @@
 /**
- * Agent Core — FASE 5
+ * Agent Core — FASE 5-6
  *
  * Loop de execução do agente com integração ao Safety Engine.
  */
@@ -15,6 +15,12 @@ export {
   getMessages,
   expireOldSessions,
 } from './session-manager';
+export {
+  saveMemory,
+  searchMemories,
+  getRecentMemories,
+  deleteMemory,
+} from './memory';
 
 export type {
   AgentContext,
@@ -38,3 +44,11 @@ export type {
   AddMessageInput,
   SessionStatus,
 } from './session-manager';
+
+export type {
+  Memory,
+  SaveMemoryInput,
+  SearchMemoryInput,
+  MemorySearchResult,
+  MemoryKind,
+} from './memory';
