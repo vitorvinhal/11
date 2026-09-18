@@ -20,6 +20,19 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.8.0-alpha — 2026-09-17
+
+### 🧪 FASE 14 — E2E Tests
+- **Playwright setup**: Configuração completa com Chromium
+- **Smoke tests**: 11 testes E2E para caminhos críticos
+  - Home page load + title
+  - Health, Version, Plugins, Skills, Metrics API
+  - Auth verification (401 without token)
+  - Health & Admin dashboard pages
+  - Rate limiting verification
+
+---
+
 ## v1.7.0-alpha — 2026-09-17
 
 ### 📚 FASE 13 — Documentation

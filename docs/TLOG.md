@@ -4,6 +4,19 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v1.8.0-alpha — 2026-09-17
+
+### FASE 14 — E2E Tests
+- **`apps/web/playwright.config.ts`** — Configuração Playwright
+- **`apps/web/e2e/smoke.spec.ts`** — 11 testes E2E (smoke tests)
+- **`@playwright/test`** — Adicionado como devDependency
+
+### Testes
+- 296 unit tests (254 IA + 42 web)
+- 11 E2E tests (Playwright)
+
+---
+
 ## v1.7.0-alpha — 2026-09-17
 
 ### FASE 13 — Documentation

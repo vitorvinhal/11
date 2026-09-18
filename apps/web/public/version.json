@@ -1,10 +1,11 @@
 {
-  "version": "1.7.0-alpha",
+  "version": "1.8.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 13 Complete",
+  "phase": "FASE 14 Complete",
   "features": [
-    "API documentation (docs/api.md)",
-    "Architecture overview (docs/architecture.md)",
-    "README.md polish"
+    "E2E test setup with Playwright",
+    "Smoke tests for critical paths",
+    "Health, Version, Plugins, Skills, Metrics API tests",
+    "Dashboard page tests"
   ]
 }
