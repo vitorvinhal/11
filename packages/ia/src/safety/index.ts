@@ -26,3 +26,20 @@ export type {
   DryRunContext,
   SimulationStatus,
 } from './dry-run';
+
+export {
+  createCheckpoint,
+  restoreCheckpoint,
+  createPendingAction,
+  approveAction,
+  rejectAction,
+  markExecuted,
+} from './checkpoint';
+
+export type {
+  Checkpoint,
+  PendingAction,
+  CreateCheckpointInput,
+  CheckpointStatus,
+  PendingActionStatus,
+} from './checkpoint';
