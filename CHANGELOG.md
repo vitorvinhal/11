@@ -20,6 +20,30 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v0.9.0-alpha — 2026-09-17
+
+### 🔐 Security Fix — IDOR em Connectors Google
+- **google/drive, gmail, calendar**: adicionado `requireUser()` — antes qualquer request com userId no query acessava dados de qualquer usuário (IDOR crítico)
+- **google/gmail**: Supabase key corrigida de `ANON` para JWT via `requireUser()`
+
+### 🌐 Deploy Fix — Domínio de Produção
+- Domínio `11-five-umber.vercel.app` estava associado ao projeto Vercel errado (`eleven` ao invés de `11-app`)
+- Corrigido via `vercel domains add --force` — agora serve v0.9.0-alpha
+- **Versão hardcoded** em `/api/version` como fallback (garante display correto mesmo com cache CDN)
+
+### 🧹 Limpeza do Repositório
+- Removidos 11 PNGs de mockup (`_*.png`) do git tracking
+- Removido `apps/dist/` (build Vite desktop) do tracking
+- `.gitignore` atualizado com padrão `_*.png`
+
+### 📊 Auditoria de Connectors
+- 13 rotas de connectors auditadas
+- 3 rotas Google com IDOR corrigido (drive/gmail/calendar)
+- 4 rotas OAuth callback: Google tem CSRF cookie ✅, GitHub/Slack/Notion sem CSRF (risco médio, aceitável para fluxo OAuth)
+- Todas as 16 tabelas Supabase com RLS habilitado e políticas corretas
+
+---
+
 ## v0.8.0-alpha — 2026-09-17
 
 ### 🔐 Consistência de Auth

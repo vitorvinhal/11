@@ -6,17 +6,15 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const VERSION_DATA = {
-  version: '0.8.1-alpha',
-  versionCode: 8,
+  version: '0.9.0-alpha',
+  versionCode: 9,
   name: '11 — Inteligência Autônoma',
   channel: 'alpha',
   changelog: [
-    'Settings route migrada para requireUser() - padrão único de auth em todas as rotas',
-    '@inferencesh/sdk removido (não era importado em nenhum lugar)',
-    'Deploy fix: removido routes do vercel.json que bloqueava atualização',
-    'CostBreaker: contabilização real com parse de tokens 9Router',
-    'Auditoria completa do checklist: 15 itens verificados',
-    'Migrations SQL completas em infra/supabase/migrations/',
+    'Security: IDOR fix em Google connectors (drive/gmail/calendar)',
+    'Deploy: domínio vinculado ao projeto correto',
+    'Cleanup: mockups e build artifacts removidos',
+    'Auditoria: 13 rotas connectors + 16 tabelas RLS verificadas',
   ],
   apkUrl: 'https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/app-release.apk',
   desktopUrl: 'https://github.com/vitorvinhal/11/releases/download/v0.4.0-alpha/11-desktop_0.4.0_x64-setup.exe',
