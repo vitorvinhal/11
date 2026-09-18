@@ -20,6 +20,29 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.1.0-alpha — 2026-09-17
+
+### 📡 FASE 7A — Streaming SSE
+- **`/api/agent`** agora suporta `stream: true` — eventos em tempo real: `meta`, `delta`, `done`, `error`
+- Efeito "digitando" para respostas do agente
+
+### ✅ FASE 7B — Tool Approval Flow
+- **POST `/api/agent/approve`**: aprovar ou rejeitar ações pendentes (DESTRUCTIVE)
+- **GET `/api/agent/approve`**: listar ações pendentes do usuário
+- Ownership check: cada usuário só vê suas próprias ações
+
+### 📊 FASE 7C — Agent Metrics
+- **`agent/metrics.ts`**: coleta de métricas em tempo real
+- Métricas: latência, tool calls, distribuição de risco, erros, tokens
+- `getMetricSummary()`: resumo agregado para dashboards
+- 17 testes unitários
+
+### 📊 Testes
+- 251 testes passando (222 IA + 29 web)
+- 11 suites de teste no pacote IA
+
+---
+
 ## v1.0.0-alpha — 2026-09-17
 
 ### 🛡️ FASE 4 — Safety Engine
