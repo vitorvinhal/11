@@ -30,6 +30,7 @@ const MODELS = [
   { id: 'anthropic', label: 'Anthropic', desc: 'Claude · high quality' },
   { id: 'astra', label: 'Astra', desc: 'Modo padrão da 11 (via 9Router)' },
   { id: 'minimax', label: 'MiniMax', desc: 'Alternativa rápida (via 9Router)' },
+  { id: 'agent', label: 'Agent · Tools + Safety', desc: 'Modo agente com execução de tools' },
 ];
 
 interface Attach {
@@ -147,23 +148,37 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     setInput('');
     setBusy(true);
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+    const isAgentMode = model === 'agent';
+
     try {
-      const res = await fetch('/api/chat', {
+      const apiUrl = isAgentMode ? '/api/agent' : '/api/chat';
+      const body = isAgentMode
+        ? {
+            prompt: text,
+            sessionId,
+            enableTools: true,
+            maxIterations: 10,
+            stream: true,
+          }
+        : {
+            sessionId,
+            userId: user?.id,
+            messages: next.map((m) => ({ role: m.role, content: m.content })),
+            provider: model === '9router/custom' && customCombo.trim() ? `9router/${customCombo.trim()}` : model,
+            geminiKey: (keys.gemini ?? '').trim(),
+            anthropicKey: (keys.anthropic ?? '').trim(),
+            nineRouterKey: (keys.nineRouter ?? '').trim(),
+            files: attached.map((a) => ({ label: a.label, snippet: a.snippet })),
+            webSearch,
+            memory: memory && !incognito,
+            stream: true,
+          };
+
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          userId: user?.id,
-          messages: next.map((m) => ({ role: m.role, content: m.content })),
-          provider: model === '9router/custom' && customCombo.trim() ? `9router/${customCombo.trim()}` : model,
-          geminiKey: (keys.gemini ?? '').trim(),
-          anthropicKey: (keys.anthropic ?? '').trim(),
-          nineRouterKey: (keys.nineRouter ?? '').trim(),
-          files: attached.map((a) => ({ label: a.label, snippet: a.snippet })),
-          webSearch,
-          memory: memory && !incognito,
-          stream: true,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
