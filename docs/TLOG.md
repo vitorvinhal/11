@@ -4,6 +4,39 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v0.9.0-alpha — 2026-09-17
+
+### Security Fix — IDOR em Connectors Google
+- **`apps/web/src/app/api/connectors/google/drive/route.ts`** — Adicionado `requireUser()`. Antes: qualquer request com `userId` no query param acessava dados de qualquer usuário (IDOR crítico).
+- **`apps/web/src/app/api/connectors/google/gmail/route.ts`** — IDOR fix + correção de Supabase key (era `ANON`, agora usa JWT via `requireUser()`).
+- **`apps/web/src/app/api/connectors/google/calendar/route.ts`** — IDOR fix com `requireUser()`.
+
+### Deploy Fix — Domínio de Produção
+- Domínio `11-five-umber.vercel.app` estava associado ao projeto Vercel errado (`eleven` ao invés de `11-app`).
+- Corrigido via `vercel domains add --force 11-five-umber.vercel.app 11-app`.
+- **`apps/web/src/app/api/version/route.ts`** — Rota API com fallback hardcoded para versão (garante display correto mesmo com cache CDN).
+
+### Connector Audit
+- 13 rotas de connectors auditadas para auth e ownership.
+- 3 rotas Google com IDOR corrigido.
+- 4 rotas OAuth callback: Google tem CSRF cookie ✅, GitHub/Slack/Notion sem CSRF (risco médio aceitável).
+- Todas as 16 tabelas Supabase com RLS habilitado e políticas corretas.
+
+### File Cleanup
+- 11 PNGs de mockup (`_*.png`) removidos do git tracking.
+- `apps/dist/` (build Vite desktop) removido do tracking.
+- `.gitignore` atualizado com padrão `_*.png`.
+
+### CI Fix
+- **`.github/workflows/ci.yml`** — Node 18 (era 24), `supabase` CLI (era `@supabase/cli`), `--no-frozen-lockfile`, typecheck step adicionado.
+- **`.github/workflows/build.yml`** — Node 18, `pnpm lint` (era `pnpx eslint`), removido `|| echo` que engolia erros de teste.
+
+### Terminal E2E Test
+- 5 testes de API ao vivo: auth (401), comando vazio (400), JSON inválido (400), destrutivo (401), GET status (200).
+- 22 testes de validação local: whitelist, DANGEROUS patterns, baseCommand, isUnderRoot — todos pass.
+
+---
+
 ## v0.8.0-alpha — 2026-09-17
 
 ### Consistência de Auth

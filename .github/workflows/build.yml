@@ -1,23 +1,25 @@
-name: 11-ci
+name: Build
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
       - name: Install pnpm
-        run: npm i -g pnpm
+        run: npm i -g pnpm@8.15.9
       - name: Install deps
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
       - name: Lint
-        run: pnpx eslint . --ext .js,.ts,.tsx
+        run: pnpm lint
       - name: Test
-        run: pnpm test || echo 'No tests'
-      - name: Build Web
-        run: pnpm build:web
+        run: pnpm test
+      - name: Build
+        run: pnpm build
