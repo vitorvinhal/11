@@ -1,10 +1,11 @@
 {
-  "version": "2.5.0-alpha",
+  "version": "2.6.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 18C Complete",
+  "phase": "FASE 19A Complete",
   "features": [
-    "Bulk data import API (POST /api/import)",
-    "Import memories, plugins, skills",
-    "1 new E2E test for import"
+    "Dark mode toggle with system preference support",
+    "ThemeProvider with localStorage persistence",
+    "Loading components (Spinner, Card, Page)",
+    "CSS variables for dark/light themes"
   ]
 }

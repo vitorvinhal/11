@@ -14,7 +14,17 @@
   --text-dim: rgba(236, 236, 241, 0.32);
 }
 
-/* Tema claro (appearance: light) */
+/* Dark mode (default) */
+.dark {
+  --background: #030309;
+  --surface: rgba(255, 255, 255, 0.035);
+  --text-primary: #ececf1;
+  --text-muted: rgba(236, 236, 241, 0.55);
+  --text-dim: rgba(236, 236, 241, 0.32);
+}
+
+/* Light mode */
+.light,
 html.light {
   --background: #f7f7f8;
   --surface: rgba(0, 0, 0, 0.03);
