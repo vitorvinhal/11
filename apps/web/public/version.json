@@ -1,10 +1,10 @@
 {
-  "version": "2.3.0-alpha",
+  "version": "2.4.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 18A Complete",
+  "phase": "FASE 18B Complete",
   "features": [
-    "In-memory cache with TTL support",
-    "Cache integration in health endpoint",
-    "11 new unit tests for cache"
+    "Event Emitter for real-time pub/sub",
+    "SSE endpoint /api/events for live updates",
+    "7 new unit tests for event emitter"
   ]
 }
