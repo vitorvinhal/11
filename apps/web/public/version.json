@@ -1,11 +1,12 @@
 {
-  "version": "1.8.0-alpha",
+  "version": "1.9.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 14 Complete",
+  "phase": "FASE 15 Complete",
   "features": [
-    "E2E test setup with Playwright",
-    "Smoke tests for critical paths",
-    "Health, Version, Plugins, Skills, Metrics API tests",
-    "Dashboard page tests"
+    "CI/CD workflow improvements",
+    "E2E tests in CI pipeline",
+    "Pre-commit hooks (husky + lint-staged)",
+    "pnpm caching in CI",
+    "Playwright report artifacts on failure"
   ]
 }

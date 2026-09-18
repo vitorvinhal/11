@@ -37,6 +37,8 @@ coverage/
 
 # Test artifacts
 .nyc_output/
+test-results/
+playwright-report/
 
 # Design mockups (not source code)
 _*.png

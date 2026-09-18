@@ -1,12 +1,13 @@
 {
   "name": "11",
-  "version": "1.8.0-alpha",
+  "version": "1.9.0-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
+    "prepare": "husky",
     "build": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/web build",
     "build:web": "pnpm --filter @11/web build",
     "build:packages": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/api build && pnpm --filter @11/cli build",
@@ -21,7 +22,8 @@
     "version:minor": "node scripts/version.js minor",
     "version:major": "node scripts/version.js major",
     "version:rc": "node scripts/version.js patch --release rc",
-    "version:show": "node -e \"const j=require('./apps/web/public/version.json');console.log(j.version)\""
+    "version:show": "node -e \"const j=require('./apps/web/public/version.json');console.log(j.version)\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "axios": "^1.20.0",
@@ -46,16 +48,29 @@
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",
     "eslint": "^8",
+    "husky": "^9.1.7",
     "jest": "^29",
+    "lint-staged": "^17.5.1",
     "pnpm": "^8",
     "prettier": "^3",
     "ts-jest": "^29",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
   "pnpm": {
     "peerDependencyRules": {
-      "ignoreMissing": ["node-pty"]
+      "ignoreMissing": [
+        "node-pty"
+      ]
     }
   }
 }
