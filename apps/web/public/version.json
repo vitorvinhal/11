@@ -1,13 +1,10 @@
 {
-  "version": "1.6.0-alpha",
+  "version": "1.7.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 12 Complete",
+  "phase": "FASE 13 Complete",
   "features": [
-    "Metrics API endpoint (FASE 12A)",
-    "Version API endpoint",
-    "Admin dashboard page (FASE 12B)",
-    "System health overview",
-    "Agent metrics visualization",
-    "Plugin/Skill management UI"
+    "API documentation (docs/api.md)",
+    "Architecture overview (docs/architecture.md)",
+    "README.md polish"
   ]
 }

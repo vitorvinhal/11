@@ -20,6 +20,15 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.7.0-alpha — 2026-09-17
+
+### 📚 FASE 13 — Documentation
+- **`docs/api.md`**: Referência completa da API (todos os endpoints, request/response, rate limits)
+- **`docs/architecture.md`**: Visão geral da arquitetura (diagramas, packages, safety engine, agent loop, DB schema)
+- **`README.md`**: Reescrito com tech stack, quick start, features, endpoints, estrutura
+
+---
+
 ## v1.6.0-alpha — 2026-09-17
 
 ### 📊 FASE 12 — Admin Dashboard

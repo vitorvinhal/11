@@ -4,6 +4,18 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v1.7.0-alpha — 2026-09-17
+
+### FASE 13 — Documentation
+- **`docs/api.md`** — Referência completa da API
+- **`docs/architecture.md`** — Visão geral da arquitetura
+- **`README.md`** — Reescrito com visão moderna
+
+### Testes
+- 296 testes passando (254 IA + 42 web)
+
+---
+
 ## v1.6.0-alpha — 2026-09-17
 
 ### FASE 12 — Admin Dashboard
