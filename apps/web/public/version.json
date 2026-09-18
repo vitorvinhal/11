@@ -1,14 +1,13 @@
 {
-  "version": "1.4.0-alpha",
+  "version": "1.5.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 10 Complete",
+  "phase": "FASE 11 Complete",
   "features": [
-    "Plugin Registry (FASE 9A)",
-    "Skill System (FASE 9B)",
-    "Plugins API route (FASE 10A)",
-    "Skills API route (FASE 10B)",
-    "Rate limiter integration (FASE 10C)",
-    "IA package build integration",
-    "officegen externalized for webpack"
+    "Health endpoints (FASE 11A)",
+    "Health dashboard page (FASE 11B)",
+    "/api/health (aggregated)",
+    "/api/health/router",
+    "/api/health/plugins",
+    "/api/health/skills"
   ]
 }

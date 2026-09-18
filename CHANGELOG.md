@@ -20,6 +20,17 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.5.0-alpha — 2026-09-17
+
+### 🏥 FASE 11 — Health & Monitoring
+- **`/api/health`**: Health check aggregado de todos os subsystems (sem auth, para load balancers)
+- **`/api/health/router`**: Health check do Model Gateway
+- **`/api/health/plugins`**: Health check do Plugin Registry (contagem de plugins instalados)
+- **`/api/health/skills`**: Health check do Skill System (contagem de skills instaladas)
+- **`/health`**: Dashboard web com status em tempo real (auto-refresh 30s)
+
+---
+
 ## v1.4.0-alpha — 2026-09-17
 
 ### 🔌 FASE 10A — Plugins API

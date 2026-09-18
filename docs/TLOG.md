@@ -4,6 +4,20 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v1.5.0-alpha — 2026-09-17
+
+### FASE 11 — Health & Monitoring
+- **`apps/web/src/app/api/health/route.ts`** — GET /api/health (agregado, sem auth)
+- **`apps/web/src/app/api/health/router/route.ts`** — GET /api/health/router
+- **`apps/web/src/app/api/health/plugins/route.ts`** — GET /api/health/plugins
+- **`apps/web/src/app/api/health/skills/route.ts`** — GET /api/health/skills
+- **`apps/web/src/app/health/page.tsx`** — Dashboard /health com auto-refresh
+
+### Testes
+- 296 testes passando (254 IA + 42 web)
+
+---
+
 ## v1.4.0-alpha — 2026-09-17
 
 ### FASE 10 — Plugins & Skills API
