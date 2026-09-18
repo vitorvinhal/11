@@ -5,6 +5,7 @@
  */
 
 export { agentLoop, executeToolCall } from './agent-core';
+export { executeTool } from './tool-executor';
 
 export type {
   AgentContext,
@@ -14,3 +15,9 @@ export type {
   ToolResult,
   AgentMessage,
 } from './agent-core';
+
+export type {
+  ExecutionContext,
+  ExecutionResult,
+  ExecutionStatus,
+} from './tool-executor';
