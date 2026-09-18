@@ -1,24 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { loadRootEnv } from '../../../../../lib/server-env';
+import { requireUser } from '../../../../../lib/auth-helpers';
 
 loadRootEnv();
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function sb(req: Request) {
-  const auth = req.headers.get('authorization') ?? '';
-  const token = auth.replace('Bearer ', '');
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-}
-
-async function getGoogleToken(s: ReturnType<typeof sb>, userId: string) {
-  const { data } = await s.from('connectors').select('access_token, refresh_token, expires_at').eq('user_id', userId).eq('provider', 'google').single();
+async function getGoogleToken(sb: any, userId: string) {
+  const { data } = await sb.from('connectors').select('access_token, refresh_token, expires_at').eq('user_id', userId).eq('provider', 'google').single();
   if (!data?.access_token) return null;
   if (data.expires_at && new Date(data.expires_at) < new Date() && data.refresh_token) {
     const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -33,7 +23,7 @@ async function getGoogleToken(s: ReturnType<typeof sb>, userId: string) {
     });
     const tokens = await refreshRes.json();
     if (tokens.access_token) {
-      await s.from('connectors').update({
+      await sb.from('connectors').update({
         access_token: tokens.access_token,
         expires_at: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null,
       }).eq('user_id', userId).eq('provider', 'google');
@@ -43,17 +33,17 @@ async function getGoogleToken(s: ReturnType<typeof sb>, userId: string) {
   return data.access_token;
 }
 
-// Gmail: list messages
 export async function GET(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const { sb, userId } = auth;
+
     const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
     const query = url.searchParams.get('q') ?? '';
     const pageToken = url.searchParams.get('pageToken') ?? '';
-    const s = sb(req);
-    if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
 
-    const token = await getGoogleToken(s, userId);
+    const token = await getGoogleToken(sb, userId);
     if (!token) return NextResponse.json({ error: 'Google not connected' }, { status: 401 });
 
     const params = new URLSearchParams({ maxResults: '20' });
@@ -66,7 +56,6 @@ export async function GET(req: Request) {
     const list = await res.json();
     if (!list.messages) return NextResponse.json({ messages: [], nextPageToken: null });
 
-    // Fetch details for each message
     const messages = await Promise.all(
       list.messages.slice(0, 10).map(async (m: { id: string }) => {
         const msgRes = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, {

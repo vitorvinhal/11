@@ -37,3 +37,6 @@ coverage/
 
 # Test artifacts
 .nyc_output/
+
+# Design mockups (not source code)
+_*.png
