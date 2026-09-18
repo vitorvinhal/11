@@ -18,3 +18,11 @@ export type {
   ActionClassification,
   RiskRule,
 } from './risk-engine';
+
+export { dryRun } from './dry-run';
+
+export type {
+  DryRunResult,
+  DryRunContext,
+  SimulationStatus,
+} from './dry-run';
