@@ -4,7 +4,7 @@
  * Loop de execução do agente com integração ao Safety Engine.
  */
 
-export { agentLoop, executeToolCall } from './agent-core';
+export { agentLoop } from './agent-core';
 export { executeTool } from './tool-executor';
 export {
   createSession,
@@ -36,8 +36,8 @@ export type {
   AgentContext,
   AgentResponse,
   AgentStatus,
-  ToolCall,
-  ToolResult,
+  AgentToolCall,
+  AgentToolResult,
   AgentMessage,
 } from './agent-core';
 

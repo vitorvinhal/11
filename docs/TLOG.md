@@ -4,7 +4,26 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
-## v1.0.0-alpha — 2026-09-17
+## v1.4.0-alpha — 2026-09-17
+
+### FASE 10 — Plugins & Skills API
+- **`apps/web/src/app/api/plugins/route.ts`** — GET/POST para listar e gerenciar plugins via Supabase.
+- **`apps/web/src/app/api/skills/route.ts`** — GET/POST para listar e habilitar/desabilitar skills.
+- **Rate limiter** integrado em `/api/chat` e `/api/agent` com headers HTTP.
+
+### Build Fixes
+- `@11/ia` agora é dependência do `@11/web` e buildado antes dele.
+- `officegen` externalizado do webpack (era incompatível com bundler do Next.js).
+- `seed.json` inlineado em `seed.ts` (eliminou `readFileSync` em build time).
+- `AgentToolCall`/`AgentToolResult` renomeados para evitar conflito de tipos com router.
+- Export do módulo `plugins` adicionado ao barrel do `@11/ia`.
+
+### Testes
+- 296 testes passando (254 IA + 42 web)
+
+---
+
+## v1.3.0-alpha — 2026-09-17
 
 ### FASE 4 — Safety Engine
 - **`packages/ia/src/safety/risk-engine.ts`** — 50+ regras de classificação (SAFE/REVERSIBLE/DESTRUCTIVE). Default deny: ação desconhecida = DESTRUCTIVE.

@@ -154,8 +154,8 @@ export async function executeTool(
   }
 
   // 1. Classificar risco
-  const classification = classifyAction(tool.action, args);
-  const riskLevel = getRisk(tool.action, args);
+  const classification = classifyAction(tool.action);
+  const riskLevel = getRisk(tool.action);
 
   // 2. Dry-run para ações não seguras
   let dryRunResult: DryRunResult | undefined;
@@ -184,7 +184,7 @@ export async function executeTool(
         status: 'failed',
         toolName,
         arguments: args,
-        error: `Ação destrutiva não passou no dry-run: ${dryRunResult.simulationResult?.note ?? 'desconhecido'}`,
+        error: `Ação destrutiva não passou no dry-run: ${(dryRunResult.simulationResult as Record<string, unknown>)?.note ?? 'desconhecido'}`,
         dryRun: dryRunResult,
         riskLevel,
         durationMs: Date.now() - start,

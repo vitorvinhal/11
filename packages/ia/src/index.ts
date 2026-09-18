@@ -16,3 +16,6 @@ export * from './safety/index';
 
 // FASE 5 — Agent Core
 export * from './agent/index';
+
+// FASE 9 — Plugins & Skills
+export * from './plugins/index';

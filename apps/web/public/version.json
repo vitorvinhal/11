@@ -1,13 +1,14 @@
 {
-  "version": "1.3.0-alpha",
-  "versionCode": 13,
-  "name": "11 — Inteligência Autônoma",
-  "channel": "alpha",
-  "changelog": [
-    "FASE 9A: Plugin Registry — registro/discovery de tools customizadas",
-    "FASE 9B: Skill System — 4 built-in skills com restrições de segurança",
-    "296 testes passando (254 IA + 42 web)"
-  ],
-  "apkUrl": "https://github.com/vitorvinhal/11/releases/download/v1.3.0-alpha/app-release.apk",
-  "desktopUrl": "https://github.com/vitorvinhal/11/releases/download/v1.3.0-alpha/11-desktop_1.3.0_x64-setup.exe"
+  "version": "1.4.0-alpha",
+  "buildDate": "2026-09-17",
+  "phase": "FASE 10 Complete",
+  "features": [
+    "Plugin Registry (FASE 9A)",
+    "Skill System (FASE 9B)",
+    "Plugins API route (FASE 10A)",
+    "Skills API route (FASE 10B)",
+    "Rate limiter integration (FASE 10C)",
+    "IA package build integration",
+    "officegen externalized for webpack"
+  ]
 }

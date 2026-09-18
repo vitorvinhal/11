@@ -93,7 +93,7 @@ export class RateLimiter {
   cleanup(): number {
     const now = Date.now();
     let cleaned = 0;
-    for (const [key, timestamps] of this.hits.entries()) {
+    for (const [key, timestamps] of Array.from(this.hits.entries())) {
       const valid = timestamps.filter((t) => t > now - this.config.windowMs);
       if (valid.length === 0) {
         this.hits.delete(key);

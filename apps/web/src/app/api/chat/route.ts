@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { loadRootEnv } from '../../../lib/server-env';
 import { requireUser } from '../../../lib/auth-helpers';
 import { parseCompletionContent } from '../../../lib/parse-completion';
+import { chatLimiter } from '../../../lib/rate-limiter';
 
 loadRootEnv();
 
@@ -35,6 +36,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
     const { userId } = auth;
+
+    // Rate limiting
+    const rateLimit = chatLimiter.check(userId);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas mensagens. Aguarde um momento.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((rateLimit.retryAfterMs ?? 1000) / 1000)),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
+    }
 
     const body = (await req.json()) as ChatBody;
     const { messages, sessionId, provider } = body;

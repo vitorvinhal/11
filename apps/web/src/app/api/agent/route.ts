@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { requireUser } from '../../../lib/auth-helpers';
 import { loadRootEnv } from '../../../lib/server-env';
 import { agentLoop } from '@11/ia';
+import { agentLimiter } from '../../../lib/rate-limiter';
 import type { AgentContext, AgentMessage } from '@11/ia';
 
 loadRootEnv();
@@ -32,6 +33,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
     const { userId } = auth;
+
+    // Rate limiting
+    const rateLimit = agentLimiter.check(userId);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas requisições ao agente. Aguarde.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((rateLimit.retryAfterMs ?? 1000) / 1000)),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
+    }
 
     const body = (await req.json()) as AgentBody;
     const { prompt, sessionId, enableTools = true, maxIterations, provider, stream } = body;

@@ -4,7 +4,7 @@
  * Testes unitários da lógica do agente (sem LLM real).
  */
 
-import type { AgentContext, AgentResponse, ToolCall, ToolResult, AgentMessage } from './agent-core';
+import type { AgentContext, AgentResponse, AgentToolCall, AgentToolResult, AgentMessage } from './agent-core';
 
 describe('AgentCore — FASE 5A', () => {
   // ── Types ──
@@ -46,9 +46,9 @@ describe('AgentCore — FASE 5A', () => {
   });
 
   // ── Tool calls ──
-  describe('ToolCall structure', () => {
+  describe('AgentToolCall structure', () => {
     test('file_read call', () => {
-      const tc: ToolCall = {
+      const tc: AgentToolCall = {
         id: 'call-1',
         name: 'file_read',
         arguments: { path: '/app/src/main.ts' },
@@ -58,7 +58,7 @@ describe('AgentCore — FASE 5A', () => {
     });
 
     test('file_write call', () => {
-      const tc: ToolCall = {
+      const tc: AgentToolCall = {
         id: 'call-2',
         name: 'file_write',
         arguments: { path: '/app/src/main.ts', content: 'new code' },
@@ -67,7 +67,7 @@ describe('AgentCore — FASE 5A', () => {
     });
 
     test('terminal_exec call', () => {
-      const tc: ToolCall = {
+      const tc: AgentToolCall = {
         id: 'call-3',
         name: 'terminal_exec',
         arguments: { command: 'git status' },
@@ -76,7 +76,7 @@ describe('AgentCore — FASE 5A', () => {
     });
 
     test('git_commit call with files array', () => {
-      const tc: ToolCall = {
+      const tc: AgentToolCall = {
         id: 'call-4',
         name: 'git_commit',
         arguments: {
@@ -90,9 +90,9 @@ describe('AgentCore — FASE 5A', () => {
   });
 
   // ── Tool results ──
-  describe('ToolResult structure', () => {
+  describe('AgentToolResult structure', () => {
     test('successful result', () => {
-      const result: ToolResult = {
+      const result: AgentToolResult = {
         toolCallId: 'call-1',
         content: 'file content here',
         isError: false,
@@ -101,7 +101,7 @@ describe('AgentCore — FASE 5A', () => {
     });
 
     test('error result', () => {
-      const result: ToolResult = {
+      const result: AgentToolResult = {
         toolCallId: 'call-1',
         content: 'File not found',
         isError: true,

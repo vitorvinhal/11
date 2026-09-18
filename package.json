@@ -1,13 +1,13 @@
 {
   "name": "11",
-  "version": "0.9.0-alpha",
+  "version": "1.4.0-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "build": "pnpm --filter @11/shared build && pnpm --filter @11/web build",
+    "build": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/web build",
     "build:web": "pnpm --filter @11/web build",
     "build:packages": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/api build && pnpm --filter @11/cli build",
     "dev:api": "pnpm --filter @11/api start",

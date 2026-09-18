@@ -10,24 +10,24 @@
  *   - Checkpoint (FASE 4C): salva estado para rollback
  */
 
-import { modelGateway } from './router/index';
-import { classifyAction, getRisk, requiresApproval } from './safety/risk-engine';
-import { dryRun } from './safety/dry-run';
-import type { RiskLevel } from './safety/risk-engine';
-import type { DryRunResult } from './safety/dry-run';
+import { modelGateway } from '../router/index';
+import { classifyAction, getRisk, requiresApproval } from '../safety/risk-engine';
+import { dryRun } from '../safety/dry-run';
+import type { RiskLevel } from '../safety/risk-engine';
+import type { DryRunResult } from '../safety/dry-run';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
 export type AgentStatus = 'idle' | 'thinking' | 'executing' | 'awaiting_approval' | 'error';
 
-export interface ToolCall {
+export interface AgentToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
 }
 
-export interface ToolResult {
+export interface AgentToolResult {
   toolCallId: string;
   content: string;
   isError?: boolean;
@@ -36,8 +36,8 @@ export interface ToolResult {
 export interface AgentMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
-  toolCalls?: ToolCall[];
-  toolResults?: ToolResult[];
+  toolCalls?: AgentToolCall[];
+  toolResults?: AgentToolResult[];
 }
 
 export interface AgentContext {
@@ -177,16 +177,16 @@ function mapToolToAction(toolName: string): string {
  * Executa uma tool call com verificações de segurança.
  */
 async function executeToolCall(
-  toolCall: ToolCall,
+  toolCall: AgentToolCall,
   userId: string,
   tenantId?: string
-): Promise<ToolResult> {
+): Promise<AgentToolResult> {
   try {
     // 1. Classificar risco
     const action = mapToolToAction(toolCall.name);
-    const classification = classifyAction(action, toolCall.arguments);
-    const risk = getRisk(action, toolCall.arguments);
-    const needsApproval = requiresApproval(classification);
+    const classification = classifyAction(action);
+    const risk = getRisk(action);
+    const needsApproval = requiresApproval(action);
 
     // 2. Dry-run (quando aplicável)
     if (risk !== 'SAFE') {
@@ -207,7 +207,7 @@ async function executeToolCall(
       if (needsApproval && !dryResult.wouldSucceed) {
         return {
           toolCallId: toolCall.id,
-          content: `Ação requer aprovação e não passou na simulação: ${dryResult.simulationResult?.note ?? 'desconhecido'}`,
+          content: `Ação requer aprovação e não passou na simulação: ${(dryResult.simulationResult as Record<string, unknown>)?.note ?? 'desconhecido'}`,
           isError: true,
         };
       }
@@ -320,11 +320,10 @@ export async function agentLoop(
         role: m.role as 'system' | 'user' | 'assistant',
         content: [{ type: 'text' as const, text: m.content }],
       })),
-      tools: TOOL_DEFINITIONS,
     });
 
     const assistantMsg = result.message;
-    const text = assistantMsg.content.map((c) => c.text ?? '').join('\n');
+    const text = assistantMsg.content.map((c: { text?: string }) => c.text ?? '').join('\n');
     const toolCalls = assistantMsg.toolCalls ?? [];
 
     // 2. Se não há tool calls, retornar resposta final
@@ -339,11 +338,11 @@ export async function agentLoop(
 
     // 3. Executar tool calls
     status = 'executing';
-    const results: ToolResult[] = [];
+    const results: AgentToolResult[] = [];
 
     for (const tc of toolCalls) {
       const action = mapToolToAction(tc.name);
-      const risk = getRisk(action, tc.arguments);
+      const risk = getRisk(action);
       riskSummary[risk as keyof typeof riskSummary]++;
 
       const result = await executeToolCall(tc, ctx.userId, ctx.tenantId);
@@ -355,7 +354,7 @@ export async function agentLoop(
     messages.push({
       role: 'assistant',
       content: text,
-      toolCalls: toolCalls.map((tc) => ({
+      toolCalls: toolCalls.map((tc: { id: string; name: string; arguments: Record<string, unknown> }) => ({
         id: tc.id,
         name: tc.name,
         arguments: tc.arguments,

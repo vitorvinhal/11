@@ -20,6 +20,30 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.4.0-alpha — 2026-09-17
+
+### 🔌 FASE 10A — Plugins API
+- **`/api/plugins`**: rotas GET (listar) e POST (instalar/desinstalar) plugins
+- Persistência via Supabase com RLS
+
+### 🧠 FASE 10B — Skills API
+- **`/api/skills`**: rotas GET (listar built-in + custom) e POST (enable/disable)
+- 4 skills built-in: Code Writer, Researcher, DevOps Engineer, Documentation Writer
+
+### ⏱️ FASE 10C — Rate Limiter Integration
+- Rate limiter aplicado em `/api/chat` e `/api/agent`
+- Headers HTTP: `Retry-After`, `X-RateLimit-Remaining`
+
+### 🔧 Build Fixes
+- **`@11/ia`** adicionado como dependência do web app
+- `officegen` externalizado do webpack (incompatível com bundler)
+- `seed.json` inlineado no módulo `seed.ts` (eliminou readFileSync em build time)
+- `AgentToolCall`/`AgentToolResult` renomeados para evitar conflito com tipos do router
+- Export do módulo `plugins` adicionado ao barrel do `@11/ia`
+- `pnpm-lock.yaml` atualizado com `readable-stream`
+
+---
+
 ## v1.3.0-alpha — 2026-09-17
 
 ### 🔌 FASE 9A — Plugin Registry
