@@ -1,10 +1,10 @@
 {
-  "version": "2.2.0-alpha",
+  "version": "2.3.0-alpha",
   "buildDate": "2026-09-17",
-  "phase": "FASE 17B Complete",
+  "phase": "FASE 18A Complete",
   "features": [
-    "Batch operations for plugins (PATCH /api/plugins)",
-    "Batch operations for skills (PATCH /api/skills)",
-    "4 new E2E tests"
+    "In-memory cache with TTL support",
+    "Cache integration in health endpoint",
+    "11 new unit tests for cache"
   ]
 }
