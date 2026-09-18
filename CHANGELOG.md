@@ -20,6 +20,25 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v1.2.0-alpha — 2026-09-17
+
+### 🖥️ FASE 8A — Frontend AgentCore Integration
+- **ChatPanel**: novo modelo "Agent · Tools + Safety" no seletor
+- Quando selecionado, usa `/api/agent` em vez de `/api/chat`
+- Suporte a streaming em ambos os modos
+
+### 🛡️ FASE 8B — Rate Limiting
+- **`rate-limiter.ts`**: classe RateLimiter com check(), getHeaders(), cleanup()
+- Presets: chat (30/min), agent (10/min), auth (5/min), upload (20/min)
+- Headers HTTP padrão: X-RateLimit-Limit, Remaining, Reset, Retry-After
+- Cleanup automático a cada 5 minutos
+- 13 testes unitários
+
+### 📊 Testes
+- 264 testes passando (222 IA + 42 web)
+
+---
+
 ## v1.1.0-alpha — 2026-09-17
 
 ### 📡 FASE 7A — Streaming SSE
