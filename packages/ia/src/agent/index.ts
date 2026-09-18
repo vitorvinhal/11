@@ -6,6 +6,15 @@
 
 export { agentLoop, executeToolCall } from './agent-core';
 export { executeTool } from './tool-executor';
+export {
+  createSession,
+  getSession,
+  updateSessionStatus,
+  listActiveSessions,
+  addMessage,
+  getMessages,
+  expireOldSessions,
+} from './session-manager';
 
 export type {
   AgentContext,
@@ -21,3 +30,11 @@ export type {
   ExecutionResult,
   ExecutionStatus,
 } from './tool-executor';
+
+export type {
+  AgentSession,
+  SessionMessage,
+  CreateSessionInput,
+  AddMessageInput,
+  SessionStatus,
+} from './session-manager';
