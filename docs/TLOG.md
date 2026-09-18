@@ -4,6 +4,21 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v2.0.0-alpha — 2026-09-17
+
+### FASE 16 — Monitoring & Observability
+
+- **`apps/web/src/lib/logger.ts`** — Logger estruturado (JSON/legível)
+- **`apps/web/src/lib/error-tracking.ts`** — Rastreamento de erros + middleware
+- **`apps/web/src/lib/performance.ts`** — Monitoramento de performance
+- **13 novos testes** para módulos de monitoramento
+
+### Testes
+
+- 309 testes passando (254 IA + 55 web)
+
+---
+
 ## v1.9.0-alpha — 2026-09-17
 
 ### FASE 15 — CI/CD Improvements

@@ -20,6 +20,28 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.0.0-alpha — 2026-09-17
+
+### 📊 FASE 16 — Monitoring & Observability
+
+- **`logger.ts`**: Logger estruturado com formatação JSON (produção) e legível (dev)
+  - Níveis: debug, info, warn, error
+  - Timer para métricas de performance
+  - Sub-loggers com contexto fixo
+- **`error-tracking.ts`**: Rastreamento de erros com:
+  - IDs únicos para cada erro
+  - Severidade automática (low/medium/high/critical)
+  - Middleware `withErrorTracking` para API routes
+  - Handlers globais para erros não capturados
+- **`performance.ts`**: Monitoramento de performance com:
+  - Métricas de latência por request
+  - Headers `X-Response-Time`
+  - Tracking de requests lentos (> 1s)
+  - Resumo de performance (avg, p95, error rate)
+- **13 novos testes** para módulos de monitoramento
+
+---
+
 ## v1.9.0-alpha — 2026-09-17
 
 ### 🚀 FASE 15 — CI/CD Improvements
