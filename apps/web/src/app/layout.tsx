@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "monaco-editor/min/vs/editor/editor.main.css";
 import { AstroSphere } from "../components/AstroSphere";
 import { Providers } from "./providers";
 import { ThemeProvider } from "../components/ThemeProvider";

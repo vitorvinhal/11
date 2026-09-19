@@ -1,6 +1,6 @@
 {
   "name": "@11/ia",
-  "version": "2.10.6-alpha",
+  "version": "2.10.7-alpha",
   "private": true,
   "main": "dist/index.js",
   "scripts": {

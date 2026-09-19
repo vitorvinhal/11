@@ -20,6 +20,13 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.7-alpha — 2026-09-19
+
+- Eleven Code agora usa Monaco Editor (portado do Orca/stablyai): syntax highlight real, minimap, busca com seed da seleção, fontes JetBrains Mono, multi-arquivo
+- Novo module `lib/monaco-setup.ts` (workers JSON/CSS/HTML/TS + linguagens Vue/Svelte/Astro/Nim/JSONL + aliases shell) portado do Orca
+- Adicionadas deps `monaco-editor@^0.55.1`, `@monaco-editor/react@^4.7.0`, `vscode-textmate`, `vscode-oniguruma`, `@xterm/addon-search@0.16.0`
+- `layout.tsx` importa `monaco-editor` css global
+
 ## v2.10.6-alpha — 2026-09-19
 
 - Import third-party skill libraries: mattpocock-skills (engineering/productivity) + OpenMontage (agentic video production)
