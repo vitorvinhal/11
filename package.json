@@ -1,6 +1,6 @@
 {
   "name": "11",
-  "version": "2.10.13-alpha",
+  "version": "2.10.14-alpha",
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "engines": {
@@ -46,6 +46,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",
+    "esbuild": "^0.25.12",
     "eslint": "^8",
     "husky": "^9.1.7",
     "jest": "^29",

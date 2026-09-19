@@ -6,12 +6,9 @@ import type {
   IRawGrammar,
   StateStack,
 } from "vscode-textmate";
-// Next/webpack não lida com `?url` de node_modules; o padrão `new URL` do webpack 5
-// emite o asset como estático e devolve a URL pública.
-const onigurumaWasmUrl = new URL(
-  "vscode-oniguruma/release/onig.wasm",
-  import.meta.url,
-).toString();
+// Wasm do oniguruma: pré-bundlado por `scripts/build-monaco-workers.mjs` e servido de
+// `public/vs/onig.wasm` — fora do asset-emit do webpack.
+const onigurumaWasmUrl = "/vs/onig.wasm";
 
 type TextMateTokensProvider = Monaco.languages.TokensProvider;
 

@@ -46,3 +46,7 @@ _*.png
 
 # UI test screenshots (local evidence, not source)
 apps/web/_shots/
+
+# Workers/wasm do Monaco gerados no build
+apps/web/public/vs/
+

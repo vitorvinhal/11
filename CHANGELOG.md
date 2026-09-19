@@ -20,6 +20,13 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.14-alpha — 2026-09-19
+
+- Fix definitivo build Vercel (`Hash.update(undefined)`): workers do Monaco deixam de ser assets do webpack
+- Novo `scripts/build-monaco-workers.mjs` (esbuild): pré-bundle standalone dos 5 workers + `onig.wasm` → `apps/web/public/vs/`
+- `monaco-setup.ts`/`textmate-token-provider.ts` apontam para `/vs/*` (sem `new URL(..., import.meta.url)`)
+- `apps/web/public/vs/` adicionado ao `.gitignore` (gerado no build); `esbuild` no root devDeps
+
 ## v2.10.13-alpha — 2026-09-19
 
 - Fix build Vercel intermitente (`uncaughtException Hash.update(undefined)` no webpack do Next 13.5, erro de cache incremental)
