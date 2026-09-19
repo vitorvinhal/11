@@ -1,6 +1,7 @@
 {
   "version": 2,
+  "framework": "nextjs",
+  "rootDirectory": "apps/web",
   "installCommand": "corepack enable && corepack use pnpm@8.15.9 && pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/web build",
-  "framework": "nextjs"
+  "buildCommand": "pnpm --filter @11/shared build && pnpm --filter @11/ia build && pnpm --filter @11/web build"
 }

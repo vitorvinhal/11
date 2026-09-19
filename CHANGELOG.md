@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.10-alpha — 2026-09-19
+
+- Deploy fix: monorepo rootDirectory apps/web (Next builder encontra .next) + vercel.json alinhado
+
 ## v2.10.9-alpha — 2026-09-19
 
 - Novo `TerminalPane.tsx`: terminal xterm integrado reutilizável (REST+SSE, busca Ctrl+F via addon-search) — estilo Orca

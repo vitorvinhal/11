@@ -1,9 +1,9 @@
 {
-  "version": "2.10.9-alpha",
-  "versionCode": 10,
+  "version": "2.10.10-alpha",
+  "versionCode": 11,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Deploy fix: remover outputDirectory de vercel.json (builder Next em vez de file-serving estatico)"
+    "Deploy fix: monorepo rootDirectory apps/web (Next builder encontra .next) + vercel.json alinhado"
   ]
 }
