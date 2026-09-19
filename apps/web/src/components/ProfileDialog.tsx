@@ -12,6 +12,15 @@ import {
   Lock,
   Puzzle,
   Smartphone,
+  Key,
+  Mail,
+  AlertTriangle,
+  Download,
+  Eye,
+  EyeOff,
+  Globe,
+  Cog,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { SkillsPanel } from "./SkillsPanel";
@@ -69,15 +78,9 @@ export function ProfileDialog({
   const [dataBusy, setDataBusy] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [accountMsg, setAccountMsg] = useState("");
   const [accountBusy, setAccountBusy] = useState(false);
-  const [stats, setStats] = useState<{
-    memories: number;
-    skills: number;
-    projects: number;
-    media: number;
-    sessions: number;
-  } | null>(null);
   const [customizeTab, setCustomizeTab] = useState<
     "skills" | "connectors" | "plugins"
   >("skills");
@@ -238,41 +241,6 @@ export function ProfileDialog({
     setDataBusy(false);
   };
 
-  const loadStats = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await getAccessToken();
-      const auth = { Authorization: `Bearer ${token}` };
-      const [mem, sk, proj, media] = await Promise.all([
-        fetch(`/api/memories?userId=${user.id}`, { headers: auth })
-          .then((r) => r.json())
-          .catch(() => []),
-        fetch(`/api/skills?userId=${user.id}`, { headers: auth })
-          .then((r) => r.json())
-          .catch(() => []),
-        fetch(`/api/projects?userId=${user.id}`, { headers: auth })
-          .then((r) => r.json())
-          .catch(() => []),
-        fetch(`/api/media?userId=${user.id}`, { headers: auth })
-          .then((r) => r.json())
-          .catch(() => []),
-      ]);
-      setStats({
-        memories: Array.isArray(mem) ? mem.length : 0,
-        skills: Array.isArray(sk) ? sk.length : 0,
-        projects: Array.isArray(proj) ? proj.length : 0,
-        media: Array.isArray(media) ? media.length : 0,
-        sessions: 0,
-      });
-    } catch {
-      /* ignore */
-    }
-  }, [user, getAccessToken]);
-
-  useEffect(() => {
-    if (open && settingsTab === "sessions" && user) void loadStats();
-  }, [open, settingsTab, user, loadStats]);
-
   const saveProfile = async () => {
     await supabase.auth.updateUser({ data: { name, callYou, instructions } });
     if (user) {
@@ -356,21 +324,32 @@ export function ProfileDialog({
           className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-text-muted transition hover:text-text-primary"
           aria-label="Configurações"
         >
-          <Cpu className="h-4 w-4" />
+          <Cog className="h-4 w-4" />
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm" />
         <Dialog.Content className="glass-card fixed inset-0 z-50 flex flex-col overflow-hidden rounded-none md:left-1/2 md:top-1/2 md:h-[86vh] md:w-[92vw] md:max-w-4xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
-          {" "}
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-            <Dialog.Title className="text-base font-semibold text-text-primary">
-              Settings
-            </Dialog.Title>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10">
+                <Cog className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <Dialog.Title className="text-sm font-semibold text-text-primary">
+                  Settings
+                </Dialog.Title>
+                <p className="text-[10px] text-text-dim">
+                  v{appVersion || "…"}
+                </p>
+              </div>
+            </div>
             <Dialog.Close className="grid h-7 w-7 place-items-center rounded-lg text-text-dim transition hover:bg-white/6 hover:text-text-primary">
               <X className="h-4 w-4" />
             </Dialog.Close>
           </div>
+
           {/* Mobile tabs */}
           <div className="flex overflow-x-auto border-b border-white/[0.06] md:hidden no-scrollbar">
             {settingsNav.map((item) => (
@@ -383,6 +362,7 @@ export function ProfileDialog({
               </button>
             ))}
           </div>
+
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">
             {/* Desktop sidebar */}
             <div className="hidden w-52 shrink-0 flex-col border-r border-white/[0.06] md:flex">
@@ -406,69 +386,81 @@ export function ProfileDialog({
               </nav>
             </div>
 
+            {/* Content */}
             <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-              {/* GENERAL */}
+              {/* ── GENERAL ── */}
               {settingsTab === "general" && (
-                <div className="space-y-6">
+                <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Profile
+                    Perfil
                   </h2>
-                  <AvatarUpload />
-                  <div className="space-y-3">
+
+                  {/* Avatar */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <AvatarUpload />
+                  </div>
+
+                  {/* Form */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
-                        Full name
+                      <label className="mb-1 block text-[11px] font-medium text-text-muted">
+                        Nome completo
                       </label>
                       <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Seu nome"
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
-                        What should Eleven call you?
+                      <label className="mb-1 block text-[11px] font-medium text-text-muted">
+                        Como o Eleven deve te chamar
                       </label>
                       <input
                         value={callYou}
                         onChange={(e) => setCallYou(e.target.value)}
-                        placeholder="Como quer ser chamado"
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        placeholder="Apelido"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
-                        Instructions for Eleven
+                      <label className="mb-1 block text-[11px] font-medium text-text-muted">
+                        Instruções para o Eleven
                       </label>
                       <textarea
                         value={instructions}
                         onChange={(e) => setInstructions(e.target.value)}
-                        placeholder="e.g. keep explanations brief and to the point"
+                        placeholder="Ex: responda sempre em português, seja direto..."
                         rows={3}
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary placeholder:text-text-dim outline-none resize-none"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary placeholder:text-text-dim outline-none resize-none focus:border-primary/30 transition"
                       />
                     </div>
                   </div>
 
-                  <div className="border-t border-white/[0.06] pt-4">
-                    <h3 className="text-sm font-semibold text-text-primary mb-2">
-                      Changelog · v{appVersion || "…"}
-                    </h3>
-                    <ul className="space-y-1">
-                      {(changelog ?? []).map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-start gap-2 text-[11px] text-text-dim"
-                        >
-                          <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {/* Changelog */}
+                  {changelog && changelog.length > 0 && (
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                      <h3 className="text-xs font-semibold text-text-primary mb-2 flex items-center gap-2">
+                        <Zap className="h-3.5 w-3.5 text-primary" />
+                        Changelog
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {changelog.map((item) => (
+                          <li
+                            key={item}
+                            className="flex items-start gap-2 text-[11px] text-text-dim"
+                          >
+                            <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                  <div className="border-t border-white/[0.06] pt-4 flex gap-2">
+                  {/* Actions */}
+                  <div className="flex gap-2">
                     <button
                       onClick={saveProfile}
                       className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
@@ -507,25 +499,40 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* ACCOUNT */}
+              {/* ── ACCOUNT ── */}
               {settingsTab === "account" && (
-                <div className="space-y-6">
+                <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
                     Conta
                   </h2>
-                  <div className="rounded-xl bg-white/[0.04] p-3 text-xs text-text-dim">
-                    {user?.email}
+
+                  {/* Current email */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-text-primary">
+                        E-mail atual
+                      </span>
+                    </div>
+                    <div className="rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-text-muted">
+                      {user?.email}
+                    </div>
                   </div>
-                  <div className="rounded-xl bg-white/[0.04] p-4 space-y-3">
-                    <div className="text-sm font-medium text-text-primary">
-                      Alterar e-mail
+
+                  {/* Change email */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-white/40" />
+                      <span className="text-xs font-medium text-text-primary">
+                        Alterar e-mail
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <input
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
                         placeholder="novo@email.com"
-                        className="flex-1 rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        className="flex-1 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                       <button
                         onClick={() => void changeEmail()}
@@ -536,18 +543,35 @@ export function ProfileDialog({
                       </button>
                     </div>
                   </div>
-                  <div className="rounded-xl bg-white/[0.04] p-4 space-y-3">
-                    <div className="text-sm font-medium text-text-primary">
-                      Alterar senha
+
+                  {/* Change password */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Key className="h-4 w-4 text-white/40" />
+                      <span className="text-xs font-medium text-text-primary">
+                        Alterar senha
+                      </span>
                     </div>
                     <div className="flex gap-2">
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Nova senha (mín. 6)"
-                        className="flex-1 rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
-                      />
+                      <div className="relative flex-1">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Nova senha (mín. 6)"
+                          className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 pr-8 text-sm text-text-primary outline-none focus:border-primary/30 transition"
+                        />
+                        <button
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                       <button
                         onClick={() => void changePassword()}
                         disabled={accountBusy}
@@ -557,20 +581,35 @@ export function ProfileDialog({
                       </button>
                     </div>
                   </div>
+
                   {accountMsg && (
-                    <p className="text-xs text-emerald-400">{accountMsg}</p>
-                  )}
-                  <div className="rounded-xl bg-rose-500/[0.06] p-4">
-                    <div className="text-sm font-medium text-rose-300">
-                      Excluir conta
+                    <div
+                      className={`rounded-lg px-3 py-2 text-xs ${
+                        accountMsg.startsWith("Erro")
+                          ? "bg-rose-500/10 text-rose-400"
+                          : "bg-emerald-500/10 text-emerald-400"
+                      }`}
+                    >
+                      {accountMsg}
                     </div>
-                    <p className="mt-1 text-xs text-text-muted">
-                      Apaga permanentemente sua conta e todos os dados.
+                  )}
+
+                  {/* Danger zone */}
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="h-4 w-4 text-rose-400" />
+                      <span className="text-sm font-medium text-rose-300">
+                        Zona de perigo
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-muted mb-3">
+                      Apaga permanentemente sua conta e todos os dados. Esta
+                      ação é irreversível.
                     </p>
                     <button
                       onClick={() => void deleteAccount()}
                       disabled={accountBusy}
-                      className="mt-2 rounded-lg bg-rose-500/20 px-4 py-2 text-xs text-rose-300 hover:bg-rose-500/30 transition disabled:opacity-40"
+                      className="rounded-lg bg-rose-500/20 px-4 py-2 text-xs text-rose-300 hover:bg-rose-500/30 transition disabled:opacity-40"
                     >
                       {accountBusy ? "Processando…" : "Excluir minha conta"}
                     </button>
@@ -578,47 +617,94 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* APPEARANCE */}
+              {/* ── APPEARANCE ── */}
               {settingsTab === "appearance" && (
-                <div className="space-y-6">
+                <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
                     Aparência
                   </h2>
-                  <div className="rounded-xl bg-white/[0.04] p-4 space-y-4">
-                    <div>
-                      <div className="text-sm font-medium text-text-primary mb-2">
-                        Tema
-                      </div>
-                      <div className="flex rounded-lg bg-white/[0.04] p-0.5">
-                        {(["dark", "light", "system"] as const).map((a) => (
-                          <button
-                            key={a}
-                            onClick={() => setAppearance(a)}
-                            className={`flex-1 rounded-md px-3 py-2 text-xs transition ${appearance === a ? "bg-white/10 text-text-primary" : "text-text-dim hover:text-text-muted"}`}
-                          >
-                            {a === "dark"
-                              ? "Dark"
-                              : a === "light"
-                                ? "Light"
-                                : "System"}
-                          </button>
-                        ))}
-                      </div>
+
+                  {/* Theme */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                    <span className="text-xs font-medium text-text-primary">
+                      Tema
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        {
+                          key: "dark" as const,
+                          label: "Dark",
+                          preview: "bg-[#05050A]",
+                        },
+                        {
+                          key: "light" as const,
+                          label: "Light",
+                          preview: "bg-[#f7f7f8]",
+                        },
+                        {
+                          key: "system" as const,
+                          label: "System",
+                          preview:
+                            "bg-gradient-to-r from-[#05050A] to-[#f7f7f8]",
+                        },
+                      ].map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setAppearance(t.key)}
+                          className={`rounded-xl border p-3 transition text-center ${
+                            appearance === t.key
+                              ? "border-primary/40 bg-primary/[0.06]"
+                              : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <div
+                            className={`h-8 w-full rounded-lg mb-2 ${t.preview} border border-white/[0.06]`}
+                          />
+                          <span className="text-[11px] text-text-muted">
+                            {t.label}
+                          </span>
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-muted">Chat font</span>
+                  </div>
+
+                  {/* Chat font */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-medium text-text-primary">
+                        Fonte do chat
+                      </span>
                       <select
                         value={chatFont}
                         onChange={(e) => setChatFont(e.target.value)}
-                        className="rounded-lg bg-white/[0.05] px-3 py-1.5 text-xs text-text-primary outline-none"
+                        className="rounded-lg bg-white/[0.06] border border-white/[0.06] px-3 py-1.5 text-xs text-text-primary outline-none"
                       >
                         <option value="system">System</option>
                         <option value="serif">Serif</option>
                         <option value="mono">Mono</option>
                       </select>
                     </div>
+                    <div
+                      className="rounded-lg bg-white/[0.03] p-2 text-xs text-text-dim"
+                      style={{
+                        fontFamily:
+                          chatFont === "serif"
+                            ? "Georgia, serif"
+                            : chatFont === "mono"
+                              ? "JetBrains Mono, monospace"
+                              : "inherit",
+                      }}
+                    >
+                      The quick brown fox jumps over the lazy dog
+                    </div>
+                  </div>
+
+                  {/* Motion */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-muted">Motion</span>
+                      <span className="text-xs font-medium text-text-primary">
+                        Animações
+                      </span>
                       <div className="flex rounded-lg bg-white/[0.04] p-0.5">
                         {(["system", "reduced"] as const).map((m) => (
                           <button
@@ -631,18 +717,27 @@ export function ProfileDialog({
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-text-muted">
-                        Code font
-                      </label>
-                      <input
-                        value={codeFont}
-                        onChange={(e) => setCodeFont(e.target.value)}
-                        placeholder="JetBrains Mono"
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
-                      />
+                  </div>
+
+                  {/* Code font */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <label className="mb-2 block text-xs font-medium text-text-primary">
+                      Fonte do código
+                    </label>
+                    <input
+                      value={codeFont}
+                      onChange={(e) => setCodeFont(e.target.value)}
+                      placeholder="JetBrains Mono"
+                      className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
+                    />
+                    <div
+                      className="mt-2 rounded-lg bg-white/[0.03] p-2 text-xs text-text-dim"
+                      style={{ fontFamily: codeFont || "monospace" }}
+                    >
+                      {"const hello = () => 'world';"}
                     </div>
                   </div>
+
                   <button
                     onClick={saveProfile}
                     className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
@@ -652,15 +747,24 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* AI PROVIDER */}
+              {/* ── AI PROVIDER ── */}
               {settingsTab === "ai" && (
-                <div className="space-y-6">
+                <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
                     IA Provider
                   </h2>
-                  <div className="rounded-xl bg-white/[0.04] p-4 space-y-3">
+
+                  {/* API Keys */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Key className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-text-primary">
+                        Chaves de API
+                      </span>
+                    </div>
+
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
+                      <label className="mb-1 block text-[11px] text-text-muted">
                         Gemini API Key
                       </label>
                       <input
@@ -668,11 +772,11 @@ export function ProfileDialog({
                         value={geminiKey}
                         onChange={(e) => setGeminiKey(e.target.value)}
                         placeholder="AIza..."
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
+                      <label className="mb-1 block text-[11px] text-text-muted">
                         Anthropic API Key
                       </label>
                       <input
@@ -680,11 +784,11 @@ export function ProfileDialog({
                         value={anthropicKey}
                         onChange={(e) => setAnthropicKey(e.target.value)}
                         placeholder="sk-ant-..."
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-text-muted">
+                      <label className="mb-1 block text-[11px] text-text-muted">
                         9Router Endpoint + Key
                       </label>
                       <input
@@ -692,9 +796,10 @@ export function ProfileDialog({
                         value={nineRouterKey}
                         onChange={(e) => setNineRouterKey(e.target.value)}
                         placeholder="endpoint|chave"
-                        className="w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-text-primary outline-none"
+                        className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                       />
                     </div>
+
                     <button
                       onClick={saveKeys}
                       className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
@@ -702,94 +807,94 @@ export function ProfileDialog({
                       {keysSaved ? "Salvo ✓" : "Salvar chaves"}
                     </button>
                   </div>
-                  <div className="border-t border-white/[0.06] pt-4">
-                    <h3 className="text-sm font-semibold text-text-primary mb-3">
-                      Ollama (local)
-                    </h3>
+
+                  {/* Ollama */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Globe className="h-4 w-4 text-white/40" />
+                      <span className="text-xs font-medium text-text-primary">
+                        Ollama (local)
+                      </span>
+                    </div>
                     <OllamaPanel />
                   </div>
                 </div>
               )}
 
-              {/* SESSIONS */}
+              {/* ── SESSIONS ── */}
               {settingsTab === "sessions" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-semibold text-text-primary">
-                    Sessões
-                  </h2>
-                  <SessionsPanel />
-                  <div className="border-t border-white/[0.06] pt-4">
-                    <h3 className="text-sm font-semibold text-text-primary mb-2">
-                      Reflect
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {[
-                        { label: "Memórias", value: stats?.memories },
-                        { label: "Skills", value: stats?.skills },
-                        { label: "Projetos", value: stats?.projects },
-                        { label: "Mídia", value: stats?.media },
-                      ].map((s) => (
-                        <div
-                          key={s.label}
-                          className="rounded-lg bg-white/[0.04] p-3 text-center"
-                        >
-                          <div className="text-xl font-semibold text-primary">
-                            {s.value ?? "—"}
-                          </div>
-                          <div className="mt-0.5 text-[10px] uppercase tracking-wider text-text-dim">
-                            {s.label}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="text-lg font-semibold text-text-primary">
+                      Sessões
+                    </h2>
+                    <p className="text-[11px] text-text-dim mt-0.5">
+                      Gerencie seus dispositivos e sessões ativas
+                    </p>
                   </div>
+                  <SessionsPanel />
                 </div>
               )}
 
-              {/* PRIVACY */}
+              {/* ── PRIVACY ── */}
               {settingsTab === "privacy" && (
-                <div className="space-y-6">
+                <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
                     Privacidade
                   </h2>
-                  <div className="flex items-center justify-between rounded-xl bg-white/[0.04] p-4">
-                    <div>
-                      <div className="text-sm text-text-primary">
-                        Modo Incognito
+
+                  {/* Incognito */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-text-primary">
+                            Modo Incognito
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-text-muted">
+                          Conversa sem memória — para assuntos sensíveis.
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-text-muted">
-                        Conversa sem memória — para assuntos sensíveis.
-                      </p>
-                    </div>
-                    <div
-                      className={`h-5 w-9 shrink-0 rounded-full transition ${incognito ? "bg-primary" : "bg-white/10"} relative cursor-pointer`}
-                      onClick={() => setIncognito(!incognito)}
-                    >
                       <div
-                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${incognito ? "left-[18px]" : "left-0.5"}`}
-                      />
+                        className={`h-5 w-9 shrink-0 rounded-full transition ${incognito ? "bg-primary" : "bg-white/10"} relative cursor-pointer`}
+                        onClick={() => setIncognito(!incognito)}
+                      >
+                        <div
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${incognito ? "left-[18px]" : "left-0.5"}`}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white/[0.04] p-4">
-                    <div className="text-sm font-medium text-text-primary">
-                      Exportar dados
+                  {/* Export */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Download className="h-4 w-4 text-white/40" />
+                      <span className="text-sm font-medium text-text-primary">
+                        Exportar dados
+                      </span>
                     </div>
-                    <p className="mt-1 text-xs text-text-muted">
+                    <p className="text-[11px] text-text-muted mb-3">
                       Baixe tudo (memórias, skills, projetos, mídia) em JSON.
                     </p>
                     <button
                       onClick={() => void exportData()}
                       disabled={dataBusy}
-                      className="mt-2 rounded-lg bg-white/[0.06] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] hover:text-text-primary transition disabled:opacity-40"
+                      className="rounded-lg bg-white/[0.06] border border-white/[0.06] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] hover:text-text-primary transition disabled:opacity-40"
                     >
                       {dataBusy ? "Exportando…" : "Exportar meus dados"}
                     </button>
                   </div>
 
-                  <div className="rounded-xl bg-white/[0.04] p-4">
-                    <div className="text-sm font-medium text-text-primary mb-2">
-                      Capabilities
+                  {/* Capabilities */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Zap className="h-4 w-4 text-white/40" />
+                      <span className="text-sm font-medium text-text-primary">
+                        Capabilities
+                      </span>
                     </div>
                     {(
                       [
@@ -803,7 +908,7 @@ export function ProfileDialog({
                     ).map((cap) => (
                       <div
                         key={cap.key}
-                        className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0"
+                        className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-0"
                       >
                         <span className="text-sm text-text-primary">
                           {cap.label}
@@ -830,7 +935,7 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* CUSTOMIZE */}
+              {/* ── CUSTOMIZE ── */}
               {settingsTab === "customize" && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-text-primary">
