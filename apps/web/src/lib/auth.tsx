@@ -1,15 +1,25 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
+import { getPlatform } from "./platform";
 
 let cachedClient: SupabaseClient | null = null;
 
 function getSupabase(): SupabaseClient {
   if (cachedClient) return cachedClient;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-  cachedClient = createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  cachedClient = createClient(
+    url || "https://placeholder.supabase.co",
+    key || "placeholder",
+  );
   return cachedClient;
 }
 
@@ -26,16 +36,50 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function registerDeviceSession(token: string) {
+  try {
+    const platform = getPlatform();
+    const browser =
+      typeof navigator !== "undefined"
+        ? (navigator.userAgent.split(" ").pop() ?? "unknown")
+        : "unknown";
+    const device =
+      typeof navigator !== "undefined"
+        ? navigator.platform || "unknown"
+        : "unknown";
+
+    await fetch("/api/devices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ platform, device, browser }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user ?? null;
+      setUser(u);
+      if (data.session?.access_token) {
+        void registerDeviceSession(data.session.access_token);
+      }
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.access_token) {
+        void registerDeviceSession(session.access_token);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [supabase]);
@@ -46,19 +90,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     return { error: error?.message };
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: { redirectTo: window.location.origin },
     });
     return { error: error?.message };
   };
 
-  const signOut = async () => { await supabase.auth.signOut(); };
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const getAccessToken = async (): Promise<string | null> => {
     const { data } = await supabase.auth.getSession();
@@ -66,7 +115,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ supabase, user, loading, signUp, signIn, signInWithGoogle, signOut, getAccessToken }}>
+    <AuthContext.Provider
+      value={{
+        supabase,
+        user,
+        loading,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        getAccessToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -74,6 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth deve ser usado dentro de <AuthProvider>');
+  if (!ctx) throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
   return ctx;
 }
