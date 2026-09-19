@@ -18,6 +18,14 @@ loadRootEnv();
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function safeParseJson(raw: string): Record<string, unknown> {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 interface PluginBody {
   pluginId?: string;
   id?: string;
@@ -48,7 +56,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await sb
       .from("plugins")
-      .select("id, name, description, author, enabled, config, created_at")
+      .select("id, name, description, author, enabled, metadata, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -57,15 +65,20 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      plugins: (data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        author: p.author,
-        enabled: p.enabled,
-        config: JSON.parse(p.config ?? "{}"),
-        createdAt: p.created_at,
-      })),
+      plugins: (data ?? []).map((p) => {
+        const raw = p.metadata;
+        const metadata =
+          typeof raw === "string" ? safeParseJson(raw) : (raw ?? {});
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          author: p.author,
+          enabled: p.enabled,
+          config: metadata,
+          createdAt: p.created_at,
+        };
+      }),
     });
   } catch (err) {
     return NextResponse.json(
@@ -116,7 +129,7 @@ export async function POST(req: Request) {
         // Já instalado — apenas habilitar
         await sb
           .from("plugins")
-          .update({ enabled: true, config: JSON.stringify(config ?? {}) })
+          .update({ enabled: true, metadata: config ?? {} })
           .eq("id", pluginId)
           .eq("user_id", userId);
       } else {
@@ -128,7 +141,7 @@ export async function POST(req: Request) {
           description: body.description ?? `Plugin ${pluginId}`,
           author: body.author ?? "community",
           enabled: body.enabled ?? true,
-          config: JSON.stringify(config ?? {}),
+          metadata: config ?? {},
         });
       }
 

@@ -72,8 +72,9 @@ async function callPCAgent(
   try {
     const res = await fetch(`${PC_AGENT_BASE}${endpoint}`, {
       method,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(data),
+      headers:
+        method === "GET" ? undefined : { "content-type": "application/json" },
+      body: method === "GET" ? undefined : JSON.stringify(data),
       signal: controller.signal,
     });
 
@@ -225,8 +226,12 @@ export async function GET(req: Request) {
       callPCAgent("/health", "GET", {}),
     ]);
 
+    const failedCount = [router9Health.status, pcAgentHealth.status].filter(
+      (s) => s === "rejected",
+    ).length;
+
     return NextResponse.json({
-      status: "ok",
+      status: failedCount === 0 ? "ok" : "degraded",
       router9:
         router9Health.status === "fulfilled"
           ? router9Health.value

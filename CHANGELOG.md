@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.5-alpha — 2026-09-19
+
+- Fix health/admin dashboards, plugins config->metadata, pc-agent health, CSP allowlist CDN
+
 ## v2.10.4-alpha — 2026-09-19
 
 - Fix Tauri desktop app detection: withGlobalTauri + multiple detection signals
