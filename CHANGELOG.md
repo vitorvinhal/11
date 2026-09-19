@@ -20,9 +20,14 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.11-alpha — 2026-09-19
+
+- Fix deploy Vercel: removida propriedade `rootDirectory` do `vercel.json` (inválida no schema atual) — root está no project settings; deploys automáticos do GitHub voltaram a passar
+- Produção atualizada: `11-app-sage.vercel.app`
+
 ## v2.10.10-alpha — 2026-09-19
 
-- Deploy fix: monorepo rootDirectory apps/web (Next builder encontra .next) + vercel.json alinhado
+- Sem notas de release.
 
 ## v2.10.9-alpha — 2026-09-19
 
