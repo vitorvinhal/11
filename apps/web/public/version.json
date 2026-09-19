@@ -1,17 +1,7 @@
 {
-  "version": "2.10.0-alpha",
-  "versionCode": 1,
+  "version": "2.10.2-alpha",
+  "versionCode": 3,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
-  "changelog": [
-    "OpenRouter provider + perfis de roteamento cost/latency/quality",
-    "Modo comparacao lado a lado /api/compare (ate 3 modelos)",
-    "Memoria auditavel: supersede + memory_events + paginas /memoria /contexto",
-    "/reverter: rollback de checkpoints com before_state",
-    "FinOps: /api/finops + CostBreaker com custos reais por provedor",
-    "Migrations 20240927: action_risk_rules, tenant_vault, memories origin/scope/superseded",
-    "PWA offline: SW + fila IndexedDB + Background Sync + banner GATEWAY_UNAVAILABLE",
-    "UI Astra: fundo #05050A, glassmorphism, sidebar por data, rotas /coder /canvas /neural /memoria",
-    "Ajustes: vector(768) unificado, CLI templates, mobile noEmit, .env OPENROUTER_*"
-  ]
+  "changelog": ["Add Vercel Analytics + Speed Insights"]
 }

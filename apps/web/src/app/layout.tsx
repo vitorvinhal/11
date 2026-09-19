@@ -3,6 +3,8 @@ import { AstroSphere } from "../components/AstroSphere";
 import { Providers } from "./providers";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { ServiceWorkerRegister } from "../components/ServiceWorkerRegister";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ReactNode } from "react";
 
 export const metadata = {
@@ -32,6 +34,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AstroSphere />
           <ServiceWorkerRegister />
           <Providers>{children}</Providers>
+          <Analytics />
+          <SpeedInsights />
           <div className="noise-overlay" aria-hidden />
         </ThemeProvider>
       </body>
