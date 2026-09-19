@@ -22,15 +22,16 @@ async function lookupGeo(ip: string): Promise<{
   try {
     if (!ip || ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1")
       return { city: "Local", country: "Local", country_code: "LC" };
-    const res = await fetch(`https://ipapi.co/${ip}/json/`, {
+    const res = await fetch(`https://ipinfo.io/${ip}/json`, {
       signal: AbortSignal.timeout(2000),
     });
     if (!res.ok) return { city: null, country: null, country_code: null };
     const d = await res.json();
+    const cc = d.country ?? null;
     return {
       city: d.city ?? null,
-      country: d.country_name ?? null,
-      country_code: d.country_code ?? null,
+      country: d.region ?? cc,
+      country_code: cc,
     };
   } catch {
     return { city: null, country: null, country_code: null };
@@ -60,6 +61,37 @@ export async function GET(req: Request) {
       .order("last_active", { ascending: false });
 
     if (error) return NextResponse.json({ sessions: [], metrics: null });
+
+    // Backfill IP/geo for sessions missing it (non-blocking)
+    const ip = getClientIp(req);
+    if (ip) {
+      const needsGeo = (sessions ?? []).filter(
+        (s) => !s.ip_address && s.user_id === auth.userId,
+      );
+      if (needsGeo.length > 0) {
+        const geo = await lookupGeo(ip);
+        void Promise.all(
+          needsGeo.map((s) =>
+            client
+              .from("device_sessions")
+              .update({
+                ip_address: ip,
+                ...(geo.city ? { city: geo.city } : {}),
+                ...(geo.country ? { country: geo.country } : {}),
+                ...(geo.country_code ? { country_code: geo.country_code } : {}),
+              })
+              .eq("id", s.id),
+          ),
+        );
+        // Update local data too
+        for (const s of needsGeo) {
+          if (geo.city) s.city = geo.city;
+          if (geo.country) s.country = geo.country;
+          if (geo.country_code) s.country_code = geo.country_code;
+          s.ip_address = ip;
+        }
+      }
+    }
 
     // Activity log (last 24h)
     const twentyFourHAgo = new Date(
