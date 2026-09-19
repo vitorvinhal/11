@@ -20,9 +20,15 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.9-alpha — 2026-09-19
+
+- Novo `TerminalPane.tsx`: terminal xterm integrado reutilizável (REST+SSE, busca Ctrl+F via addon-search) — estilo Orca
+- Eleven Code (CodePanel): split editor+terminal (botão Terminal / Ctrl+`), mesmo conceito do workbench do Orca
+- Eleven Coder: busca no buffer com `@xterm/addon-search` (Ctrl+F, prev/next com wrap)
+
 ## v2.10.8-alpha — 2026-09-19
 
-- Deploy fix: remover outputDirectory de vercel.json (builder Next em vez de file-serving estatico)
+- Sem notas de release.
 
 ## v2.10.7-alpha — 2026-09-19
 

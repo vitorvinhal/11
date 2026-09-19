@@ -13,6 +13,9 @@ import {
   X,
   Zap,
   Activity,
+  Search,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 
@@ -31,6 +34,7 @@ interface TerminalSession {
 let TerminalClass: any = null;
 let FitAddonClass: any = null;
 let WebLinksAddonClass: any = null;
+let SearchAddonClass: any = null;
 
 async function loadDeps() {
   if (!TerminalClass) {
@@ -38,6 +42,12 @@ async function loadDeps() {
     TerminalClass = xterm.Terminal;
     const fit = await import("@xterm/addon-fit");
     FitAddonClass = fit.FitAddon;
+    try {
+      const search = await import("@xterm/addon-search");
+      SearchAddonClass = search.SearchAddon;
+    } catch {
+      /* ignore */
+    }
     try {
       const wl = await import("@xterm/addon-web-links");
       WebLinksAddonClass = wl.WebLinksAddon;
@@ -56,6 +66,7 @@ interface XTermHandle {
   container: HTMLElement;
   term: any;
   fitAddon: any;
+  searchAddon: any;
   busy: boolean;
   line: string;
   history: string[];
@@ -67,11 +78,14 @@ export default function ElevenCoder() {
   const { getAccessToken } = useAuth();
   const hostRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef<Map<string, XTermHandle>>(new Map());
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [sessions, setSessions] = useState<TerminalSession[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected"
   >("disconnected");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const activeRef = useRef<string>("");
   const sessionsRef = useRef<TerminalSession[]>([]);
 
@@ -209,6 +223,8 @@ export default function ElevenCoder() {
 
       const fitAddon = new FitAddonClass();
       term.loadAddon(fitAddon);
+      const searchAddon = SearchAddonClass ? new SearchAddonClass() : null;
+      if (searchAddon) term.loadAddon(searchAddon);
       try {
         if (WebLinksAddonClass) term.loadAddon(new WebLinksAddonClass());
       } catch {
@@ -221,6 +237,7 @@ export default function ElevenCoder() {
         container,
         term,
         fitAddon,
+        searchAddon,
         busy: false,
         line: "",
         history: [],
@@ -230,6 +247,11 @@ export default function ElevenCoder() {
 
       term.onData((data: string) => {
         if (handle.busy) return;
+        if (data === "\u0006") {
+          setSearchOpen(true);
+          setTimeout(() => searchInputRef.current?.focus(), 0);
+          return;
+        }
         if (data === "\u001b[A") {
           if (!handle.history.length) return;
           handle.histIdx = handle.histIdx <= 0 ? 0 : handle.histIdx - 1;
@@ -486,6 +508,16 @@ export default function ElevenCoder() {
     }
   }, [activeId]);
 
+  const findNext = useCallback(() => {
+    const h = handlesRef.current.get(activeId);
+    if (h?.searchAddon && query) h.searchAddon.findNext(query);
+  }, [activeId, query]);
+
+  const findPrevious = useCallback(() => {
+    const h = handlesRef.current.get(activeId);
+    if (h?.searchAddon && query) h.searchAddon.findPrevious(query);
+  }, [activeId, query]);
+
   const activeSession = sessions.find((s) => s.id === activeId);
 
   return (
@@ -583,6 +615,19 @@ export default function ElevenCoder() {
           >
             <RotateCw className="h-3.5 w-3.5" style={{ color: "#8f8f8f" }} />
           </button>
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            title="Buscar (Ctrl+F)"
+            className={`h-7 w-7 grid place-items-center rounded-lg transition ${
+              searchOpen ? "" : ""
+            }`}
+            style={{
+              background: searchOpen ? "#00e5ff22" : "#ffffff08",
+              color: searchOpen ? CYAN : "#8f8f8f",
+            }}
+          >
+            <Search className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
@@ -631,7 +676,69 @@ export default function ElevenCoder() {
         </button>
       </div>
 
-      <div ref={hostRef} className="min-h-0 flex-1 overflow-hidden relative" />
+      <div ref={hostRef} className="min-h-0 flex-1 overflow-hidden relative">
+        {searchOpen && (
+          <div
+            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 px-2 py-1.5"
+            style={{
+              background: "#12141c",
+              border: "1px solid #00e5ff33",
+              borderRadius: 8,
+            }}
+          >
+            <input
+              ref={searchInputRef}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (e.target.value) {
+                  const h = handlesRef.current.get(activeId);
+                  if (h?.searchAddon) h.searchAddon.findNext(e.target.value);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  findNext();
+                } else if (e.key === "Escape") {
+                  setSearchOpen(false);
+                  const h = handlesRef.current.get(activeId);
+                  try {
+                    h?.term.focus();
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              }}
+              placeholder="Buscar no buffer…"
+              spellCheck={false}
+              className="w-44 bg-transparent text-xs outline-none"
+              style={{ color: "#e6e6e6", fontFamily: FONT }}
+            />
+            <button
+              onClick={findPrevious}
+              title="Anterior"
+              className="grid h-5 w-5 place-items-center rounded transition hover:bg-white/10"
+            >
+              <ChevronUp className="h-3.5 w-3.5" style={{ color: CYAN }} />
+            </button>
+            <button
+              onClick={findNext}
+              title="Próximo"
+              className="grid h-5 w-5 place-items-center rounded transition hover:bg-white/10"
+            >
+              <ChevronDown className="h-3.5 w-3.5" style={{ color: CYAN }} />
+            </button>
+            <button
+              onClick={() => setSearchOpen(false)}
+              title="Fechar"
+              className="grid h-5 w-5 place-items-center rounded transition hover:bg-white/10"
+            >
+              <X className="h-3.5 w-3.5" style={{ color: "#8f8f8f" }} />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div
         className="flex items-center justify-between px-3 py-1.5"

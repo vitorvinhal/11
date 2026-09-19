@@ -20,6 +20,7 @@ import Editor from "@monaco-editor/react";
 import "../lib/monaco-setup";
 import { monacoFindOptions } from "../lib/monaco-find-options";
 import { MAX_TOKENIZATION_LINE_LENGTH } from "../lib/monaco-languages/monarch-embed-entry-budget";
+import TerminalPane from "./TerminalPane";
 
 interface File {
   id: string;
@@ -114,6 +115,7 @@ export default function CodePanel() {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showConsole, setShowConsole] = useState(true);
+  const [showTerminal, setShowTerminal] = useState(false);
   const [copied, setCopied] = useState(false);
   const consoleRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -319,6 +321,18 @@ export default function CodePanel() {
     consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight });
   }, [consoleEntries]);
 
+  // Toggle terminal com Ctrl+` (estilo Orca/VS Code)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "`") {
+        e.preventDefault();
+        setShowTerminal((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!activeFile) return null;
 
   return (
@@ -337,6 +351,18 @@ export default function CodePanel() {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowTerminal((v) => !v)}
+            className={`h-7 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition ${
+              showTerminal
+                ? "bg-cyan-500/15 text-cyan-300"
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+            title="Terminal integrado (Ctrl+`)"
+          >
+            <Terminal className="h-3.5 w-3.5" />
+            Terminal
+          </button>
           <button
             onClick={() => void runCode()}
             disabled={running}
@@ -558,6 +584,13 @@ export default function CodePanel() {
           )}
         </div>
       </div>
+
+      {/* Terminal integrado (split estilo Orca) */}
+      {showTerminal && (
+        <div className="border-t border-border">
+          <TerminalPane sessionId="eleven-code-panel" height={176} />
+        </div>
+      )}
     </div>
   );
 }
