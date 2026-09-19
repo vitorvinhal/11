@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { loadRootEnv } from "../../../lib/server-env";
 import { requireUser } from "../../../lib/auth-helpers";
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   try {
     const auth = await requireUser(req);
     if (!auth) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      return NextResponse.json({ error: "N�o autenticado" }, { status: 401 });
     }
     const { userId } = auth;
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const { messages, sessionId, provider } = body;
     if (!messages?.length || !sessionId) {
       return NextResponse.json(
-        { error: "messages e sessionId sÃ£o obrigatÃ³rios" },
+        { error: "messages e sessionId são obrigatórios" },
         { status: 400 },
       );
     }
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     const withMemory = body.memory
       ? await injectMemory(withSearch, userId)
       : withSearch;
-    const selected = (provider ?? "astra").toLowerCase();
+    const selected = provider ?? "astra";
     const reply = await routeByProvider(selected, withMemory, body);
     if (!reply)
       return NextResponse.json(
@@ -77,8 +77,8 @@ export async function POST(req: Request) {
         { status: 502 },
       );
 
-    // PersistÃªncia best-effort Ã© feita em ambos os modos (antes de transmitir SSE,
-    // para nÃ£o duplicar gravaÃ§Ã£o se o cliente abortar no meio).
+    // Persistência best-effort é feita em ambos os modos (antes de transmitir SSE,
+    // para não duplicar gravação se o cliente abortar no meio).
     await persistChat(body, messages, userId, sessionId, reply);
 
     if (body.stream) {
@@ -128,7 +128,7 @@ async function persistChat(
         .then(() => undefined) as Promise<unknown>,
     ];
     if (body.memory && userId) {
-      const memText = `${last.role === "user" ? "UsuÃ¡rio" : "Assistente"}: ${last.content} â†’ Resposta: ${reply}`;
+      const memText = `${last.role === "user" ? "Usuário" : "Assistente"}: ${last.content} → Resposta: ${reply}`;
       const memory = compactMemory(memText);
       if (memory) {
         ops.push(
@@ -147,23 +147,23 @@ async function persistChat(
     }
     await Promise.all(ops);
   } catch {
-    // persistÃªncia Ã© best-effort
+    // persistência é best-effort
   }
 }
 
 /**
  * SSE: transmite a resposta em deltas (efeito "digitando") e encerra com done.
- * O provedor Ã© chamado com stream:false (acima); o particionamento em chunks
+ * O provedor é chamado com stream:false (acima); o particionamento em chunks
  * acontece no servidor para entrega incremental ao cliente.
  */
 function sseChatResponse(reply: string, provider: string): Response {
   const encoder = new TextEncoder();
-  // LÃ©xica: quebra em palavras preservando espaÃ§os â€” chunks de ~6 chars com
-  // partÃ­culas pequenas (2-4) para efeito natural de digitaÃ§Ã£o.
+  // Léxica: quebra em palavras preservando espaços — chunks de ~6 chars com
+  // partículas pequenas (2-4) para efeito natural de digitação.
   const chunks: string[] = [];
   const words = reply.match(/\S+\s*/g) ?? [];
   for (const w of words) {
-    // Divide cada "palavra+espaÃ§o" em pedaÃ§os de atÃ© 3 chars (sem regex flag s).
+    // Divide cada "palavra+espaço" em pedaços de até 3 chars (sem regex flag s).
     for (let i = 0; i < w.length; i += 3) chunks.push(w.slice(i, i + 3));
   }
   if (!chunks.length) chunks.push("");
@@ -182,7 +182,7 @@ function sseChatResponse(reply: string, provider: string): Response {
               `event: delta\ndata: ${JSON.stringify({ content: c })}\n\n`,
             ),
           );
-          // Backpressure leve: aguarda o cliente drenar antes do prÃ³ximo chunk.
+          // Backpressure leve: aguarda o cliente drenar antes do próximo chunk.
           await new Promise((r) => setTimeout(r, 8));
         }
         controller.enqueue(
@@ -233,7 +233,7 @@ async function injectMemory(
     .filter((m) => overlap(m.toLowerCase(), userMsg.toLowerCase()) > 0)
     .slice(0, 8);
 
-  const system = `MemÃ³rias relevantes do usuÃ¡rio:\n${relevant.join("\n")}\n\nUse-as quando fizer sentido. Ignore as irrelevantes.`;
+  const system = `Memórias relevantes do usuário:\n${relevant.join("\n")}\n\nUse-as quando fizer sentido. Ignore as irrelevantes.`;
   const systemMsgs = messages.filter((m) => m.role === "system");
   return [
     ...(systemMsgs.length
@@ -252,20 +252,20 @@ function overlap(a: string, b: string): number {
 }
 
 function compactMemory(text: string): string | null {
-  const stop = "âš ï¸";
+  const stop = "⚠️";
   const w = text
     .slice(0, 700)
     .replace(/\s+/g, " ")
     .replace(/^.*?:\/\//, "");
-  if (w.includes("O que posso fazer") || w.includes("olÃ¡") || w.includes("oi"))
+  if (w.includes("O que posso fazer") || w.includes("olá") || w.includes("oi"))
     return null;
   if (w.indexOf(stop) !== -1 && w.length < 30) return null;
-  return `O usuÃ¡rio conversou sobre: ${w.slice(0, 400)}`;
+  return `O usuário conversou sobre: ${w.slice(0, 400)}`;
 }
 
 /**
- * Web search â€” integra uma pesquisa real (DuckDuckGo Instant Answer, sem chave)
- * como contexto "system" quando a flag webSearch estÃ¡ ativa. Sem key, nÃ£o bloqueia
+ * Web search — integra uma pesquisa real (DuckDuckGo Instant Answer, sem chave)
+ * como contexto "system" quando a flag webSearch está ativa. Sem key, não bloqueia
  * o envio; apenas injeta o que conseguir buscar.
  */
 async function contextualizeWebSearch(
@@ -320,7 +320,7 @@ function contextualize(
   const system = messages.find((m) => m.role === "system");
   const rest = messages.filter((m) => m.role !== "system");
   return [
-    { role: "system", content: `Anexos fornecidos pelo usuÃ¡rio:\n${ctx}` },
+    { role: "system", content: `Anexos fornecidos pelo usuário:\n${ctx}` },
     ...(system ? [{ role: "system" as const, content: system.content }] : []),
     ...rest,
   ];
@@ -331,11 +331,12 @@ async function routeByProvider(
   messages: ChatMsg[],
   body: ChatBody,
 ): Promise<string | null> {
-  if (provider.startsWith("9router/")) {
-    const model = provider.replace("9router/", "");
+  if (provider.startsWith("9router/") || provider.startsWith("9Router/")) {
+    const model = provider.replace(/^[^/]+\//, "");
     return route9Router(messages, model, body.nineRouterKey);
   }
-  switch (provider) {
+  const lower = provider.toLowerCase();
+  switch (lower) {
     case "9router":
       return route9Router(messages, undefined, body.nineRouterKey);
     case "gemini":
@@ -382,31 +383,32 @@ async function route9Router(
 ): Promise<string | null> {
   const rawKey = userKey && userKey.trim() ? userKey.trim() : undefined;
 
-  // Chave no formato "endpoint|apikey" sobrepÃµe a config do ambiente.
+  // Chave no formato "endpoint|apikey" sobrepõe a config do ambiente.
   const userEndpoint = rawKey?.includes("|") ? rawKey.split("|")[0] : undefined;
   const finalKey = rawKey?.includes("|") ? rawKey.split("|")[1] : rawKey;
-  const apiKey = finalKey ?? process.env["9ROUTER_TOKEN"] ?? "";
+  const apiKey = finalKey ?? process.env["ROUTER9_TOKEN"] ?? "";
 
-  // Combos: modelo escolhido â†’ fallbacks da config â†’ lista segura de combos gratuitos.
-  const envFallbacks = (process.env["9ROUTER_FALLBACK_MODELS"] ?? "")
+  // Combos: modelo escolhido → fallbacks da config → lista segura de combos gratuitos.
+  const envFallbacks = (process.env["ROUTER9_FALLBACK_MODELS"] ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
   const requested =
-    model && model.trim() ? model.trim() : process.env["9ROUTER_MODEL"];
+    model && model.trim() ? model.trim() : process.env["ROUTER9_MODEL"];
   const models = [
     ...(requested ? [requested] : []),
     ...envFallbacks,
+    "Arcenal",
     "kr/glm-5",
     "kr/claude-sonnet-4.5",
     "gemini/gemini-3.6-flash",
   ].filter((m, i, arr) => !!m && arr.indexOf(m) === i);
 
-  // Tentativas em ordem: endpoint do usuÃ¡rio â†’ local â†’ tÃºnel (fallback resiliente).
+  // Tentativas em ordem: endpoint do usuário → local → túnel (fallback resiliente).
   const candidates = [
     userEndpoint,
-    process.env["9ROUTER_ENDPOINT"],
-    process.env["9ROUTER_TUNNEL"],
+    process.env["ROUTER9_TUNNEL"],
+    process.env["ROUTER9_ENDPOINT"],
   ].filter((ep): ep is string => !!ep && ep.startsWith("http"));
 
   let lastErr = "";
@@ -425,7 +427,7 @@ async function route9Router(
         });
         if (!res.ok) {
           lastErr = `[${modelId} @ ${endpoint}] HTTP ${res.status}`;
-          // 503/404 do 9Router = upstream falhou (quota/erro de modelo) â†’ tenta prÃ³ximo combo.
+          // 503/404 do 9Router = upstream falhou (quota/erro de modelo) → tenta próximo combo.
           if (res.status === 503 || res.status === 404) continue;
           break;
         }

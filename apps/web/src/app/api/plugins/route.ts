@@ -19,9 +19,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface PluginBody {
-  pluginId: string;
-  action: "install" | "uninstall";
+  pluginId?: string;
+  id?: string;
+  action?: "install" | "uninstall";
   config?: Record<string, unknown>;
+  name?: string;
+  description?: string;
+  category?: string;
+  author?: string;
+  enabled?: boolean;
 }
 
 /**
@@ -84,11 +90,13 @@ export async function POST(req: Request) {
     const { userId } = auth;
 
     const body = (await req.json()) as PluginBody;
-    const { pluginId, action, config } = body;
+    const pluginId = body.pluginId ?? body.id;
+    const action = body.action ?? "install";
+    const { config } = body;
 
-    if (!pluginId || !action) {
+    if (!pluginId) {
       return NextResponse.json(
-        { error: "pluginId e action são obrigatórios" },
+        { error: "pluginId ou id é obrigatório" },
         { status: 400 },
       );
     }
@@ -119,11 +127,11 @@ export async function POST(req: Request) {
         await sb.from("plugins").insert({
           id: pluginId,
           user_id: userId,
-          name: pluginId,
-          description: `Plugin ${pluginId}`,
+          name: body.name ?? pluginId,
+          description: body.description ?? `Plugin ${pluginId}`,
           version: "1.0.0",
-          author: "community",
-          enabled: true,
+          author: body.author ?? "community",
+          enabled: body.enabled ?? true,
           config: JSON.stringify(config ?? {}),
         });
       }
@@ -168,6 +176,35 @@ export async function POST(req: Request) {
       { error: 'action deve ser "install" ou "uninstall"' },
       { status: 400 },
     );
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * DELETE /api/plugins?id=xxx — Desinstalar plugin
+ */
+export async function DELETE(req: Request) {
+  try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+    const { userId } = auth;
+    const url = new URL(req.url);
+    const pluginId = url.searchParams.get("id");
+    if (!pluginId) {
+      return NextResponse.json({ error: "id é obrigatório" }, { status: 400 });
+    }
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    );
+    await sb.from("plugins").delete().eq("id", pluginId).eq("user_id", userId);
+    return NextResponse.json({ success: true, action: "deleted", pluginId });
   } catch (err) {
     return NextResponse.json(
       { error: (err as Error).message },

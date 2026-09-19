@@ -14,6 +14,7 @@ import CodeWorkspace from "./CodeWorkspace";
 import ElevenCoder from "./ElevenCoder";
 import { MediaGallery } from "./MediaGallery";
 import { MobileAgent } from "./MobileAgent";
+import { MobileDevicePanel } from "./MobileDevicePanel";
 import { MemoriaPanel } from "./MemoriaPanel";
 import { FinOpsPanel } from "./FinOpsPanel";
 import { CanvasPanel } from "./CanvasPanel";
@@ -179,6 +180,11 @@ export function AppShell({
             {activeNav === "agent" && (
               <div className="h-full">
                 <MobileAgent />
+              </div>
+            )}
+            {activeNav === "mobile" && (
+              <div className="h-full">
+                <MobileDevicePanel />
               </div>
             )}
             {activeNav === "neural" && (

@@ -32,6 +32,15 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 - UI Astra: fundo #05050A, glassmorphism, sidebar por data, rotas /coder /canvas /neural /memoria
 - Ajustes: vector(768) unificado, CLI templates, mobile noEmit, .env OPENROUTER_*
 
+### Validação de Segurança (2026-09-18)
+
+- **safePath fix**: Corrigido bug de bypass em sibling-dir em `router9/index.ts` — `isInsideRoot()` usa `path.sep` + fallback de traversal
+- **safePath test**: 8 testes unitários em `safePath.test.ts` (todos passando)
+- **Baseline completa**: typecheck/lint/test/build todos OK (385 testes, 30 suites, 0 erros)
+- **RLS audit**: 10/10 tabelas de negócio com RLS habilitado + policy `auth.uid() = user_id`
+- **bridge.ts**: 4 ops seguras no allowlist, `ops/run-command` removido (já corrigido FASE 1)
+- **Docs**: `baseline.md`, `TLOG.md`, `CHANGELOG.md` atualizados
+
 ## v2.9.0-alpha — 2026-09-17
 
 ### 🚀 FASE 22-30 — Infrastructure & DevOps

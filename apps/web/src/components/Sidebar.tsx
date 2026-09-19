@@ -20,8 +20,10 @@ import {
   Shapes,
   ScrollText,
   Wallet,
+  Smartphone,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { usePlatform, Platform } from "../lib/platform";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 export interface SidebarChat {
@@ -49,6 +51,7 @@ export type NavTab =
   | "plugins"
   | "media"
   | "agent"
+  | "mobile"
   | "canvas"
   | "memoria"
   | "finops";
@@ -79,6 +82,7 @@ export function Sidebar({
   const { user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [busySignout, setBusySignout] = useState(false);
+  const { platform } = usePlatform();
 
   const initials = useMemo(() => {
     const n = user?.email?.split("@")[0] ?? "U";
@@ -141,32 +145,110 @@ export function Sidebar({
     );
   }
 
-  const navItems: Array<{
+  const allNavItems: Array<{
     id: NavTab;
     label: string;
     icon: any;
     section?: string;
+    platforms?: Platform[];
   }> = [
     {
       id: "conversas",
       label: "Conversas",
       icon: MessageSquare,
       section: "Menu",
+      platforms: ["desktop-app", "desktop-web", "mobile-web"],
     },
-    { id: "projetos", label: "Projects", icon: FolderGit2 },
-    { id: "artifacts", label: "Artifacts", icon: FileText },
-    { id: "canvas", label: "Canvas", icon: Shapes },
-    { id: "code", label: "Code & Terminal", icon: Code2 },
-    { id: "coder", label: "Eleven Coder", icon: Terminal },
-    { id: "neural", label: "Rede Neural", icon: Brain },
-    { id: "memoria", label: "Memória", icon: ScrollText },
-    { id: "finops", label: "FinOps", icon: Wallet },
-    { id: "skills", label: "Skills", icon: Blocks, section: "Customize" },
-    { id: "connectors", label: "Connectors", icon: Plug2 },
-    { id: "media", label: "Mídia", icon: FileText },
-    { id: "agent", label: "Agente PC", icon: Terminal },
-    { id: "plugins", label: "Plugins", icon: Puzzle },
+    {
+      id: "projetos",
+      label: "Projects",
+      icon: FolderGit2,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "artifacts",
+      label: "Artifacts",
+      icon: FileText,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "canvas",
+      label: "Canvas",
+      icon: Shapes,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "code",
+      label: "Code & Terminal",
+      icon: Code2,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "coder",
+      label: "Eleven Coder",
+      icon: Terminal,
+      platforms: ["desktop-app"],
+    },
+    {
+      id: "neural",
+      label: "Rede Neural",
+      icon: Brain,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "memoria",
+      label: "Memória",
+      icon: ScrollText,
+      platforms: ["desktop-app", "desktop-web", "mobile-web"],
+    },
+    {
+      id: "finops",
+      label: "FinOps",
+      icon: Wallet,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "skills",
+      label: "Skills",
+      icon: Blocks,
+      section: "Customize",
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "connectors",
+      label: "Connectors",
+      icon: Plug2,
+      platforms: ["desktop-app", "desktop-web"],
+    },
+    {
+      id: "media",
+      label: "Mídia",
+      icon: FileText,
+      platforms: ["desktop-app", "desktop-web", "mobile-web"],
+    },
+    {
+      id: "agent",
+      label: "Agente PC",
+      icon: Terminal,
+      platforms: ["desktop-app"],
+    },
+    {
+      id: "mobile",
+      label: "Agente Mobile",
+      icon: Smartphone,
+      platforms: ["mobile-app", "mobile-web"],
+    },
+    {
+      id: "plugins",
+      label: "Plugins",
+      icon: Puzzle,
+      platforms: ["desktop-app", "desktop-web"],
+    },
   ];
+
+  const navItems = allNavItems.filter(
+    (item) => !item.platforms || item.platforms.includes(platform),
+  );
 
   return (
     <aside className="flex h-full w-[272px] shrink-0 flex-col bg-[#0d0f15]">

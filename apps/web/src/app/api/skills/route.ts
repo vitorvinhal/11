@@ -18,8 +18,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface SkillBody {
-  skillId: string;
-  action: "enable" | "disable";
+  skillId?: string;
+  action?: "enable" | "disable" | "create";
+  name?: string;
+  description?: string;
+  icon?: string;
+  prompt?: string;
 }
 
 /**
@@ -129,8 +133,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, action: "disabled", skillId });
     }
 
+    // Criar skill customizada (frontend envia name/description/icon)
+    if (body.name) {
+      const id = `custom-${Date.now()}`;
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+        process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+      );
+      const { data, error } = await sb
+        .from("skills")
+        .insert({
+          id,
+          user_id: userId,
+          name: body.name,
+          description: body.description ?? "",
+          icon: body.icon ?? "⚡",
+          system_prompt: body.prompt ?? "",
+          enabled: true,
+          builtin: false,
+        })
+        .select()
+        .single();
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(data);
+    }
+
     return NextResponse.json(
-      { error: 'action deve ser "enable" ou "disable"' },
+      {
+        error: 'action deve ser "enable", "disable" ou enviar name para criar',
+      },
       { status: 400 },
     );
   } catch (err) {

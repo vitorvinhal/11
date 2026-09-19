@@ -2,7 +2,6 @@ import "../styles/globals.css";
 import { AstroSphere } from "../components/AstroSphere";
 import { Providers } from "./providers";
 import { ThemeProvider } from "../components/ThemeProvider";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { ServiceWorkerRegister } from "../components/ServiceWorkerRegister";
 import { ReactNode } from "react";
 
@@ -31,7 +30,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="aurora-bg" aria-hidden />
           <div className="vignette" aria-hidden />
           <AstroSphere />
-          <ThemeToggle />
           <ServiceWorkerRegister />
           <Providers>{children}</Providers>
           <div className="noise-overlay" aria-hidden />

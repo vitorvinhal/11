@@ -11,7 +11,6 @@ import {
   ThumbsDown,
   Mic,
   Cpu,
-  ChevronDown,
   Paperclip,
   Image as ImageIcon,
   FolderGit2,
@@ -22,7 +21,6 @@ import {
   X,
   Check,
   Code2,
-  ArrowLeftRight,
   WifiOff,
 } from "lucide-react";
 import Image from "next/image";
@@ -66,43 +64,6 @@ const SUGGESTIONS = [
   },
 ];
 
-const MODELS = [
-  {
-    id: "9router",
-    label: "9Router · Combo",
-    desc: "Combo padrão configurado (kr/glm-5)",
-  },
-  {
-    id: "9router/kr/claude-sonnet-4.5",
-    label: "9Router · Kiro Claude 4.5",
-    desc: "Combo gratuito · Claude 4.5",
-  },
-  {
-    id: "9router/kr/glm-5",
-    label: "9Router · Kiro GLM-5",
-    desc: "Combo gratuito · GLM-5",
-  },
-  {
-    id: "9router/gemini/gemini-3.6-flash",
-    label: "9Router · Gemini 3.6 Flash",
-    desc: "Combo gratuito · Gemini",
-  },
-  {
-    id: "9router/custom",
-    label: "9Router · Combo customizado",
-    desc: "Digite o nome do seu combo",
-  },
-  { id: "gemini", label: "Gemini", desc: "Google · free tier" },
-  { id: "anthropic", label: "Anthropic", desc: "Claude · high quality" },
-  { id: "astra", label: "Astra", desc: "Modo padrão da 11 (via 9Router)" },
-  { id: "minimax", label: "MiniMax", desc: "Alternativa rápida (via 9Router)" },
-  {
-    id: "agent",
-    label: "Agent · Tools + Safety",
-    desc: "Modo agente com execução de tools",
-  },
-];
-
 interface Attach {
   id: string;
   label: string;
@@ -114,18 +75,6 @@ const MAX_FILE_BYTES = 512 * 1024;
 
 export type RoutingProfile = "cost" | "latency" | "quality";
 
-const PROFILES: Array<{ id: RoutingProfile; label: string; desc: string }> = [
-  { id: "cost", label: "Priorizar Custo", desc: "9Router/gratuitos primeiro" },
-  { id: "latency", label: "Priorizar Latência", desc: "Resposta mais rápida" },
-  {
-    id: "quality",
-    label: "Priorizar Qualidade",
-    desc: "Melhor resultado (pagos)",
-  },
-];
-
-const COMPARE_PROVIDERS = ["9router", "gemini", "openrouter"];
-
 function uid() {
   return Math.random().toString(36).slice(2);
 }
@@ -135,22 +84,14 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [model, setModel] = useState(MODELS[0].id);
-  const [customCombo, setCustomCombo] = useState("");
   const [attached, setAttached] = useState<Attach[]>([]);
   const [webSearch, setWebSearch] = useState(false);
   const [memory, setMemory] = useState(false);
   const [incognito, setIncognito] = useState(false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
-  const [profile, setProfile] = useState<RoutingProfile>("cost");
-  const [comparing, setComparing] = useState(false);
-  const [compareRes, setCompareRes] = useState<Array<{
-    provider: string;
-    text: string;
-    error?: string;
-  }> | null>(null);
   const [offline, setOffline] = useState(false);
+  const profile: RoutingProfile = "cost";
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const recRef = useRef<any>(null);
@@ -302,42 +243,32 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       setBusy(true);
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      const isAgentMode = model === "agent";
+      const token = user ? await getAccessToken() : null;
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       try {
-        const apiUrl = isAgentMode ? "/api/agent" : "/api/chat";
-        const body = isAgentMode
-          ? {
-              prompt: text,
-              sessionId,
-              enableTools: true,
-              maxIterations: 10,
-              stream: true,
-            }
-          : {
-              sessionId,
-              userId: user?.id,
-              messages: next.map((m) => ({ role: m.role, content: m.content })),
-              provider:
-                model === "9router/custom" && customCombo.trim()
-                  ? `9router/${customCombo.trim()}`
-                  : model,
-              geminiKey: (keys.gemini ?? "").trim(),
-              anthropicKey: (keys.anthropic ?? "").trim(),
-              nineRouterKey: (keys.nineRouter ?? "").trim(),
-              files: attached.map((a) => ({
-                label: a.label,
-                snippet: a.snippet,
-              })),
-              webSearch,
-              memory: memory && !incognito,
-              profile,
-              stream: true,
-            };
+        const apiUrl = "/api/chat";
+        const body = {
+          sessionId,
+          userId: user?.id,
+          messages: next.map((m) => ({ role: m.role, content: m.content })),
+          provider: "9router/Arcenal",
+          geminiKey: (keys.gemini ?? "").trim(),
+          anthropicKey: (keys.anthropic ?? "").trim(),
+          nineRouterKey: (keys.nineRouter ?? "").trim(),
+          files: attached.map((a) => ({
+            label: a.label,
+            snippet: a.snippet,
+          })),
+          webSearch,
+          memory: memory && !incognito,
+          profile,
+          stream: true,
+        };
 
         const res = await fetch(apiUrl, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", ...authHeaders },
           body: JSON.stringify(body),
         });
         if (!res.ok) {
@@ -398,16 +329,22 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
           setOffline(true);
           window.dispatchEvent(new CustomEvent("gateway_unavailable"));
           try {
-            await enqueueChatOffline({
-              sessionId,
-              userId: user?.id,
-              messages: next.map((m) => ({ role: m.role, content: m.content })),
-              provider: model,
-              profile,
-              webSearch,
-              memory: memory && !incognito,
-              stream: false,
-            });
+            await enqueueChatOffline(
+              {
+                sessionId,
+                userId: user?.id,
+                messages: next.map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                })),
+                provider: "9router/Arcenal",
+                profile,
+                webSearch,
+                memory: memory && !incognito,
+                stream: false,
+              },
+              authHeaders,
+            );
           } catch {
             /* best-effort */
           }
@@ -436,55 +373,13 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       sessionId,
       user?.id,
       setMessages,
-      model,
-      customCombo,
       attached,
       webSearch,
       memory,
       incognito,
-      profile,
       patchAssistant,
     ],
   );
-
-  const runCompare = useCallback(async () => {
-    if (!messages.length || !sessionId) return;
-    setComparing(true);
-    setCompareRes(null);
-    const keys = apiKeysRef.current;
-    try {
-      const res = await fetch("/api/compare", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          providers: COMPARE_PROVIDERS,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
-          geminiKey: (keys.gemini ?? "").trim(),
-          anthropicKey: (keys.anthropic ?? "").trim(),
-          nineRouterKey: (keys.nineRouter ?? "").trim(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Comparação falhou");
-      const results = (data.results ?? []).map(
-        (r: {
-          provider: string;
-          message?: { content: Array<{ text?: string }> };
-          error?: string;
-        }) => ({
-          provider: r.provider,
-          text: r.message?.content?.map((c) => c.text ?? "").join("") ?? "",
-          error: r.error,
-        }),
-      );
-      setCompareRes(results);
-    } catch (err) {
-      setCompareRes([{ provider: "erro", text: (err as Error).message }]);
-    } finally {
-      setComparing(false);
-    }
-  }, [messages, sessionId]);
 
   const onFilesSelected = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -642,9 +537,6 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     setListening(true);
   }, [listening, recordFallback]);
 
-  const currentModel = MODELS.find((m) => m.id === model) ?? MODELS[0];
-  const currentProfile = PROFILES.find((p) => p.id === profile) ?? PROFILES[0];
-
   return (
     <div className="flex h-full flex-col bg-astro-dark">
       {offline && (
@@ -675,9 +567,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
               </h1>
               <p className="mt-1.5 text-sm text-text-dim">
                 Modelo ativo:{" "}
-                <span className="font-medium text-primary">
-                  {currentModel.label}
-                </span>
+                <span className="font-medium text-primary">Arcenal</span>
               </p>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -951,128 +841,9 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
 
-            <div className="flex flex-col gap-1">
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted hover:bg-white/[0.08] hover:text-text-primary transition"
-                  >
-                    <Cpu className="h-3 w-3 text-primary" />{" "}
-                    {currentModel.label}
-                    <ChevronDown className="h-2.5 w-2.5" />
-                  </button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    side="top"
-                    sideOffset={6}
-                    className="z-50 w-60 rounded-xl glass-card p-1.5 shadow-2xl"
-                  >
-                    <div className="px-3 pb-1.5 text-[10px] uppercase tracking-wider text-text-dim">
-                      Modelo
-                    </div>
-                    {MODELS.map((mo) => (
-                      <DropdownMenu.Item
-                        key={mo.id}
-                        className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 outline-none hover:bg-white/6"
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setModel(mo.id);
-                        }}
-                      >
-                        <div>
-                          <div
-                            className={`text-sm ${model === mo.id ? "text-primary" : "text-text-primary"}`}
-                          >
-                            {mo.label}
-                          </div>
-                          <div className="text-[11px] text-text-dim">
-                            {mo.desc}
-                          </div>
-                        </div>
-                        {model === mo.id && (
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
-                        )}
-                      </DropdownMenu.Item>
-                    ))}
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
-              {model === "9router/custom" && (
-                <input
-                  value={customCombo}
-                  onChange={(e) => setCustomCombo(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-                  placeholder="Nome do combo (ex: my-smart-combo)"
-                  className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-primary outline-none placeholder:text-text-dim w-52"
-                />
-              )}
+            <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted">
+              <Cpu className="h-3 w-3 text-primary" /> Arcenal
             </div>
-
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <button
-                  type="button"
-                  title="Perfil de roteamento"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted hover:bg-white/[0.08] hover:text-text-primary transition"
-                >
-                  <Cpu className="h-3 w-3 text-primary" />{" "}
-                  {currentProfile.label}
-                  <ChevronDown className="h-2.5 w-2.5" />
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  side="top"
-                  sideOffset={6}
-                  className="z-50 w-60 rounded-xl glass-card p-1.5 shadow-2xl"
-                >
-                  <div className="px-3 pb-1.5 text-[10px] uppercase tracking-wider text-text-dim">
-                    Roteamento
-                  </div>
-                  {PROFILES.map((p) => (
-                    <DropdownMenu.Item
-                      key={p.id}
-                      className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 outline-none hover:bg-white/6"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setProfile(p.id);
-                      }}
-                    >
-                      <div>
-                        <div
-                          className={`text-sm ${profile === p.id ? "text-primary" : "text-text-primary"}`}
-                        >
-                          {p.label}
-                        </div>
-                        <div className="text-[11px] text-text-dim">
-                          {p.desc}
-                        </div>
-                      </div>
-                      {profile === p.id && (
-                        <Check className="h-3.5 w-3.5 text-emerald-400" />
-                      )}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-
-            <button
-              type="button"
-              onClick={() => void runCompare()}
-              disabled={comparing || !messages.length}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted transition enabled:hover:bg-white/[0.08] enabled:hover:text-text-primary disabled:opacity-40"
-              title="Comparar até 3 modelos lado a lado"
-            >
-              {comparing ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <ArrowLeftRight className="h-3 w-3 text-primary" />
-              )}{" "}
-              Comparar
-            </button>
 
             <button
               type="button"
@@ -1104,47 +875,6 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
           Eleven pode cometer erros. Verifique informações importantes.
         </div>
       </div>
-
-      {compareRes && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          onClick={() => setCompareRes(null)}
-        >
-          <div
-            className="glassmorph-strong w-full max-w-4xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-                <ArrowLeftRight className="h-4 w-4 text-primary" /> Comparação
-                de modelos
-              </div>
-              <button
-                onClick={() => setCompareRes(null)}
-                className="text-text-dim hover:text-text-primary transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid max-h-[70vh] grid-cols-1 gap-px overflow-y-auto bg-white/[0.04] md:grid-cols-3">
-              {compareRes.map((r) => (
-                <div key={r.provider} className="bg-[#0b0b14] p-4">
-                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary">
-                    {r.provider}
-                  </div>
-                  <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-primary">
-                    {r.error ? (
-                      <span className="text-rose-300">{r.error}</span>
-                    ) : (
-                      r.text
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

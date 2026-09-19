@@ -4,6 +4,49 @@ Registro técnico de todas as versões do projeto 11.
 
 ---
 
+## v2.10.0-alpha — 2026-09-18 (validação de segurança)
+
+### Validação de 6 itens — safePath fix, baseline, RLS, bridge, docs
+
+#### Item 1 — safePath fix (router9)
+
+- **`apps/desktop/src/router9/index.ts`** — Corrigido bug de bypass em sibling-dir:
+  - Nova função `isInsideRoot()` usa `path.sep` em vez de `startsWith` (que falhava com paths compartilhados como `C:\Users`)
+  - Fallback de traversal: quando nem path nem parent existem, sobe até diretório existente, valida com `isInsideRoot`
+  - Exemplo: `C:\Users\Admin\Documents\11\outro\file` + root `C:\Users\Admin\Documents\11` → `outro` parent não existe, sobe para `Documents` (que existe) → `isInsideRoot` bloqueia porque `Documents` não está dentro de `Documents\11`
+- **`apps/desktop/src/router9/safePath.test.ts`** — 8 testes unitários (sibling-dir bypass, absolute path, parent dir, same dir, valid read)
+
+#### Item 2 — Baseline completa
+
+- `pnpm install` → OK
+- `npx tsc --noEmit` (web, ia, shared) → OK
+- `npx next lint` (web) → PASS (7 warnings, 0 errors — todos pre-existing)
+- `npx jest` → PASS (385/385 testes, 30 suites)
+- `pnpm build` → OK (shared → ia → web, 24 pages)
+- `docs/audit/baseline.md` atualizado com resultados
+
+#### Item 3 — RLS audit
+
+- Todas as 10 tabelas de negócio verificadas: `sessions`, `messages`, `memories`, `projects`, `skills`, `plugins`, `artifacts`, `media`, `pending_actions`, `checkpoints`
+- Todas com `ENABLE ROW LEVEL SECURITY` + policy `FOR ALL USING (auth.uid() = user_id)`
+- Nenhuma migration corretiva necessária
+
+#### Item 4 — bridge.ts verification
+
+- Allowlist: `ops/list-files`, `ops/read-file`, `ops/run-build`, `ops/run-tests` (4 ops seguras)
+- `ops/run-command` removido (já corrigido na FASE 1)
+- Chamadas via REST API (`callOpsApi`), sem shell arbitrário
+- Auth: JWT incluído quando disponível
+- Timeout: 60s via `AbortSignal.timeout`
+
+#### Item 5 — Docs update
+
+- `docs/audit/baseline.md` — resultados atualizados, problemas críticos marcados como CORRIGIDOS
+- `docs/TLOG.md` — entrada adicionada para esta validação
+- `CHANGELOG.md` — entrada adicionada
+
+---
+
 ## v2.10.0-alpha — 2026-09-18
 
 ### Modo Astra — UI/UX, OpenRouter, Salvaguardas e Resiliência Offline

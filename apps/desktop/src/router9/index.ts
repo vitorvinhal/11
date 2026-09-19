@@ -1,4 +1,5 @@
 import axios from "axios";
+import express, { Express, Request, Response, NextFunction } from "express";
 import { promises as fs } from "fs";
 import path from "path";
 import { existsSync, realpathSync } from "fs";
@@ -7,7 +8,6 @@ import sqlite3 from "sqlite3";
 // @ts-ignore - node-wol não tem tipos próprios
 import wol from "node-wol";
 import jwt from "jsonwebtoken";
-import type { Request, Response, NextFunction } from "express";
 
 // ─── Configuração de Segurança ───────────────────────────────────────────────
 
@@ -53,6 +53,15 @@ export function authMiddleware(
 // ─── Path Sandbox ────────────────────────────────────────────────────────────
 
 /**
+ * Verifica se `target` é um subdiretório real de `root` (ou o próprio root).
+ * Evita bypass via prefixo de string — ex: /tmp/test-root-evil passaria em
+ * startsWith('/tmp/test-root') mas NÃO passa aqui porque falta o separador.
+ */
+function isInsideRoot(target: string, root: string): boolean {
+  return target === root || target.startsWith(root + path.sep);
+}
+
+/**
  * Resolve um caminho de forma segura, verificando que está dentro de ROOT_DIR.
  * Usa fs.realpath para resolver symlinks reais e impedir escape.
  */
@@ -63,7 +72,7 @@ function safePath(targetPath: string): string | null {
     if (existsSync(absPath)) {
       const real = realpathSync(absPath);
       const realRoot = realpathSync(ROOT_DIR);
-      if (!real.startsWith(realRoot)) return null;
+      if (!isInsideRoot(real, realRoot)) return null;
       return real;
     }
     // Se não existe, verifica que o path pai está dentro do root
@@ -71,7 +80,18 @@ function safePath(targetPath: string): string | null {
     if (existsSync(parentDir)) {
       const realParent = realpathSync(parentDir);
       const realRoot = realpathSync(ROOT_DIR);
-      if (!realParent.startsWith(realRoot)) return null;
+      if (!isInsideRoot(realParent, realRoot)) return null;
+    } else {
+      // Nem path nem pai existem — sobe até achar um existente e valida
+      let dir = parentDir;
+      while (dir && !existsSync(dir) && dir !== path.dirname(dir)) {
+        dir = path.dirname(dir);
+      }
+      if (dir && existsSync(dir)) {
+        const realDir = realpathSync(dir);
+        const realRoot = realpathSync(ROOT_DIR);
+        if (!isInsideRoot(realDir, realRoot)) return null;
+      }
     }
     return absPath;
   } catch {
@@ -184,10 +204,10 @@ async function remoteOp(payload: any) {
 async function mediaOp(payload: any) {
   const { prompt, imageUrl } = payload ?? {};
   let result: any = { received: { prompt, imageUrl } };
-  const token = process.env["9ROUTER_TOKEN"] ?? "";
+  const token = process.env["ROUTER9_TOKEN"] ?? "";
   const candidates = [
-    (process.env["9ROUTER_ENDPOINT"] ?? "").trim(),
-    (process.env["9ROUTER_TUNNEL"] ?? "").trim(),
+    (process.env["ROUTER9_ENDPOINT"] ?? "").trim(),
+    (process.env["ROUTER9_TUNNEL"] ?? "").trim(),
   ].filter((ep) => ep.startsWith("http"));
   try {
     if (!candidates.length || !token) {
@@ -199,7 +219,7 @@ async function mediaOp(payload: any) {
           const res = await axios.post(
             `${endpoint}/v1/chat/completions`,
             {
-              model: process.env["9ROUTER_MODEL"] ?? "gemini/gemini-3.8-flash",
+              model: process.env["ROUTER9_MODEL"] ?? "gemini/gemini-3.8-flash",
               messages: [
                 {
                   role: "system",
@@ -271,5 +291,30 @@ export async function handler(req: Request, res: Response, next: NextFunction) {
 
 export default handler;
 
+/** Cria servidor HTTP Express para o Router9 */
+export function createRouter9Server(): Express {
+  const app = express();
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true }));
+
+  // Health check
+  app.get("/health", (_, res) => {
+    res.json({
+      ok: true,
+      service: "router9",
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // Main router endpoint
+  app.post("/router9", async (req, res) => {
+    await routerHandler(req as any, res as any);
+  });
+
+  return app;
+}
+
 // Re-export para uso programático
 export { db, ROOT_DIR, safePath };
+
+export default handler;

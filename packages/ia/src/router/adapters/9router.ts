@@ -1,50 +1,67 @@
-import { ProviderAdapter, CanonicalMessage, ContentBlock, GatewayCompletionResult } from '../types';
+import {
+  ProviderAdapter,
+  CanonicalMessage,
+  ContentBlock,
+  GatewayCompletionResult,
+} from "../types";
 
 /**
  * NineRouterAdapter — provedor default gratuito (9Router, compatível com OpenAI).
- * Endpoints: 9ROUTER_ENDPOINT (local) com fallback 9ROUTER_TUNNEL (público).
+ * Endpoints: ROUTER9_ENDPOINT (local) com fallback ROUTER9_TUNNEL (público).
  */
 export class NineRouterAdapter implements ProviderAdapter {
-  readonly id = '9router' as const;
+  readonly id = "9router" as const;
   readonly isPaid = false;
 
   async complete(
     messages: CanonicalMessage[],
-    _opts: { sessionId: string; model?: string }
+    _opts: { sessionId: string; model?: string },
   ): Promise<GatewayCompletionResult> {
-    const token = process.env['9ROUTER_TOKEN'] ?? '';
-    const requested = _opts.model ?? process.env['9ROUTER_MODEL'] ?? 'kr/glm-5';
-    const envFallbacks = (process.env['9ROUTER_FALLBACK_MODELS'] ?? '')
-      .split(',')
+    const token = process.env["ROUTER9_TOKEN"] ?? "";
+    const requested = _opts.model ?? process.env["ROUTER9_MODEL"] ?? "Arcenal";
+    const envFallbacks = (process.env["ROUTER9_FALLBACK_MODELS"] ?? "")
+      .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const models = [requested, ...envFallbacks, 'kr/glm-5', 'kr/claude-sonnet-4.5', 'gemini/gemini-3.6-flash']
-      .filter((m, i, arr) => !!m && arr.indexOf(m) === i);
+    const models = [
+      requested,
+      ...envFallbacks,
+      "kr/glm-5",
+      "kr/claude-sonnet-4.5",
+      "gemini/gemini-3.6-flash",
+    ].filter((m, i, arr) => !!m && arr.indexOf(m) === i);
     const candidates = [
-      (process.env['9ROUTER_ENDPOINT'] ?? '').trim(),
-      (process.env['9ROUTER_TUNNEL'] ?? '').trim(),
-      'http://localhost:20128',
-    ].filter((ep) => ep.startsWith('http'));
+      (process.env["ROUTER9_TUNNEL"] ?? "").trim(),
+      (process.env["ROUTER9_ENDPOINT"] ?? "").trim(),
+      "http://localhost:20128",
+    ].filter((ep) => ep.startsWith("http"));
 
     let lastError: Error | null = null;
     for (const modelId of models) {
       for (const endpoint of candidates) {
         try {
           const res = await fetch(`${endpoint}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify({
               model: modelId,
               stream: false,
               messages: messages.map((m) => ({
                 role: m.role,
-                content: m.content.map((c: ContentBlock) => c.text ?? c.data ?? '').join('\n'),
+                content: m.content
+                  .map((c: ContentBlock) => c.text ?? c.data ?? "")
+                  .join("\n"),
               })),
             }),
             signal: AbortSignal.timeout(60_000),
           });
           if (!res.ok) {
-            lastError = new Error(`9router ${res.status} (${modelId} @ ${endpoint})`);
+            lastError = new Error(
+              `9router ${res.status} (${modelId} @ ${endpoint})`,
+            );
             if (res.status === 503 || res.status === 404) continue;
             break;
           }
@@ -53,10 +70,17 @@ export class NineRouterAdapter implements ProviderAdapter {
           if (content) {
             const usage = parseUsage(text);
             return {
-              provider: '9router',
+              provider: "9router",
               model: modelId,
-              message: { role: 'assistant', content: [{ type: 'text', text: content }] },
-              usage: { inputTokens: usage.input, outputTokens: usage.output, costUnits: 0 },
+              message: {
+                role: "assistant",
+                content: [{ type: "text", text: content }],
+              },
+              usage: {
+                inputTokens: usage.input,
+                outputTokens: usage.output,
+                costUnits: 0,
+              },
             };
           }
         } catch (err) {
@@ -64,7 +88,7 @@ export class NineRouterAdapter implements ProviderAdapter {
         }
       }
     }
-    throw lastError ?? new Error('9router indisponível');
+    throw lastError ?? new Error("9router indisponível");
   }
 }
 
@@ -80,19 +104,21 @@ export function nineRouterAdapter(): NineRouterAdapter {
  */
 function parseCompletionContent(body: string): string | null {
   if (!body) return null;
-  if (body.includes('data:')) {
-    let out = '';
+  if (body.includes("data:")) {
+    let out = "";
     for (const line of body.split(/\r?\n/)) {
       const m = line.match(/^data:\s*(.*)$/);
-      if (!m || m[1] === '[DONE]') continue;
+      if (!m || m[1] === "[DONE]") continue;
       try {
         const chunk = JSON.parse(m[1]);
         const delta =
           chunk.choices?.[0]?.delta?.content ??
           chunk.choices?.[0]?.message?.content ??
-          '';
-        if (typeof delta === 'string') out += delta;
-      } catch { /* chunk não-JSON */ }
+          "";
+        if (typeof delta === "string") out += delta;
+      } catch {
+        /* chunk não-JSON */
+      }
     }
     return out || null;
   }
@@ -102,8 +128,8 @@ function parseCompletionContent(body: string): string | null {
       data.choices?.[0]?.message?.content ??
       data.choices?.[0]?.delta?.content ??
       data.output_text ??
-      '';
-    return typeof text === 'string' && text ? text : null;
+      "";
+    return typeof text === "string" && text ? text : null;
   } catch {
     return null;
   }
@@ -113,7 +139,7 @@ function parseCompletionContent(body: string): string | null {
 function parseUsage(body: string): { input: number; output: number } {
   try {
     // Para JSON puro
-    if (!body.includes('data:')) {
+    if (!body.includes("data:")) {
       const data = JSON.parse(body) as any;
       return {
         input: data.usage?.prompt_tokens ?? 0,
@@ -124,11 +150,13 @@ function parseUsage(body: string): { input: number; output: number } {
     let last: any = null;
     for (const line of body.split(/\r?\n/)) {
       const m = line.match(/^data:\s*(.*)$/);
-      if (!m || m[1] === '[DONE]') continue;
+      if (!m || m[1] === "[DONE]") continue;
       try {
         const chunk = JSON.parse(m[1]);
         if (chunk.usage) last = chunk;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     return {
       input: last?.usage?.prompt_tokens ?? 0,

@@ -1,54 +1,52 @@
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+#!/usr/bin/env node
+/**
+ * Desktop App Server Entry Point
+ * Starts both Router9 (port 3002) and PC Agent (port 3001)
+ */
 
-const ROOT_DOTENV = join(process.cwd(), '../../.env');
-const LOCAL_DOTENV = join(process.cwd(), '.env');
+import { createServer } from "http";
+import { createRouter9Server } from "./router9";
+import {
+  app as pcAgentApp,
+  httpServer as pcAgentHttpServer,
+} from "./pc-agent/server";
 
-function loadEnvFile(file: string): void {
-  if (!existsSync(file)) return;
-  for (const raw of readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const eq = line.indexOf('=');
-    if (eq <= 0) continue;
-    const key = line.slice(0, eq).trim();
-    const value = line.slice(eq + 1).trim();
-    if (!process.env[key]) process.env[key] = value;
-  }
+// Ports
+const ROUTER9_PORT = parseInt(process.env.ROUTER9_PORT || "3002", 10);
+const PC_AGENT_PORT = parseInt(process.env.PC_AGENT_PORT || "3001", 10);
+
+async function start() {
+  console.log("[Desktop] Starting 11 Desktop services...");
+
+  // Start Router9 (file operations, media analysis, STT)
+  const router9Server = createRouter9Server();
+  router9Server.listen(ROUTER9_PORT, () => {
+    console.log(`[Router9] HTTP server running on port ${ROUTER9_PORT}`);
+  });
+
+  // Start PC Agent (session management, WebSocket)
+  pcAgentHttpServer.listen(PC_AGENT_PORT, () => {
+    console.log(`[PC Agent] HTTP server running on port ${PC_AGENT_PORT}`);
+    console.log(`[PC Agent] WebSocket server running on port ${PC_AGENT_PORT}`);
+  });
+
+  // Graceful shutdown
+  process.on("SIGINT", () => {
+    console.log("\n[Desktop] Shutting down...");
+    router9Server.close();
+    pcAgentHttpServer.close();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    console.log("\n[Desktop] Shutting down...");
+    router9Server.close();
+    pcAgentHttpServer.close();
+    process.exit(0);
+  });
 }
 
-loadEnvFile(LOCAL_DOTENV);
-loadEnvFile(ROOT_DOTENV);
-
-// FAIL FAST: JWT_SECRET obrigatório em produção
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('[FATAL] JWT_SECRET não definido. Router9 não pode iniciar.');
+start().catch((err) => {
+  console.error("[Desktop] Failed to start:", err);
   process.exit(1);
-}
-
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import routerHandler, { authMiddleware } from './router9/index';
-
-const app = express();
-
-// Segurança HTTP
-app.use(helmet());
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') ?? 'http://localhost:3000',
-  credentials: true,
-}));
-app.use(express.json({ limit: '1mb' }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
-
-// Rota /router9 PROTEGIDA com JWT auth
-app.post('/router9', authMiddleware, routerHandler);
-
-// Health check (sem auth)
-app.get('/health', (_, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
-
-const PORT = process.env.ROUTER9_PORT || process.env.PORT || 3002;
-app.listen(PORT, () => console.log(`router9 listening on ${PORT}`));
+});
