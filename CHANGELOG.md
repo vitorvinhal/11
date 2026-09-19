@@ -20,6 +20,11 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.13-alpha — 2026-09-19
+
+- Fix build Vercel intermitente (`uncaughtException Hash.update(undefined)` no webpack do Next 13.5, erro de cache incremental)
+- Novo `scripts/clear-next-cache.mjs`: limpa `.next` antes do `next build` no buildCommand do Vercel → build determinístico (sem cache corrompido)
+
 ## v2.10.12-alpha — 2026-09-19
 
 - Eleven Code (CodeWorkspace) agora abre no modo Editor (Monaco) por padrão — antes abria no terminal

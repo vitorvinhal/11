@@ -70,3 +70,25 @@ Fazer relatório + testes completos do projeto 11 e transformar a aba **Eleven C
 
 - `@xterm/addon-search` instalado e pronto p/ integrar busca no Eleven Coder (feature do Orca) — pendente por escopo
 - Workbench split editor+terminal na mesma aba (core visual do Orca) — possível próximo passo
+
+---
+
+## ➕ ADENDO — Rodada 2: Terminal integrado + busca (v2.10.9-alpha)
+
+- Novo `apps/web/src/components/TerminalPane.tsx`: terminal xterm reutilizável (REST+SSE) com busca Ctrl+F via `@xterm/addon-search`
+- `CodePanel.tsx`: split editor+terminal estilo Orca (botão "Terminal" / `Ctrl+``), painel inferior 176px
+- `ElevenCoder.tsx`: busca no buffer (Ctrl+F, prev/next, wrap)
+- Lint 0 erros · testes web 130/130 · build ✓ · commit `82bd2de` pushado
+
+## ➕ ADENDO — Rodada 3: Fix deploy Vercel (v2.10.11-alpha)
+
+- 🚨 **BUG EM PRODUÇÃO**: abas novas não apareciam no site — deploys automáticos do GitHub falhavam.
+- **Causa**: `vercel.json` tinha `rootDirectory: "apps/web"` — propriedade inválida no schema atual do Vercel → deploy automático com status **Error** (produção estagnada no build antigo).
+- ✅ **Fix**: removido `rootDirectory` do `vercel.json` (já configurado no project settings do dashboard). Deploy manual → **Ready** em `11-app-sage.vercel.app`; push `24688be` → deploy automático voltou a dar **Ready**.
+- Commit `24688be` pushado.
+
+## ➕ ADENDO — Rodada 4: UX Eleven Code (v2.10.12-alpha)
+
+- 🚨 **BUG**: aba "Code & Terminal" abria em modo Terminal por padrão — usuário via terminal, parecia "nada alterado".
+- ✅ **Fix**: `CodeWorkspace.tsx` default `mode: 'editor'` (Monaco aparece direto); aba renomeada para **"Eleven Code"** no `Sidebar.tsx`.
+- Lint 0 erros · build ✓ · commit `a533ebc` pushado (deploy automático em andamento).
