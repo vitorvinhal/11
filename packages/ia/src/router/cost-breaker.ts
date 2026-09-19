@@ -1,19 +1,19 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { createHash } from "crypto";
 
 /**
- * Converte string arbitrária em UUID v5 determinístico (para uso em colunas uuid).
+ * Converte string arbitária em UUID para uso em colunas uuid.
  */
 function toUuid(input: string): string {
-  const hash = createHash("sha256").update(input).digest("hex");
-  return [
-    hash.slice(0, 8),
-    hash.slice(8, 12),
-    "5" + hash.slice(13, 16),
-    ((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16) +
-      hash.slice(18, 20),
-    hash.slice(20, 32),
-  ].join("-");
+  let h = 0;
+  for (let i = 0; i < input.length; i++) {
+    h = ((h << 5) - h + input.charCodeAt(i)) | 0;
+  }
+  const hex = Math.abs(h).toString(16).padStart(8, "0").slice(0, 8);
+  const r = () =>
+    Math.floor(Math.random() * 0x10000)
+      .toString(16)
+      .padStart(4, "0");
+  return `${hex}-${r()}-5${r().slice(1)}-${(Math.floor(Math.random() * 64) | 0x80).toString(16)}${r().slice(1)}-${r()}${r()}`;
 }
 
 /**
