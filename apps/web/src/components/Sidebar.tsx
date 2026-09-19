@@ -187,7 +187,7 @@ export function Sidebar({
     },
     {
       id: "code",
-      label: "Code & Terminal",
+      label: "Eleven Code",
       icon: Code2,
       platforms: ["desktop-app", "desktop-web", "mobile-app"],
     },

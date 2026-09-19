@@ -20,6 +20,11 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.12-alpha — 2026-09-19
+
+- Eleven Code (CodeWorkspace) agora abre no modo Editor (Monaco) por padrão — antes abria no terminal
+- Sidebar: aba "Code & Terminal" renomeada para "Eleven Code" (editor Monaco + terminal integrado via Ctrl+`)
+
 ## v2.10.11-alpha — 2026-09-19
 
 - Fix deploy Vercel: removida propriedade `rootDirectory` do `vercel.json` (inválida no schema atual) — root está no project settings; deploys automáticos do GitHub voltaram a passar
