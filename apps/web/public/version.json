@@ -1,7 +1,9 @@
 {
-  "version": "2.10.2-alpha",
-  "versionCode": 3,
+  "version": "2.10.3-alpha",
+  "versionCode": 4,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
-  "changelog": ["Add Vercel Analytics + Speed Insights"]
+  "changelog": [
+    "Sessions panel: versão do app, plataforma detalhada, features por plataforma, expansão de detalhes"
+  ]
 }

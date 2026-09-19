@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
     const body = await req.json();
-    const { platform, device, browser } = body;
+    const { platform, device, browser, app_version, app_name } = body;
 
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -60,7 +60,12 @@ export async function POST(req: Request) {
     if (existing) {
       await sb
         .from("device_sessions")
-        .update({ last_active: new Date().toISOString(), device })
+        .update({
+          last_active: new Date().toISOString(),
+          device,
+          app_version: app_version ?? "unknown",
+          app_name: app_name ?? "web",
+        })
         .eq("id", existing.id);
     } else {
       await sb.from("device_sessions").insert({
@@ -68,6 +73,8 @@ export async function POST(req: Request) {
         platform: platform ?? "unknown",
         device: device ?? "unknown",
         browser: browser ?? "unknown",
+        app_version: app_version ?? "unknown",
+        app_name: app_name ?? "web",
       });
     }
 

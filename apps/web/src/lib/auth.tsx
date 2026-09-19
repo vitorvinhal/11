@@ -48,13 +48,41 @@ async function registerDeviceSession(token: string) {
         ? navigator.platform || "unknown"
         : "unknown";
 
+    // Detect app name from platform
+    const appName =
+      platform === "desktop-app"
+        ? "desktop"
+        : platform === "mobile-app"
+          ? "mobile"
+          : platform === "mobile-web"
+            ? "mobile-web"
+            : "web";
+
+    // Get version from version.json
+    let appVersion = "unknown";
+    try {
+      const vr = await fetch("/version.json");
+      if (vr.ok) {
+        const vj = await vr.json();
+        appVersion = vj.version ?? "unknown";
+      }
+    } catch {
+      /* ignore */
+    }
+
     await fetch("/api/devices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ platform, device, browser }),
+      body: JSON.stringify({
+        platform,
+        device,
+        browser,
+        app_version: appVersion,
+        app_name: appName,
+      }),
     });
   } catch {
     /* best-effort */

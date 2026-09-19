@@ -1,6 +1,6 @@
 {
   "name": "@11/mobile",
-  "version": "2.10.2-alpha",
+  "version": "2.10.3-alpha",
   "private": true,
   "scripts": {
     "start": "expo start",
