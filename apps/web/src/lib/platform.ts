@@ -64,7 +64,6 @@ export function isCapacitor(): boolean {
 /** Check if running in mobile browser */
 export function isMobileWeb(): boolean {
   if (typeof window === "undefined") return false;
-  const ua = navigator.userAgent.toLowerCase();
   return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
     navigator.userAgent,
   );

@@ -12,6 +12,7 @@ dist/
 build/
 .next/
 out/
+apps/desktop/src-tauri/target/
 
 # TypeScript cache
 *.tsbuildinfo
