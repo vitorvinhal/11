@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 import { loadRootEnv } from "../../../lib/server-env";
 import { requireUser } from "../../../lib/auth-helpers";
 import { parseCompletionContent } from "../../../lib/parse-completion";
 import { chatLimiter } from "../../../lib/rate-limiter";
 
 loadRootEnv();
+
+/** Converte string arbitária em UUID v5 determinístico. */
+function toUuid(input: string): string {
+  const hash = createHash("sha256").update(input).digest("hex");
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    "5" + hash.slice(13, 16),
+    ((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16) +
+      hash.slice(18, 20),
+    hash.slice(20, 32),
+  ].join("-");
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,8 +84,28 @@ export async function POST(req: Request) {
       ? await injectMemory(withSearch, userId)
       : withSearch;
     const selected = provider ?? "astra";
-    const reply = await routeByProvider(selected, withMemory, body);
-    if (!reply)
+    let reply = await routeByProvider(selected, withMemory, body);
+    // Validação: resposta muito curta ou só caracteres especiais → tenta fallback
+    if (
+      !reply ||
+      reply.trim().length < 2 ||
+      /^[\s#*_`-]+$/.test(reply.trim())
+    ) {
+      const fallbackProviders = ["9router", "gemini", "anthropic"];
+      for (const fp of fallbackProviders) {
+        if (fp === selected.toLowerCase()) continue;
+        const fallback = await routeByProvider(fp, withMemory, body);
+        if (
+          fallback &&
+          fallback.trim().length >= 2 &&
+          !/^[\s#*_`-]+$/.test(fallback.trim())
+        ) {
+          reply = fallback;
+          break;
+        }
+      }
+    }
+    if (!reply || reply.trim().length < 2)
       return NextResponse.json(
         { error: "Nenhum provedor respondeu" },
         { status: 502 },
@@ -93,7 +127,7 @@ export async function POST(req: Request) {
         process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
       );
       void sb.from("model_usage").insert({
-        session_id: sessionId,
+        session_id: toUuid(sessionId),
         user_id: userId ?? null,
         provider: selected,
         input_tokens: inputTokens,

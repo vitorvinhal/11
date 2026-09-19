@@ -6,20 +6,24 @@
 export function parseCompletionContent(body: string): string | null {
   if (!body) return null;
 
-  // SSE (data: {...} separados por linha em branco)
-  if (body.includes('data:')) {
-    let out = '';
-    for (const line of body.split(/\r?\n/)) {
+  // SSE: linhas começam com "data: " — detecta por formato, não por substring
+  const lines = body.split(/\r?\n/);
+  const hasSSELines = lines.some((l) => /^data:\s*\{/.test(l));
+  if (hasSSELines) {
+    let out = "";
+    for (const line of lines) {
       const m = line.match(/^data:\s*(.*)$/);
-      if (!m || m[1] === '[DONE]') continue;
+      if (!m || m[1] === "[DONE]") continue;
       try {
         const chunk = JSON.parse(m[1]);
         const delta =
           chunk.choices?.[0]?.delta?.content ??
           chunk.choices?.[0]?.message?.content ??
-          '';
-        if (typeof delta === 'string') out += delta;
-      } catch { /* chunk não-JSON */ }
+          "";
+        if (typeof delta === "string") out += delta;
+      } catch {
+        /* chunk não-JSON */
+      }
     }
     return out || null;
   }
@@ -31,8 +35,8 @@ export function parseCompletionContent(body: string): string | null {
       data.choices?.[0]?.message?.content ??
       data.choices?.[0]?.delta?.content ??
       data.output_text ??
-      '';
-    return typeof text === 'string' && text ? text : null;
+      "";
+    return typeof text === "string" && text ? text : null;
   } catch {
     return null;
   }

@@ -1,4 +1,20 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
+
+/**
+ * Converte string arbitrária em UUID v5 determinístico (para uso em colunas uuid).
+ */
+function toUuid(input: string): string {
+  const hash = createHash("sha256").update(input).digest("hex");
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    "5" + hash.slice(13, 16),
+    ((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16) +
+      hash.slice(18, 20),
+    hash.slice(20, 32),
+  ].join("-");
+}
 
 /**
  * CostBreaker — circuit breaker por custo/tokens para PROVIDERS PAGOS.
@@ -62,13 +78,15 @@ export class CostBreaker {
     outputTokens: number,
   ): Promise<void> {
     try {
-      await this.supa().from("model_usage").insert({
-        session_id: sessionId,
-        provider,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        cost_units: spent,
-      });
+      await this.supa()
+        .from("model_usage")
+        .insert({
+          session_id: toUuid(sessionId),
+          provider,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          cost_units: spent,
+        });
     } catch {
       /* persistência é best-effort */
     }

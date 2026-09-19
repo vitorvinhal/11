@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       sb
         .from("model_usage")
         .select("provider, input_tokens, output_tokens, cost_units")
-        .order("created_at", { ascending: false })
+        .order("invoked_at", { ascending: false })
         .limit(5000),
     ]);
 

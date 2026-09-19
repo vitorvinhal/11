@@ -91,6 +91,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [offline, setOffline] = useState(false);
+  const [provider, setProvider] = useState("9router/Arcenal");
   const profile: RoutingProfile = "cost";
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -252,7 +253,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
           sessionId,
           userId: user?.id,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
-          provider: "9router/Arcenal",
+          provider,
           geminiKey: (keys.gemini ?? "").trim(),
           anthropicKey: (keys.anthropic ?? "").trim(),
           nineRouterKey: (keys.nineRouter ?? "").trim(),
@@ -337,7 +338,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
                   role: m.role,
                   content: m.content,
                 })),
-                provider: "9router/Arcenal",
+                provider,
                 profile,
                 webSearch,
                 memory: memory && !incognito,
@@ -567,7 +568,9 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
               </h1>
               <p className="mt-1.5 text-sm text-text-dim">
                 Modelo ativo:{" "}
-                <span className="font-medium text-primary">Arcenal</span>
+                <span className="font-medium text-primary">
+                  {provider.split("/").pop() ?? provider}
+                </span>
               </p>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -841,9 +844,51 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
 
-            <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted">
-              <Cpu className="h-3 w-3 text-primary" /> Arcenal
-            </div>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-text-muted hover:bg-white/[0.08] transition">
+                <Cpu className="h-3 w-3 text-primary" />{" "}
+                {provider.split("/").pop() ?? provider}
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  side="top"
+                  sideOffset={4}
+                  className="z-50 w-48 rounded-xl glass-card p-1"
+                >
+                  {[
+                    { id: "9router/Arcenal", label: "Arcenal (9Router)" },
+                    {
+                      id: "9router/kr/claude-sonnet-4.5",
+                      label: "Claude Sonnet 4.5",
+                    },
+                    { id: "9router/kr/glm-5", label: "GLM-5" },
+                    {
+                      id: "9router/gemini/gemini-3.6-flash",
+                      label: "Gemini 3.6 Flash",
+                    },
+                    { id: "gemini", label: "Google Gemini" },
+                    { id: "anthropic", label: "Anthropic Claude" },
+                    { id: "ollama", label: "Ollama (local)" },
+                  ].map((p) => (
+                    <DropdownMenu.Item
+                      key={p.id}
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none ${
+                        provider === p.id
+                          ? "bg-primary/10 text-primary"
+                          : "text-text-muted hover:bg-white/6 hover:text-text-primary"
+                      }`}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setProvider(p.id);
+                      }}
+                    >
+                      {provider === p.id && <Check className="h-3 w-3" />}
+                      {p.label}
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
 
             <button
               type="button"

@@ -137,9 +137,17 @@ export function Sidebar({
           <Plus className="h-4 w-4" />
         </button>
         <div className="mt-auto flex flex-col items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
-            {initials}
-          </div>
+          {user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt="Avatar"
+              className="h-9 w-9 rounded-full object-cover"
+            />
+          ) : (
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
+              {initials}
+            </div>
+          )}
         </div>
       </aside>
     );
@@ -347,9 +355,17 @@ export function Sidebar({
       <div className="border-t border-white/[0.04] p-2.5">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left hover:bg-white/[0.03] transition">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
-              {initials}
-            </div>
+            {user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Avatar"
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
+                {initials}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] text-text-primary">
                 {user?.email}

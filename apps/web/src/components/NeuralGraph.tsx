@@ -95,8 +95,22 @@ function simulatePhysics(
   }
   clusterCenters[0] = { x: cx, y: cy };
 
+  // Inicializar nodes não-core em posições aleatórias próximas ao centro do cluster
+  for (const n of ns) {
+    if (n.kind !== "core") {
+      const cc = clusterCenters[n.cluster] ?? clusterCenters[0];
+      const angle = Math.random() * Math.PI * 2;
+      const r = 30 + Math.random() * 60;
+      n.x = cc.x + Math.cos(angle) * r;
+      n.y = cc.y + Math.sin(angle) * r;
+      n.targetX = n.x;
+      n.targetY = n.y;
+    }
+  }
+
   for (let iter = 0; iter < iterations; iter++) {
     const alpha = 0.4 * (1 - iter / iterations);
+    // Forças de spring (arestas)
     for (const e of edges) {
       const s = ns.find((n) => n.id === e.source);
       const t = ns.find((n) => n.id === e.target);
@@ -105,22 +119,24 @@ function simulatePhysics(
         dy = t.y - s.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       const ideal = 80 + e.strength * 40;
-      const f = (dist - ideal) * 0.006 * alpha * e.strength;
+      const f = (dist - ideal) * 0.008 * alpha * e.strength;
       s.vx += (dx / dist) * f;
       s.vy += (dy / dist) * f;
       t.vx -= (dx / dist) * f;
       t.vy -= (dy / dist) * f;
     }
+    // Atração ao centro do cluster (mais forte)
     for (const n of ns) {
       if (n.kind === "core") continue;
       const cc = clusterCenters[n.cluster] ?? clusterCenters[0];
       const dx = cc.x - n.x,
         dy = cc.y - n.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const f = dist * 0.002 * alpha;
+      const f = dist * 0.006 * alpha;
       n.vx += (dx / dist) * f;
       n.vy += (dy / dist) * f;
     }
+    // Repulsão entre todos os pares (Coulomb simplificado)
     for (let i = 0; i < ns.length; i++) {
       for (let j = i + 1; j < ns.length; j++) {
         const a = ns[i],
@@ -128,9 +144,9 @@ function simulatePhysics(
         const dx = b.x - a.x,
           dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const minDist = (a.radius + b.radius) * 2.5;
+        const minDist = (a.radius + b.radius) * 3;
         if (dist < minDist) {
-          const f = (minDist - dist) * 0.02 * alpha;
+          const f = (minDist - dist) * 0.08 * alpha;
           a.vx -= (dx / dist) * f;
           a.vy -= (dy / dist) * f;
           b.vx += (dx / dist) * f;
@@ -138,18 +154,19 @@ function simulatePhysics(
         }
       }
     }
+    // Gravidade ao centro + atualização de posição
     for (const n of ns) {
       if (n.kind === "core") {
         n.vx += (cx - n.x) * 0.05;
         n.vy += (cy - n.y) * 0.05;
       } else {
-        n.vx += (cx - n.x) * 0.0003 * alpha;
-        n.vy += (cy - n.y) * 0.0003 * alpha;
+        n.vx += (cx - n.x) * 0.001 * alpha;
+        n.vy += (cy - n.y) * 0.001 * alpha;
       }
       n.x += n.vx;
       n.y += n.vy;
-      n.vx *= 0.85;
-      n.vy *= 0.85;
+      n.vx *= 0.82;
+      n.vy *= 0.82;
       n.x = Math.max(30, Math.min(w - 30, n.x));
       n.y = Math.max(30, Math.min(h - 30, n.y));
     }
