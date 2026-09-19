@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.8-alpha — 2026-09-19
+
+- Deploy fix: remover outputDirectory de vercel.json (builder Next em vez de file-serving estatico)
+
 ## v2.10.7-alpha — 2026-09-19
 
 - Eleven Code agora usa Monaco Editor (portado do Orca/stablyai): syntax highlight real, minimap, busca com seed da seleção, fontes JetBrains Mono, multi-arquivo

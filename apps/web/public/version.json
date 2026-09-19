@@ -1,9 +1,9 @@
 {
-  "version": "2.10.7-alpha",
-  "versionCode": 8,
+  "version": "2.10.8-alpha",
+  "versionCode": 9,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Import third-party skill libraries: mattpocock-skills (engineering/productivity) + OpenMontage (agentic video production)"
+    "Deploy fix: remover outputDirectory de vercel.json (builder Next em vez de file-serving estatico)"
   ]
 }
