@@ -23,7 +23,6 @@ const nextConfig = {
     ];
   },
   webpack: (config, { isServer }) => {
-    config.output = { ...config.output, hashFunction: 'sha256' };
     // officegen is incompatible with webpack bundling — externalize it for server-side routes
     if (isServer) {
       config.externals = [...(config.externals || []), 'officegen', 'readable-stream'];
