@@ -16,6 +16,8 @@ export interface GatewayRequest {
   mode?: GatewayMode;
   provider?: string; // usado apenas quando mode === 'pinned'
   profile?: RoutingProfile; // usado apenas no modo auto
+  /** Definições de tools (OpenAI format) — enviadas ao provedor se suportado. */
+  tools?: unknown[];
 }
 
 /**
@@ -42,13 +44,13 @@ export class ModelGateway {
   constructor(private readonly registry = defaultRegistry) {}
 
   async complete(req: GatewayRequest): Promise<GatewayCompletionResult> {
-    const { sessionId, profile = "cost" } = req;
+    const { sessionId, profile = "cost", tools } = req;
 
     // Compacta contexto longo antes de decidir provedor.
     const { messages } = longContextManager.compact(req.messages);
 
     if (req.mode === "pinned" && req.provider) {
-      return this.invokeWithFallback(req.provider, sessionId, messages);
+      return this.invokeWithFallback(req.provider, sessionId, messages, tools);
     }
 
     const order = PROFILE_ORDER[profile] ?? PROFILE_ORDER.cost;
@@ -65,7 +67,7 @@ export class ModelGateway {
         costBreaker.notifyFallback(
           `pin ${pinned} falhou (${reason}) → ${next}`,
         );
-        return this.invoke(next, sessionId, messages, reason);
+        return this.invoke(next, sessionId, messages, reason, tools);
       }
     }
 
@@ -74,7 +76,7 @@ export class ModelGateway {
       const adapter = this.registry.get(id);
       if (!adapter) continue;
       try {
-        const result = await adapter.complete(messages, { sessionId });
+        const result = await adapter.complete(messages, { sessionId, tools });
         await providerPinning.pin(sessionId, adapter.id, "auto");
         return result;
       } catch (err) {
@@ -157,8 +159,9 @@ export class ModelGateway {
     providerId: string,
     sessionId: string,
     messages: CanonicalMessage[],
+    tools?: unknown[],
   ): Promise<GatewayCompletionResult> {
-    return this.invoke(providerId, sessionId, messages);
+    return this.invoke(providerId, sessionId, messages, undefined, tools);
   }
 
   private async invoke(
@@ -166,6 +169,7 @@ export class ModelGateway {
     sessionId: string,
     messages: CanonicalMessage[],
     fallbackReason?: string,
+    tools?: unknown[],
   ): Promise<GatewayCompletionResult> {
     const adapter = this.registry.get(providerId);
     if (!adapter) throw new Error(`provedor desconhecido: ${providerId}`);
@@ -176,7 +180,7 @@ export class ModelGateway {
       throw new Error("orçamento de provedores pagos esgotado");
     }
 
-    const result = await adapter.complete(messages, { sessionId });
+    const result = await adapter.complete(messages, { sessionId, tools });
     const cost =
       result.usage.costUnits ||
       (adapter.isPaid ? this.estimateCost(messages) : 0);

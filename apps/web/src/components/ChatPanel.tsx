@@ -26,6 +26,7 @@ import {
 import Image from "next/image";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "../lib/auth";
+import { getDeviceContext } from "../lib/device-client";
 import {
   isNetworkError,
   enqueueChatOffline,
@@ -248,24 +249,37 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       try {
-        const apiUrl = "/api/chat";
-        const body = {
-          sessionId,
-          userId: user?.id,
-          messages: next.map((m) => ({ role: m.role, content: m.content })),
-          provider,
-          geminiKey: (keys.gemini ?? "").trim(),
-          anthropicKey: (keys.anthropic ?? "").trim(),
-          nineRouterKey: (keys.nineRouter ?? "").trim(),
-          files: attached.map((a) => ({
-            label: a.label,
-            snippet: a.snippet,
-          })),
-          webSearch,
-          memory: memory && !incognito,
-          profile,
-          stream: true,
-        };
+        const devCtx = getDeviceContext();
+        const isNativeApp =
+          devCtx.platform === "desktop-app" || devCtx.platform === "mobile-app";
+        const useAgent =
+          isNativeApp && !!devCtx.deviceId && provider === "9router";
+
+        const apiUrl = useAgent ? "/api/agent" : "/api/chat";
+        const body = useAgent
+          ? {
+              prompt: text,
+              sessionId,
+              deviceId: devCtx.deviceId,
+              stream: true,
+            }
+          : {
+              sessionId,
+              userId: user?.id,
+              messages: next.map((m) => ({ role: m.role, content: m.content })),
+              provider,
+              geminiKey: (keys.gemini ?? "").trim(),
+              anthropicKey: (keys.anthropic ?? "").trim(),
+              nineRouterKey: (keys.nineRouter ?? "").trim(),
+              files: attached.map((a) => ({
+                label: a.label,
+                snippet: a.snippet,
+              })),
+              webSearch,
+              memory: memory && !incognito,
+              profile,
+              stream: true,
+            };
 
         const res = await fetch(apiUrl, {
           method: "POST",

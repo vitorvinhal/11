@@ -20,6 +20,20 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.11.0-alpha — 2026-09-19
+
+### Agente de Dispositivo (PC + Mobile) — TASK-DEVICE-001
+
+- Agente PC e Agente Mobile agora são **agentes de dispositivo 100% funcionais** (base: nousresearch/hermes-agent, MIT): acesso a arquivos, fotos/mídia, apps, configurações, captura de tela e estado do sistema no dispositivo.
+- **Visibilidade nativa pura**: `Agente PC` só em `desktop-app` (Tauri), `Agente Mobile` só em `mobile-app` (Capacitor). Escondidos em qualquer browser.
+- **Pareamento real**: `devices` (deviceId persistente + secret) via `/api/devices/register`; deviceId em localStorage, segredo retornado uma única vez.
+- **Fila de jobs** `device_jobs` no Supabase + polling HTTP por dispositivo (transport Vercel-compatível; WS serverless não suportado) com rotas `poll`, `result`, `approve`.
+- **Function calling ligado**: adapter 9Router agora envia `tools` e parseia `tool_calls`; agentLoop expõe 21 tools `device.*` e roteia pelos jobs; aprovação DESTRUCTIVE → `awaiting_approval` → UI.
+- **PC (desktop)**: executor de tools em `device-tools.ts` (Windows/Node+PowerShell), rotas `/device/pair` + `/device/tool`, spawn automático dos serviços locais no boot do Tauri.
+- **Mobile**: 8 plugins Capacitor instalados (filesystem, camera, device, network, clipboard, app, preferences, local-notifications) + `DeviceBridge` injetado no WebView executando tools nativamente.
+- **UI**: painéis Agente PC/Mobile reescritos (status, jobs em execução, aprovações, histórico, comando rápido); chat usa `/api/agent` com deviceId nos apps nativos; fix do painel mobile que chamava rota inexistente `/api/agent/mobile`.
+- Testes: 3 novos no adapter 9Router (tools no body, parse tool_calls, retrocompat) — 257 total no `@11/ia`.
+
 ## v2.10.15-alpha — 2026-09-19
 
 - Fix build Vercel: caminho dos scripts no buildCommand — cwd do Vercel é `apps/web` (rootDirectory), paths corrigidos para `../../scripts/*`; scripts `clear-next-cache.mjs`/`build-monaco-workers.mjs` agora detectam cwd e limpam/geram no lugar certo

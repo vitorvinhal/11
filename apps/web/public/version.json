@@ -1,9 +1,13 @@
 {
-  "version": "2.10.15-alpha",
-  "versionCode": 16,
+  "version": "2.11.0-alpha",
+  "versionCode": 17,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
+  "buildTime": "2026-09-19T00:00:00.000Z",
   "changelog": [
-    "Deploy fix: monorepo rootDirectory apps/web (Next builder encontra .next) + vercel.json alinhado"
+    "Agente de Dispositivo: Agente PC (desktop) e Agente Mobile agora executam tools no dispositivo (arquivos, mídia, apps, configurações, tela, sistema)",
+    "Function calling conectado no 9Router (tools + tool_calls) com 21 ferramentas device.* e fluxo de aprovação humana",
+    "Pareamento de device: deviceId persistente + secret via /api/devices/register; fila de jobs no Supabase com polling (Vercel-compatível)",
+    "Visibilidade nativa pura: Agente PC só em desktop-app, Agente Mobile só em mobile-app"
   ]
 }

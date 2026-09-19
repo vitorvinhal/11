@@ -3,11 +3,13 @@ import {
   CanonicalMessage,
   ContentBlock,
   GatewayCompletionResult,
+  ToolCall,
 } from "../types";
 
 /**
  * NineRouterAdapter — provedor default gratuito (9Router, compatível com OpenAI).
  * Endpoints: ROUTER9_ENDPOINT (local) com fallback ROUTER9_TUNNEL (público).
+ * Suporta function calling (tools no body + parse de tool_calls).
  */
 export class NineRouterAdapter implements ProviderAdapter {
   readonly id = "9router" as const;
@@ -15,10 +17,10 @@ export class NineRouterAdapter implements ProviderAdapter {
 
   async complete(
     messages: CanonicalMessage[],
-    _opts: { sessionId: string; model?: string },
+    opts: { sessionId: string; model?: string; tools?: unknown[] },
   ): Promise<GatewayCompletionResult> {
     const token = process.env["ROUTER9_TOKEN"] ?? "";
-    const requested = _opts.model ?? process.env["ROUTER9_MODEL"] ?? "Arcenal";
+    const requested = opts.model ?? process.env["ROUTER9_MODEL"] ?? "Arcenal";
     const envFallbacks = (process.env["ROUTER9_FALLBACK_MODELS"] ?? "")
       .split(",")
       .map((s) => s.trim())
@@ -36,6 +38,8 @@ export class NineRouterAdapter implements ProviderAdapter {
       "http://localhost:20128",
     ].filter((ep) => ep.startsWith("http"));
 
+    const hasTools = !!opts.tools && opts.tools.length > 0;
+
     let lastError: Error | null = null;
     for (const modelId of models) {
       for (const endpoint of candidates) {
@@ -49,14 +53,44 @@ export class NineRouterAdapter implements ProviderAdapter {
             body: JSON.stringify({
               model: modelId,
               stream: false,
-              messages: messages.map((m) => ({
-                role: m.role,
-                content: m.content
-                  .map((c: ContentBlock) => c.text ?? c.data ?? "")
-                  .join("\n"),
-              })),
+              messages: messages.map((m) => {
+                const base: Record<string, unknown> = {
+                  role: m.role,
+                  content: m.content
+                    .map((c: ContentBlock) => c.text ?? c.data ?? "")
+                    .join("\n"),
+                };
+                if (m.toolCalls && m.toolCalls.length > 0) {
+                  base["tool_calls"] = m.toolCalls.map((tc) => ({
+                    id: tc.id,
+                    type: "function",
+                    function: {
+                      name: tc.name,
+                      arguments: JSON.stringify(tc.arguments ?? {}),
+                    },
+                  }));
+                }
+                if (m.toolCallId && m.toolResults) {
+                  const tr = m.toolResults.find(
+                    (r) => r.toolCallId === m.toolCallId,
+                  );
+                  base["tool_call_id"] = m.toolCallId;
+                  base["content"] = tr
+                    ? typeof tr.result === "string"
+                      ? tr.result
+                      : JSON.stringify(tr.result)
+                    : (base["content"] as string);
+                }
+                return base;
+              }),
+              ...(hasTools
+                ? {
+                    tools: opts.tools as unknown[],
+                    tool_choice: "auto" as const,
+                  }
+                : {}),
             }),
-            signal: AbortSignal.timeout(60_000),
+            signal: AbortSignal.timeout(120_000),
           });
           if (!res.ok) {
             lastError = new Error(
@@ -66,15 +100,19 @@ export class NineRouterAdapter implements ProviderAdapter {
             break;
           }
           const text = await res.text();
-          const content = parseCompletionContent(text);
-          if (content) {
+          const parsed = parseOpenAIResponse(text);
+          if (parsed && (parsed.text || (parsed.toolCalls?.length ?? 0) > 0)) {
             const usage = parseUsage(text);
+            const content: ContentBlock[] = parsed.text
+              ? [{ type: "text", text: parsed.text }]
+              : [];
             return {
               provider: "9router",
               model: modelId,
               message: {
                 role: "assistant",
-                content: [{ type: "text", text: content }],
+                content,
+                toolCalls: parsed.toolCalls ?? [],
               },
               usage: {
                 inputTokens: usage.input,
@@ -98,40 +136,92 @@ export function nineRouterAdapter(): NineRouterAdapter {
   return _instance;
 }
 
+interface OpenAIResponse {
+  text: string | null;
+  toolCalls: ToolCall[] | null;
+}
+
 /**
- * Extrai o texto de resposta OpenAI-compatível (JSON puro ou SSE streaming).
+ * Extrai texto e/ou tool_calls de resposta OpenAI-compatível (JSON puro ou SSE).
  * Alguns combos do 9Router retornam SSE mesmo com stream:false.
  */
-function parseCompletionContent(body: string): string | null {
+function parseOpenAIResponse(body: string): OpenAIResponse | null {
   if (!body) return null;
   if (body.includes("data:")) {
-    let out = "";
+    let text = "";
+    const toolCalls: ToolCall[] = [];
+    const deltaCalls: Record<
+      number,
+      { id?: string; name?: string; args: string }
+    > = {};
     for (const line of body.split(/\r?\n/)) {
       const m = line.match(/^data:\s*(.*)$/);
       if (!m || m[1] === "[DONE]") continue;
       try {
         const chunk = JSON.parse(m[1]);
-        const delta =
-          chunk.choices?.[0]?.delta?.content ??
-          chunk.choices?.[0]?.message?.content ??
-          "";
-        if (typeof delta === "string") out += delta;
+        const choice = chunk.choices?.[0];
+        if (!choice) continue;
+        const delta = choice.delta ?? choice.message ?? {};
+        if (typeof delta.content === "string") text += delta.content;
+        for (const tc of delta.tool_calls ?? []) {
+          const idx = tc.index ?? 0;
+          const entry = deltaCalls[idx] ?? { args: "" };
+          if (tc.id) entry.id = tc.id;
+          if (tc.function?.name) entry.name += tc.function.name;
+          if (tc.function?.arguments) entry.args += tc.function.arguments;
+          deltaCalls[idx] = entry;
+        }
       } catch {
         /* chunk não-JSON */
       }
     }
-    return out || null;
+    for (const [idx, entry] of Object.entries(deltaCalls)) {
+      if (!entry.name) continue;
+      toolCalls.push({
+        id: entry.id ?? `call_${idx}`,
+        name: entry.name,
+        arguments: parseArguments(entry.args),
+      });
+    }
+    if (!text && toolCalls.length === 0) return null;
+    return {
+      text: text || null,
+      toolCalls: toolCalls.length ? toolCalls : null,
+    };
   }
   try {
     const data = JSON.parse(body) as any;
+    const msg = data.choices?.[0]?.message ?? {};
     const text =
-      data.choices?.[0]?.message?.content ??
+      msg.content ??
       data.choices?.[0]?.delta?.content ??
       data.output_text ??
       "";
-    return typeof text === "string" && text ? text : null;
+    const rawCalls: any[] = msg.tool_calls ?? [];
+    const toolCalls: ToolCall[] = rawCalls
+      .filter((tc) => tc?.function?.name)
+      .map((tc) => ({
+        id: tc.id ?? `call_${Math.random().toString(36).slice(2, 8)}`,
+        name: tc.function.name,
+        arguments: parseArguments(tc.function.arguments),
+      }));
+    if (!text && toolCalls.length === 0) return null;
+    return {
+      text: typeof text === "string" && text ? text : null,
+      toolCalls: toolCalls.length ? toolCalls : null,
+    };
   } catch {
     return null;
+  }
+}
+
+function parseArguments(raw: unknown): Record<string, unknown> {
+  if (typeof raw !== "string" || !raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
   }
 }
 
