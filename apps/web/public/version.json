@@ -1,9 +1,9 @@
 {
-  "version": "2.10.3-alpha",
-  "versionCode": 4,
+  "version": "2.10.4-alpha",
+  "versionCode": 5,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Sessions panel: versão do app, plataforma detalhada, features por plataforma, expansão de detalhes"
+    "Fix Tauri desktop app detection: withGlobalTauri + multiple detection signals"
   ]
 }

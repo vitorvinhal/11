@@ -9,14 +9,19 @@ export type Platform =
 export function getPlatform(): Platform {
   if (typeof window === "undefined") return "desktop-web";
 
-  // Tauri (desktop app)
-  if ((window as any).__TAURI__) return "desktop-app";
+  // Tauri v2 (desktop app) — check multiple signals
+  const w = window as any;
+  if (w.__TAURI__ || w.__TAURI_INTERNALS__ || w.__TAURI_IPC__)
+    return "desktop-app";
+
+  // Also check user-agent for Tauri
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes("tauri")) return "desktop-app";
 
   // Capacitor (mobile app)
-  if ((window as any).Capacitor) return "mobile-app";
+  if (w.Capacitor) return "mobile-app";
 
   // Mobile web detection
-  const ua = navigator.userAgent.toLowerCase();
   const isMobile =
     /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
 
@@ -52,7 +57,11 @@ export function isMobile(platform: Platform): boolean {
 /** Check if running in Tauri (desktop app) */
 export function isTauri(): boolean {
   if (typeof window === "undefined") return false;
-  return !!(window as any).__TAURI__;
+  const w = window as any;
+  return (
+    !!(w.__TAURI__ || w.__TAURI_INTERNALS__ || w.__TAURI_IPC__) ||
+    navigator.userAgent.toLowerCase().includes("tauri")
+  );
 }
 
 /** Check if running in Capacitor (mobile app) */

@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.4-alpha — 2026-09-19
+
+- Fix Tauri desktop app detection: withGlobalTauri + multiple detection signals
+
 ## v2.10.3-alpha — 2026-09-19
 
 - Sessions panel: versão do app, plataforma detalhada, features por plataforma, expansão de detalhes
