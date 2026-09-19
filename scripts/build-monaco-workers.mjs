@@ -1,9 +1,11 @@
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { copyFileSync } from 'node:fs';
+import { join } from 'node:path';
 
+// O cwd muda conforme o runner: local (raiz do repo) ou Vercel (rootDirectory = apps/web).
+const IN_WEB = process.cwd().replace(/\\/g, '/').endsWith('/apps/web');
 const MONACO = 'node_modules/monaco-editor/esm/vs';
-const OUT = 'apps/web/public/vs';
+const OUT = `${IN_WEB ? '' : 'apps/web/'}public/vs`;
 
 const workers = {
   'monaco-editor.worker': `${MONACO}/editor/editor.worker.js`,
@@ -26,6 +28,9 @@ await build({
   logLevel: 'warning',
 });
 
-copyFileSync('node_modules/vscode-oniguruma/release/onig.wasm', join(OUT, 'onig.wasm'));
+copyFileSync(
+  'node_modules/vscode-oniguruma/release/onig.wasm',
+  join(OUT, 'onig.wasm'),
+);
 
 console.log('[build-monaco-workers] workers + onig.wasm gerados em public/vs');

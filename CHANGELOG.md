@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.15-alpha — 2026-09-19
+
+- Fix build Vercel: caminho dos scripts no buildCommand — cwd do Vercel é `apps/web` (rootDirectory), paths corrigidos para `../../scripts/*`; scripts `clear-next-cache.mjs`/`build-monaco-workers.mjs` agora detectam cwd e limpam/geram no lugar certo
+
 ## v2.10.14-alpha — 2026-09-19
 
 - Fix definitivo build Vercel (`Hash.update(undefined)`): workers do Monaco deixam de ser assets do webpack
