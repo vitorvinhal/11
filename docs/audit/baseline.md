@@ -1,157 +1,74 @@
-# Baseline — Projeto 11
+# Phase 0 Audit Baseline — 2026-09-19
 
-Data: 2026-09-18 (última verificação)
-Versão: 2.10.0-alpha
+## Build Status
 
-## 1. Arquitetura Mapeada
+- **TypeScript:** ✅ PASS (no errors)
+- **ESLint:** ✅ PASS (0 errors, warnings only)
+- **Next.js Build:** ✅ PASS
 
-### Monorepo (pnpm workspaces)
+## Changes Made (Phase 0-7)
 
-| Camada       | Pacote            | Descrição                                                                      |
-| ------------ | ----------------- | ------------------------------------------------------------------------------ |
-| **Frontend** | `apps/web`        | Next.js 14+ (App Router), UI ChatGPT-style, API routes                         |
-| **Desktop**  | `apps/desktop`    | Tauri 2 + Express (PC Agent + Router9)                                         |
-| **Mobile**   | `apps/mobile`     | Capacitor + React Native                                                       |
-| **API**      | `packages/api`    | NestJS (auth, bridge, store, deploy, terminal)                                 |
-| **IA**       | `packages/ia`     | ModelGateway, adapters (9Router/Gemini/Anthropic/MiniMax), tools, cost-breaker |
-| **Shared**   | `packages/shared` | Redux store, tipos compartilhados                                              |
-| **CLI**      | `packages/cli`    | Codegen, deploy scripts, git-guard                                             |
+### FASE 0 — Fix Crashes
 
-### APIs Principais (apps/web)
+- `apps/web/src/app/api/chat/route.ts`: `break` → `continue` in route9Router; added usage recording; added Ollama fallback
+- `apps/web/src/app/error.tsx`: NEW — page error boundary
+- `apps/web/src/app/global-error.tsx`: NEW — root error boundary
+- `apps/web/src/components/ErrorBoundary.tsx`: NEW — reusable class boundary
+- `apps/web/src/lib/version.ts`: NEW — parseVersionPayload() helper
+- `apps/web/src/components/VersionBadge.tsx`: Fixed to use parser
+- `apps/web/src/components/ProfileDialog.tsx`: Fixed changelog parsing; restructured 12→7 tabs
+- `apps/web/src/app/api/version/route.ts`: Flattened response (removed `{ok, data}` wrapper)
 
-| Rota                 | Método   | Função                                                     |
-| -------------------- | -------- | ---------------------------------------------------------- |
-| `/api/chat`          | POST     | Chat com routing multi-provider (9Router/Gemini/Anthropic) |
-| `/api/terminal/exec` | POST/GET | Terminal web via spawn (PowerShell/bash)                   |
-| `/api/code`          | POST     | Executor de código sandboxed                               |
-| `/api/connectors/*`  | GET/POST | OAuth connectors (Google, GitHub, Slack, Notion)           |
-| `/api/media`         | POST     | Upload + análise de mídia via IA                           |
-| `/api/memories`      | GET/POST | Memórias do usuário                                        |
-| `/api/settings`      | GET/POST | Configurações do usuário                                   |
-| `/api/skills`        | GET      | Catálogo de skills                                         |
-| `/api/plugins`       | GET      | Plugins instalados                                         |
+### FASE 1 — Terminal
 
-### APIs Desktop
+- `apps/web/src/components/ElevenCoder.tsx`: REWRITTEN from socket.io to REST+SSE
+- `apps/web/src/components/TerminalPanel.tsx`: Fixed xterm init (removed `display:none`)
+- `apps/web/src/components/Sidebar.tsx`: Added Code/Terminal to mobile-app platforms
 
-| Servidor                            | Porta     | Rotas                                              |
-| ----------------------------------- | --------- | -------------------------------------------------- |
-| **Router9** (`server.ts`)           | 3001/3002 | `POST /router9` (stt, file, remote, media, health) |
-| **PC Agent** (`pc-agent/server.ts`) | 3001      | `GET/POST/PATCH/DELETE /api/sessions/*`, WebSocket |
+### FASE 2 — Neural Graph
 
-### APIs NestJS (packages/api)
+- `apps/web/src/components/NeuralGraph.tsx`: Fixed skills shape mismatch; Promise.all → allSettled; improved edge visibility
 
-| Módulo         | Rotas                                                                                    | Guard                         |
-| -------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| AuthModule     | `POST /auth/magic-link`, `GET /auth/me`                                                  | SessionGuard                  |
-| BridgeModule   | `GET/POST /ops/*` (list-files, read-file, write-file, run-build, run-command, run-tests) | RateLimitGuard + SessionGuard |
-| TerminalModule | WebSocket `/terminal` (node-pty)                                                         | Supabase JWT via WS handshake |
-| StoreModule    | CRUD genérico                                                                            | —                             |
-| DeployModule   | Deploy management                                                                        | —                             |
+### FASE 3 — FinOps
 
-### ModelGateway (packages/ia)
+- `packages/ia/src/router/cost-breaker.ts`: Fixed env var (SUPABASE_URL → NEXT_PUBLIC_SUPABASE_URL); always persist
+- `apps/web/src/app/api/chat/route.ts`: Added usage recording to model_usage
 
-```
-Request → Compactação Contexto → Provider Selection → Adapter.complete() → CostBreaker.track() → Response
-```
+### FASE 4 — Canvas
 
-Adapters: 9router (free) → gemini (free) → anthropic (paid) → minimax (paid)
-Fallback cascata com provider pinning por sessão.
+- `apps/web/src/components/CanvasPanel.tsx`: Added JSX mode (Babel + React UMD); className→class transform; 3 modes: HTML/Tailwind, React/JSX, SVG
 
-### Banco de Dados (Supabase)
+### FASE 5 — Settings
 
-Tabelas identificadas no código:
+- `apps/web/src/components/AvatarUpload.tsx`: NEW — Supabase Storage upload
+- `apps/web/src/components/OllamaPanel.tsx`: NEW — Ollama config + model selector
+- `apps/web/src/components/SessionsPanel.tsx`: NEW — device sessions display
+- `apps/web/src/components/ProfileDialog.tsx`: Restructured to 7 tabs
+- `apps/web/src/app/api/devices/route.ts`: NEW — CRUD for device_sessions
+- `apps/web/src/app/api/settings/test-ollama/route.ts`: NEW — test Ollama connection
+- `infra/supabase/migrations/20260919_device_sessions.sql`: NEW — device_sessions table
+- `infra/supabase/migrations/20260919_avatars_bucket.sql`: NEW — avatars storage bucket
 
-- `users`, `sessions`, `messages`, `memories`, `embeddings`
-- `agent_states`, `artifacts`, `plugins`
-- `bridge_audit_log`, `model_usage`
-- `projects`, `skills_projects`
+### FASE 6 — Bug Fixes
 
-**⚠️ Migrações SQL não estão no repositório** — gerenciadas externamente via Supabase Dashboard.
+- `apps/web/src/app/api/skills/route.ts`: Removed non-existent columns (system_prompt, config, icon, builtin)
+- `apps/web/src/app/api/plugins/route.ts`: Removed version column from GET/POST
+- `apps/web/src/app/api/account/route.ts`: Added artifacts, plugins, device_sessions, model_usage to cleanup
 
----
+### FASE 7 — Master Directive
 
-## 2. Resultados da Baseline
+- `CLAUDE.md`: NEW — 170+ item engineering directive
 
-### pnpm install
+## Warnings (non-blocking)
 
-- **Status**: ✅ OK
+- AvatarUpload: unused `getAccessToken`, `<img>` vs `<Image />`
+- ChatPanel: missing deps in useCallback
+- Loading: unused ReactNode import
+- api-versioning.test: unused isVersionDeprecated
 
-### Typecheck (por pacote)
+## Next Steps
 
-- **Status**: ✅ OK (npx tsc --noEmit para web, ia, shared)
-- Todos os 3 pacotes passam sem erros
-
-### Lint (apps/web)
-
-- **Status**: ✅ PASS (7 warnings, 0 errors)
-  - `agent/route.ts:53` — unused var `provider` (pre-existing)
-  - `security.test.ts:6` — unused var `token` (pre-existing)
-  - `ChatPanel.tsx:440,499` — missing deps `getAccessToken`/`user` (pre-existing)
-  - `ElevenCoder.tsx:132` — ref em cleanup de effect (pre-existing)
-  - `Loading.tsx:3` — unused import `ReactNode` (pre-existing)
-  - `api-versioning.test.ts:4` — unused `isVersionDeprecated` (pre-existing)
-
-### Test (npx jest)
-
-- **Status**: ✅ PASS (385/385 testes, 30 suites)
-  - `packages/ia`: 11 testes
-  - `apps/web`: 374 testes
-  - Todos passando, 0 falhas
-
-### Build (pnpm build)
-
-- **Status**: ✅ OK
-  - `@11/shared` → tsc OK
-  - `@11/ia` → tsc + copy-assets OK
-  - `@11/web` → next build OK (24 pages)
-  - Warnings: `bufferutil`/`utf-8-validate` não resolvidos (deps opcionais de `ws`) — pre-existing
-
----
-
-## 3. Problemas Críticos — Status (2026-09-18)
-
-### ✅ CRÍTICO 1: Router9 Path Traversal — CORRIGIDO
-
-**Arquivo**: `apps/desktop/src/router9/index.ts`
-
-- Adicionada função `isInsideRoot()` que valida com `path.sep` (antes usava `startsWith` simples)
-- Adicionado fallback de traversal: quando path nem parent existem, sobe até diretório existente e valida
-- Teste unitário criado: `safePath.test.ts` — 8/8 testes passando (sibling-dir, absolute, parent-dir, same-dir, valid read)
-
-### ✅ CRÍTICO 2: PC Agent Auth — JÁ CORRIGIDO (FASE 1)
-
-- `authMiddleware` aplicado em `PATCH /cancel` e `DELETE` em `pc-agent/server.ts`
-- JWT_SECRET com fail-fast (sem fallback hardcoded)
-- CORS usa `ALLOWED_ORIGINS`
-
-### ✅ CRÍTICO 3: Terminal + Bridge — JÁ CORRIGIDO (FASE 1)
-
-- `bridge.ts`: `ops/run-command` removido do allowlist (agora só 4 ops seguras)
-- `terminal/exec`: auth obrigatória em produção (bloqueia sem Supabase)
-
-### ✅ RLS: 10/10 tabelas de negócio com RLS habilitado
-
-`sessions`, `messages`, `memories`, `projects`, `skills`, `plugins`, `artifacts`, `media`, `pending_actions`, `checkpoints` — todas com policy `auth.uid() = user_id`.
-
-## 4. Dívida Técnica Registrada
-
-| ID     | Arquivo                                               | Problema                                                 | Severidade       |
-| ------ | ----------------------------------------------------- | -------------------------------------------------------- | ---------------- |
-| DT-001 | `packages/cli/src/generators/codegen.ts:10`           | Pasta `templates` não existe — codegen falha             | HIGH             |
-| DT-002 | `apps/mobile/tsconfig.json`                           | `noEmit` pode conflitar com `extends`                    | MEDIUM           |
-| DT-003 | `.env.example`                                        | Variáveis faltantes: `OPENROUTER_API_KEY`                | LOW              |
-| DT-004 | `packages/ia/src/router/cost-breaker.ts:13`           | `spentPaid` em memória — reset a cada cold start         | HIGH             |
-| DT-005 | `packages/ia/src/tools/bridge.ts:8`                   | ~~`ops/run-command` no allowlist = RCE~~ **CORRIGIDO**   | CRITICAL → FIXED |
-| DT-006 | `supabase/`                                           | Migrações SQL não versionadas no repo                    | MEDIUM           |
-| DT-007 | Root `package.json`                                   | Sem script `typecheck` definido                          | LOW              |
-| DT-008 | `packages/ia/src/router/cost-breaker.ts:19-22`        | Supabase client com credenciais vazias = fail silencioso | MEDIUM           |
-| DT-009 | `apps/web/src/app/api/terminal/exec/route.ts:29`      | `resolveCwd` só substitui primeiro `~`                   | LOW              |
-| DT-010 | `apps/web/src/app/api/terminal/exec/route.ts:180-188` | GET expõe session state sem auth                         | MEDIUM           |
-
----
-
-## 5. Resumo do Deploy (Investigação)
-
-**Causa raiz do deploy não atualizar**: O `vercel.json` usa `"builds"` que sobrepõe Project Settings. O `pnpm install` falha com `ERR_PNPM_OUTDATED_LOCKFILE` porque o `pnpm-lock.yaml` ficava desincronizado. Resolvido com `--no-frozen-lockfile` no `installCommand`.
-
-**Status atual**: Deploy funciona (v0.4.1-alpha publicada com tag).
+- Run SQL migrations on Supabase
+- Create avatars bucket in Supabase Storage
+- Deploy to Vercel
+- Smoke test: chat, terminal, neural graph, settings, canvas

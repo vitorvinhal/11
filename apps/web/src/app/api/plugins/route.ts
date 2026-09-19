@@ -48,9 +48,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await sb
       .from("plugins")
-      .select(
-        "id, name, description, version, author, enabled, config, created_at",
-      )
+      .select("id, name, description, author, enabled, config, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -63,7 +61,6 @@ export async function GET(req: Request) {
         id: p.id,
         name: p.name,
         description: p.description,
-        version: p.version,
         author: p.author,
         enabled: p.enabled,
         config: JSON.parse(p.config ?? "{}"),
@@ -129,7 +126,6 @@ export async function POST(req: Request) {
           user_id: userId,
           name: body.name ?? pluginId,
           description: body.description ?? `Plugin ${pluginId}`,
-          version: "1.0.0",
           author: body.author ?? "community",
           enabled: body.enabled ?? true,
           config: JSON.stringify(config ?? {}),

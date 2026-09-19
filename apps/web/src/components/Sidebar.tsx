@@ -181,13 +181,13 @@ export function Sidebar({
       id: "code",
       label: "Code & Terminal",
       icon: Code2,
-      platforms: ["desktop-app", "desktop-web"],
+      platforms: ["desktop-app", "desktop-web", "mobile-app"],
     },
     {
       id: "coder",
       label: "Eleven Coder",
       icon: Terminal,
-      platforms: ["desktop-app"],
+      platforms: ["desktop-app", "desktop-web", "mobile-app"],
     },
     {
       id: "neural",

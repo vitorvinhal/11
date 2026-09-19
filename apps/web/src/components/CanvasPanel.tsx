@@ -3,15 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Sparkles, Code2 } from "lucide-react";
 
-type Mode = "html" | "svg";
+type Mode = "html" | "jsx" | "svg";
 
 const PREFIX_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">`;
 
-/**
- * Canvas generativo — playground onde a 11 renderiza e compila componentes
- * React/Tailwind/SVG em um iframe isolado em tempo real.
- * Modos: HTML (+ Tailwind via CDN) ou SVG diagram.
- */
+const REACT_CDN = `<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>`;
+const BABEL_CDN = `<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>`;
+const TAILWIND_CDN = `<script src="https://cdn.tailwindcss.com"></script>`;
+
 export function CanvasPanel() {
   const [mode, setMode] = useState<Mode>("html");
   const [code, setCode] = useState(DEFAULT_HTML);
@@ -27,9 +26,23 @@ export function CanvasPanel() {
       );
       return;
     }
-    const html = code.trim().startsWith("<") ? code : `\n${code}`;
+
+    if (mode === "jsx") {
+      // JSX mode: Babel + React UMD + Tailwind
+      const transformed = code
+        .replace(/className=/g, "class=")
+        .replace(/htmlFor=/g, "for=");
+      setSrcDoc(
+        `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}${REACT_CDN}${BABEL_CDN}</head><body class="bg-[#05050A]"><div id="root"></div><script type="text/babel">${transformed}; const root = ReactDOM.createRoot(document.getElementById('root')); root.render(React.createElement(App));</script></body></html>`,
+      );
+      return;
+    }
+
+    // HTML mode: Tailwind only (no React)
+    let html = code.trim().startsWith("<") ? code : `\n${code}`;
+    html = html.replace(/className=/g, "class=").replace(/htmlFor=/g, "for=");
     setSrcDoc(
-      `<!doctype html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-[#05050A]">${html}</body></html>`,
+      `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}</head><body class="bg-[#05050A]">${html}</body></html>`,
     );
   }, [code, mode]);
 
@@ -60,13 +73,17 @@ export function CanvasPanel() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="flex rounded-lg bg-white/[0.04] p-0.5">
-            {(["html", "svg"] as Mode[]).map((m) => (
+            {(["html", "jsx", "svg"] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={`rounded-md px-3 py-1 text-[11px] uppercase tracking-wide transition ${mode === m ? "bg-white/12 text-text-primary" : "text-text-dim hover:text-text-muted"}`}
               >
-                {m === "html" ? "React/Tailwind" : "SVG"}
+                {m === "html"
+                  ? "HTML/Tailwind"
+                  : m === "jsx"
+                    ? "React/JSX"
+                    : "SVG"}
               </button>
             ))}
           </div>
@@ -93,15 +110,17 @@ export function CanvasPanel() {
           className="h-64 min-h-full resize-none rounded-xl border border-white/[0.07] bg-[#0a0a12] p-4 font-mono text-[13px] leading-relaxed text-[#a5f3fc] outline-none focus:border-primary/40 lg:h-auto"
           placeholder={
             mode === "html"
-              ? "Cole JSX/Tailwind (ex.: hello world) ou script React…"
-              : "Cole um diagrama SVG…"
+              ? "Cole HTML/Tailwind (ex.: divs, spans, classes)…"
+              : mode === "jsx"
+                ? "Cole JSX com React (ex.: function App() { return <div>...</div> })…"
+                : "Cole um diagrama SVG…"
           }
         />
 
         <div className="relative min-h-[300px] overflow-hidden rounded-xl border border-white/[0.07] bg-[#0a0a12]">
           <iframe
             title="preview"
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             srcDoc={srcDoc}
             className="absolute inset-0 h-full w-full border-0"
           />
@@ -116,5 +135,5 @@ export function CanvasPanel() {
 }
 
 const DEFAULT_HTML = `<div class="flex h-screen items-center justify-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-400">
-  Hello, 11 ✨
+  Hello, 11
 </div>`;

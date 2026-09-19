@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * CostBreaker — circuit breaker por custo/tokens para PROVIDERS PAGOS.
@@ -17,19 +17,23 @@ export class CostBreaker {
   private supa() {
     if (!this._supabase) {
       this._supabase = createClient(
-        process.env.SUPABASE_URL ?? '',
-        process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "",
+        process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
       );
     }
     return this._supabase;
   }
 
-  async track(spent: number, provider: string, sessionId: string, inputTokens = 0, outputTokens = 0): Promise<void> {
+  async track(
+    spent: number,
+    provider: string,
+    sessionId: string,
+    inputTokens = 0,
+    outputTokens = 0,
+  ): Promise<void> {
     if (spent > 0) this.spentPaid += spent;
-    if (Date.now() - this.lastFlush > 60_000) {
-      this.lastFlush = Date.now();
-      void this.persist(sessionId, provider, spent, inputTokens, outputTokens);
-    }
+    // Sempre persistir (não limitar a 60s — serverless = processo novo a cada request).
+    void this.persist(sessionId, provider, spent, inputTokens, outputTokens);
   }
 
   canAfford(cost: number): boolean {
@@ -37,7 +41,11 @@ export class CostBreaker {
   }
 
   status(): { spent: number; budget: number; open: boolean } {
-    return { spent: this.spentPaid, budget: this.budget, open: this.spentPaid < this.budget };
+    return {
+      spent: this.spentPaid,
+      budget: this.budget,
+      open: this.spentPaid < this.budget,
+    };
   }
 
   /** Notificação de fallback (console + podem ser enviadas p/ Supabase). */
@@ -46,9 +54,15 @@ export class CostBreaker {
     console.warn(`[cost-breaker] fallback para 9Router: ${reason}`);
   }
 
-  private async persist(sessionId: string, provider: string, spent: number, inputTokens: number, outputTokens: number): Promise<void> {
+  private async persist(
+    sessionId: string,
+    provider: string,
+    spent: number,
+    inputTokens: number,
+    outputTokens: number,
+  ): Promise<void> {
     try {
-      await this.supa().from('model_usage').insert({
+      await this.supa().from("model_usage").insert({
         session_id: sessionId,
         provider,
         input_tokens: inputTokens,

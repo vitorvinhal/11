@@ -81,6 +81,29 @@ export async function POST(req: Request) {
     // para não duplicar gravação se o cliente abortar no meio).
     await persistChat(body, messages, userId, sessionId, reply);
 
+    // Gravar usage para FinOps (best-effort).
+    try {
+      const inputTokens = messages.reduce(
+        (acc, m) => acc + Math.ceil(m.content.length / 4),
+        0,
+      );
+      const outputTokens = Math.ceil(reply.length / 4);
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+        process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+      );
+      void sb.from("model_usage").insert({
+        session_id: sessionId,
+        user_id: userId ?? null,
+        provider: selected,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        cost_units: 0,
+      });
+    } catch {
+      /* best-effort */
+    }
+
     if (body.stream) {
       return sseChatResponse(reply, selected);
     }
@@ -371,7 +394,8 @@ async function routeByProvider(
         const out = await attempt();
         if (out) return out;
       }
-      return null;
+      // Último recurso: Ollama local (offline fallback).
+      return routeOllama(messages);
     }
   }
 }
@@ -427,9 +451,8 @@ async function route9Router(
         });
         if (!res.ok) {
           lastErr = `[${modelId} @ ${endpoint}] HTTP ${res.status}`;
-          // 503/404 do 9Router = upstream falhou (quota/erro de modelo) → tenta próximo combo.
-          if (res.status === 503 || res.status === 404) continue;
-          break;
+          // Qualquer erro HTTP → tenta próximo combo (endpoint/modelo).
+          continue;
         }
         const text = await res.text();
         const content = parseCompletionContent(text);
@@ -520,6 +543,31 @@ async function routeAnthropic(
         ?.map((b: any) => (b.type === "text" ? b.text : ""))
         .join("") || null
     );
+  } catch {
+    return null;
+  }
+}
+
+async function routeOllama(
+  messages: ChatMsg[],
+  model?: string,
+): Promise<string | null> {
+  const endpoint = process.env["OLLAMA_ENDPOINT"] ?? "http://localhost:11434";
+  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2";
+  try {
+    const res = await fetch(`${endpoint}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: modelId,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as any;
+    return data?.message?.content ?? null;
   } catch {
     return null;
   }

@@ -114,9 +114,6 @@ export async function POST(req: Request) {
         user_id: userId,
         name: skill.name,
         description: skill.description,
-        system_prompt: skill.systemPrompt,
-        tools: JSON.stringify(skill.tools),
-        config: JSON.stringify(skill.config),
         enabled: true,
       });
 
@@ -133,7 +130,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, action: "disabled", skillId });
     }
 
-    // Criar skill customizada (frontend envia name/description/icon)
+    // Criar skill customizada (frontend envia name/description)
     if (body.name) {
       const id = `custom-${Date.now()}`;
       const sb = createClient(
@@ -147,10 +144,7 @@ export async function POST(req: Request) {
           user_id: userId,
           name: body.name,
           description: body.description ?? "",
-          icon: body.icon ?? "⚡",
-          system_prompt: body.prompt ?? "",
           enabled: true,
-          builtin: false,
         })
         .select()
         .single();
