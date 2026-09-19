@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from "react";
 
 export interface MobileSession {
   id: string;
   command: string;
   args: string[];
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'rejected';
+  status:
+    "pending" | "running" | "completed" | "failed" | "cancelled" | "rejected";
   output?: string;
   error?: string;
   exitCode?: number;
@@ -22,7 +23,12 @@ interface UseMobileAgentOptions {
 }
 
 export function useMobileAgent(options: UseMobileAgentOptions = {}) {
-  const { wsUrl = 'ws://localhost:4500', token, onSessionUpdate, onOutput } = options;
+  const {
+    wsUrl = "ws://localhost:3001",
+    token,
+    onSessionUpdate,
+    onOutput,
+  } = options;
   const [connected, setConnected] = useState(false);
   const [sessions, setSessions] = useState<MobileSession[]>([]);
   const [connecting, setConnecting] = useState(false);
@@ -42,14 +48,14 @@ export function useMobileAgent(options: UseMobileAgentOptions = {}) {
         setConnecting(false);
         // Auth
         if (token) {
-          ws.send(JSON.stringify({ type: 'auth', token }));
+          ws.send(JSON.stringify({ type: "auth", token }));
         }
       };
 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
-          if (msg.type === 'session_update') {
+          if (msg.type === "session_update") {
             const session = msg.session as MobileSession;
             setSessions((prev) => {
               const idx = prev.findIndex((s) => s.id === session.id);
@@ -62,15 +68,19 @@ export function useMobileAgent(options: UseMobileAgentOptions = {}) {
             });
             onSessionUpdate?.(session);
           }
-          if (msg.type === 'session_output') {
+          if (msg.type === "session_output") {
             onOutput?.(msg.sessionId, msg.data);
-            setSessions((prev) => prev.map((s) =>
-              s.id === msg.sessionId
-                ? { ...s, output: (s.output ?? '') + msg.data }
-                : s
-            ));
+            setSessions((prev) =>
+              prev.map((s) =>
+                s.id === msg.sessionId
+                  ? { ...s, output: (s.output ?? "") + msg.data }
+                  : s,
+              ),
+            );
           }
-        } catch { /* ignore parse errors */ }
+        } catch {
+          /* ignore parse errors */
+        }
       };
 
       ws.onclose = () => {
@@ -105,35 +115,40 @@ export function useMobileAgent(options: UseMobileAgentOptions = {}) {
   }, []);
 
   const createSession = useCallback((command: string, args: string[] = []) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return null;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)
+      return null;
     const id = `mobile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const session: MobileSession = {
       id,
       command,
       args,
-      status: 'pending',
+      status: "pending",
       created_at: new Date().toISOString(),
     };
-    wsRef.current.send(JSON.stringify({ type: 'session_create', session }));
+    wsRef.current.send(JSON.stringify({ type: "session_create", session }));
     setSessions((prev) => [session, ...prev]);
     return session;
   }, []);
 
   const approveSession = useCallback((sessionId: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(JSON.stringify({ type: 'session_approve', sessionId }));
+    wsRef.current.send(JSON.stringify({ type: "session_approve", sessionId }));
   }, []);
 
   const cancelSession = useCallback((sessionId: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(JSON.stringify({ type: 'session_cancel', sessionId }));
+    wsRef.current.send(JSON.stringify({ type: "session_cancel", sessionId }));
   }, []);
 
-  const sendCommand = useCallback((type: string, payload: Record<string, unknown> = {}) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return false;
-    wsRef.current.send(JSON.stringify({ type, ...payload }));
-    return true;
-  }, []);
+  const sendCommand = useCallback(
+    (type: string, payload: Record<string, unknown> = {}) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)
+        return false;
+      wsRef.current.send(JSON.stringify({ type, ...payload }));
+      return true;
+    },
+    [],
+  );
 
   return {
     connected,

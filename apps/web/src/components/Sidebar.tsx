@@ -238,7 +238,7 @@ export function Sidebar({
       id: "agent",
       label: "Agente PC",
       icon: Terminal,
-      platforms: ["desktop-app"],
+      platforms: ["desktop-app", "desktop-web"],
     },
     {
       id: "mobile",

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Loader2, X, Check, Search } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Plus, Trash2, Loader2, X, Check, Search, Globe } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import {
   SKILL_CATALOG,
@@ -17,6 +17,20 @@ interface Skill {
   enabled: boolean;
   prompt: string;
   created_at: string;
+}
+
+interface ExternalSkill {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  source: "github";
+  url: string;
+  stars: number;
+  author: string;
+  tags: string[];
+  installed: boolean;
 }
 
 type PanelTab = "your" | "discover";
@@ -35,6 +49,9 @@ export function SkillsPanel() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [addingSkill, setAddingSkill] = useState<string | null>(null);
+  const [externalResults, setExternalResults] = useState<ExternalSkill[]>([]);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const fetchSkills = useCallback(async () => {
     if (!user) {
@@ -156,8 +173,36 @@ export function SkillsPanel() {
     setAddingSkill(null);
   };
 
+  const searchExternal = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setExternalResults([]);
+      return;
+    }
+    setExternalLoading(true);
+    try {
+      const res = await fetch(
+        `/api/skills/discover?q=${encodeURIComponent(query)}&source=github`,
+      );
+      const data = await res.json();
+      setExternalResults(data.skills ?? []);
+    } catch {
+      setExternalResults([]);
+    }
+    setExternalLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      if (panelTab === "discover") void searchExternal(search);
+    }, 500);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [search, panelTab, searchExternal]);
+
   const filteredCatalog = useMemo(() => {
-    return SKILL_CATALOG.filter((item) => {
+    const localFiltered = SKILL_CATALOG.filter((item) => {
       const matchSearch =
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -165,7 +210,19 @@ export function SkillsPanel() {
       const matchCategory = category === "Todos" || item.category === category;
       return matchSearch && matchCategory;
     });
-  }, [search, category]);
+
+    // Merge external results (from GitHub search)
+    const externalFiltered = externalResults.filter((item) => {
+      const matchSearch =
+        !search ||
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.description.toLowerCase().includes(search.toLowerCase());
+      const matchCategory = category === "Todos" || item.category === category;
+      return matchSearch && matchCategory;
+    });
+
+    return [...localFiltered, ...externalFiltered];
+  }, [search, category, externalResults]);
 
   const installedIds = useMemo(
     () => new Set(skills.map((s) => s.name.toLowerCase())),
@@ -390,13 +447,22 @@ export function SkillsPanel() {
 
           {/* Skill Grid */}
           <div className="space-y-1">
-            {filteredCatalog.length === 0 && (
+            {externalLoading && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-xs text-text-dim">
+                  Buscando no GitHub...
+                </span>
+              </div>
+            )}
+            {filteredCatalog.length === 0 && !externalLoading && (
               <p className="py-6 text-center text-xs text-text-dim">
                 Nenhuma skill encontrada.
               </p>
             )}
             {filteredCatalog.map((item) => {
               const isInstalled = installedIds.has(item.name.toLowerCase());
+              const isExternal = "source" in item && item.source === "github";
               return (
                 <div
                   key={item.id}
@@ -408,9 +474,14 @@ export function SkillsPanel() {
                       <span className="text-sm text-text-primary">
                         {item.name}
                       </span>
-                      {item.popular && (
+                      {"popular" in item && item.popular && (
                         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary">
                           popular
+                        </span>
+                      )}
+                      {isExternal && (
+                        <span className="flex items-center gap-1 rounded bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-medium text-sky-400">
+                          <Globe className="h-2.5 w-2.5" /> GitHub
                         </span>
                       )}
                     </div>

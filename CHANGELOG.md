@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.1-alpha — 2026-09-19
+
+- Fix Canvas CDN error handling, Agent PC platform filter + WebSocket port, Skills/Plugins Discover external search via GitHub API, AGENTS.md versioning rule
+
 ## v2.10.0-alpha — 2026-09-18
 
 - OpenRouter provider + perfis de roteamento cost/latency/quality

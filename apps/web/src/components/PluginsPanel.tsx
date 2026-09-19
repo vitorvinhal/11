@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Plus,
@@ -12,6 +12,7 @@ import {
   Scale,
   GraduationCap,
   Globe,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 
@@ -23,6 +24,20 @@ interface Plugin {
   installed: boolean;
   category: string;
   author: string;
+}
+
+interface ExternalPlugin {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  source: "github";
+  url: string;
+  stars: number;
+  author: string;
+  tags: string[];
+  installed: boolean;
 }
 
 const PLUGINS: Plugin[] = [
@@ -92,6 +107,9 @@ export function PluginsPanel() {
   const [tab, setTab] = useState<"your" | "discover">("your");
   const [plugins, setPlugins] = useState<Plugin[]>(PLUGINS);
   const [installedIds, setInstalledIds] = useState<Set<string>>(new Set());
+  const [externalResults, setExternalResults] = useState<ExternalPlugin[]>([]);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Carrega plugins instalados do servidor e mescla com o catálogo.
   useEffect(() => {
@@ -161,6 +179,34 @@ export function PluginsPanel() {
     },
     [plugins, installedIds, user, getAccessToken],
   );
+
+  const searchExternal = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setExternalResults([]);
+      return;
+    }
+    setExternalLoading(true);
+    try {
+      const res = await fetch(
+        `/api/plugins/discover?q=${encodeURIComponent(query)}&source=github`,
+      );
+      const data = await res.json();
+      setExternalResults(data.plugins ?? []);
+    } catch {
+      setExternalResults([]);
+    }
+    setExternalLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      if (tab === "discover") void searchExternal(search);
+    }, 500);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [search, tab, searchExternal]);
 
   const filtered = plugins.filter((p) => {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()))
@@ -260,6 +306,64 @@ export function PluginsPanel() {
             </button>
           </div>
 
+          {externalLoading && (
+            <div className="flex items-center justify-center gap-2 py-4">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-xs text-text-dim">
+                Buscando no GitHub...
+              </span>
+            </div>
+          )}
+
+          {/* External results */}
+          {externalResults.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[10px] font-medium text-sky-400 flex items-center gap-1">
+                <Globe className="h-3 w-3" /> Do GitHub
+              </div>
+              {externalResults.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 hover:bg-white/[0.05] transition"
+                >
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-sky-500/10 text-lg">
+                    {p.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-text-primary">
+                        {p.name}
+                      </span>
+                      <span className="flex items-center gap-1 rounded bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-medium text-sky-400">
+                        <Globe className="h-2.5 w-2.5" /> GitHub
+                      </span>
+                      {p.stars > 0 && (
+                        <span className="text-[10px] text-yellow-400">
+                          ★ {p.stars}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-text-dim line-clamp-2">
+                      {p.description}
+                    </div>
+                    <div className="mt-1 text-[10px] text-text-dim">
+                      {p.author} — {p.category}
+                    </div>
+                  </div>
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-lg bg-white/[0.06] px-2 py-1.5 text-[10px] text-text-muted hover:bg-white/[0.1] transition"
+                  >
+                    Ver
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Local catalog */}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {filtered.map((p) => (
               <div

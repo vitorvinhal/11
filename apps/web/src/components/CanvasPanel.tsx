@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Sparkles, Code2 } from "lucide-react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { RefreshCw, Sparkles, Code2, AlertTriangle } from "lucide-react";
 
 type Mode = "html" | "jsx" | "svg";
 
 const PREFIX_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">`;
 
-const REACT_CDN = `<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>`;
+const REACT_CDN = `<script src="https://unpkg.com/react@18/umd/react.production.min.js" onerror="document.getElementById('cdn-error').style.display='block'"></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>`;
 const BABEL_CDN = `<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>`;
-const TAILWIND_CDN = `<script src="https://cdn.tailwindcss.com"></script>`;
+const TAILWIND_CDN = `<script src="https://cdn.tailwindcss.com" onerror="document.getElementById('cdn-error').style.display='block'"></script>`;
+const CDN_ERROR_HTML = `<div id="cdn-error" style="display:none;position:fixed;bottom:8px;right:8px;background:#1a1a2e;border:1px solid #ff6b6b;border-radius:8px;padding:8px 12px;color:#ff6b6b;font:11px monospace;z-index:9999">CDN offline — estilos podem não funcionar</div>`;
 
 export function CanvasPanel() {
   const [mode, setMode] = useState<Mode>("html");
@@ -33,7 +34,7 @@ export function CanvasPanel() {
         .replace(/className=/g, "class=")
         .replace(/htmlFor=/g, "for=");
       setSrcDoc(
-        `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}${REACT_CDN}${BABEL_CDN}</head><body class="bg-[#05050A]"><div id="root"></div><script type="text/babel">${transformed}; const root = ReactDOM.createRoot(document.getElementById('root')); root.render(React.createElement(App));</script></body></html>`,
+        `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}${REACT_CDN}${BABEL_CDN}</head><body class="bg-[#05050A]">${CDN_ERROR_HTML}<div id="root"></div><script type="text/babel">${transformed}; const root = ReactDOM.createRoot(document.getElementById('root')); root.render(React.createElement(App));</script></body></html>`,
       );
       return;
     }
@@ -42,7 +43,7 @@ export function CanvasPanel() {
     let html = code.trim().startsWith("<") ? code : `\n${code}`;
     html = html.replace(/className=/g, "class=").replace(/htmlFor=/g, "for=");
     setSrcDoc(
-      `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}</head><body class="bg-[#05050A]">${html}</body></html>`,
+      `<!doctype html><html><head><meta charset="utf-8">${TAILWIND_CDN}</head><body class="bg-[#05050A]">${CDN_ERROR_HTML}${html}</body></html>`,
     );
   }, [code, mode]);
 
