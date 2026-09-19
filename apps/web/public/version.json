@@ -1,9 +1,9 @@
 {
-  "version": "2.10.5-alpha",
-  "versionCode": 6,
+  "version": "2.10.6-alpha",
+  "versionCode": 7,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Fix health/admin dashboards, plugins config->metadata, pc-agent health, CSP allowlist CDN"
+    "Import third-party skill libraries: mattpocock-skills (engineering/productivity) + OpenMontage (agentic video production)"
   ]
 }

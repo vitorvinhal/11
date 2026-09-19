@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.6-alpha — 2026-09-19
+
+- Import third-party skill libraries: mattpocock-skills (engineering/productivity) + OpenMontage (agentic video production)
+
 ## v2.10.5-alpha — 2026-09-19
 
 - Fix health/admin dashboards, plugins config->metadata, pc-agent health, CSP allowlist CDN

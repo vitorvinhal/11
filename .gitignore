@@ -43,3 +43,6 @@ playwright-report/
 
 # Design mockups (not source code)
 _*.png
+
+# UI test screenshots (local evidence, not source)
+apps/web/_shots/
