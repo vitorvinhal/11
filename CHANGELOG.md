@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.0-alpha — 2026-09-21
+
+- Sistema de atualização no app (mobile e desktop): notificação de nova versão, badge no perfil, aba Atualizações com download
+- Nova rota GET /api/updates (versão + changelog + links de download por plataforma)
+- Update client: versionCode como referência; acknowledge/notify persistido; notificação nativa via DeviceBridge (mobile) e PC Agent/browser (desktop)
+
 ## v2.11.0-alpha — 2026-09-19
 
 ### Agente de Dispositivo (PC + Mobile) — TASK-DEVICE-001

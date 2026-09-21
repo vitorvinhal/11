@@ -50,3 +50,6 @@ apps/web/_shots/
 # Workers/wasm do Monaco gerados no build
 apps/web/public/vs/
 
+
+supabase/.temp/
+

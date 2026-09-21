@@ -189,6 +189,8 @@ export const DEVICE_BRIDGE_SOURCE = `(function () {
   async function systemNotify(args) {
     var ln = cap('LocalNotifications');
     if (!ln) return fail('Plugin LocalNotifications indisponível');
+    var perm = await ln.requestPermissions().catch(function () { return null; });
+    if (perm && perm.display === 'denied') return fail('Permissão de notificação negada');
     await ln.schedule({
       notifications: [
         { id: Math.floor(Date.now() / 1000), title: String(args.title || ''), body: String(args.body || '') },

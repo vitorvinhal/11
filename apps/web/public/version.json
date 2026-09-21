@@ -1,13 +1,11 @@
 {
-  "version": "2.11.0-alpha",
-  "versionCode": 17,
+  "version": "2.12.0-alpha",
+  "versionCode": 18,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
-  "buildTime": "2026-09-19T00:00:00.000Z",
   "changelog": [
-    "Agente de Dispositivo: Agente PC (desktop) e Agente Mobile agora executam tools no dispositivo (arquivos, mídia, apps, configurações, tela, sistema)",
-    "Function calling conectado no 9Router (tools + tool_calls) com 21 ferramentas device.* e fluxo de aprovação humana",
-    "Pareamento de device: deviceId persistente + secret via /api/devices/register; fila de jobs no Supabase com polling (Vercel-compatível)",
-    "Visibilidade nativa pura: Agente PC só em desktop-app, Agente Mobile só em mobile-app"
+    "Sistema de atualização no app (mobile e desktop): notificação de nova versão, badge no perfil, aba Atualizações com download",
+    "Nova rota GET /api/updates (versão + changelog + links de download por plataforma)",
+    "Update client: versionCode como referência; acknowledge/notify persistido; notificação nativa via DeviceBridge (mobile) e PC Agent/browser (desktop)"
   ]
 }
