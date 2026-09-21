@@ -40,9 +40,15 @@ export async function GET() {
     buildTime: data.buildTime ?? null,
     changelog: data.changelog ?? [],
     downloads: {
-      desktop: process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_URL ?? null,
-      mobile: process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_URL ?? null,
-      android: process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_ANDROID_URL ?? null,
+      desktop:
+        process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_URL ??
+        "/downloads/11-desktop-setup.exe",
+      mobile:
+        process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_URL ??
+        "/downloads/11-mobile.apk",
+      android:
+        process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_ANDROID_URL ??
+        "/downloads/11-mobile.apk",
       ios: process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_IOS_URL ?? null,
     },
   });

@@ -1,11 +1,9 @@
 {
-  "version": "2.12.0-alpha",
-  "versionCode": 18,
+  "version": "2.12.1-alpha",
+  "versionCode": 19,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Sistema de atualização no app (mobile e desktop): notificação de nova versão, badge no perfil, aba Atualizações com download",
-    "Nova rota GET /api/updates (versão + changelog + links de download por plataforma)",
-    "Update client: versionCode como referência; acknowledge/notify persistido; notificação nativa via DeviceBridge (mobile) e PC Agent/browser (desktop)"
+    "Downloads da nova versão hospedados no site (/downloads): 11-desktop-setup.exe, 11-desktop.msi e 11-mobile.apk — /api/updates aponta para eles por padrão"
   ]
 }

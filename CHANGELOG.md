@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.1-alpha — 2026-09-21
+
+- Downloads da nova versão hospedados no site (/downloads): 11-desktop-setup.exe, 11-desktop.msi e 11-mobile.apk — /api/updates aponta para eles por padrão
+
 ## v2.12.0-alpha — 2026-09-21
 
 - Sistema de atualização no app (mobile e desktop): notificação de nova versão, badge no perfil, aba Atualizações com download
