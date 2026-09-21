@@ -1,0 +1,3 @@
+import "./pane-metric-options-deferral-Bz211kas.js";
+import { a as clearTerminalWebglAttachBackoff, c as isPaneWebglContextLost, d as resetWebglTextureAtlas, f as shouldUseTerminalWebgl, g as presentPaneViewportPreservingSynchronizedOutput, h as presentPaneViewport, i as cancelPendingWebglRefresh, l as markComplexScriptOutput, n as attachWebgl, o as clearWebglTextureAtlas, p as primeTerminalWebglAddon, r as attachWebglAfterFitIfMissing, s as disposeWebgl, t as ENABLE_WEBGL_RENDERER, u as resetTerminalWebglSuggestion } from "./pane-webgl-renderer-xMdAw5Mm.js";
+export { primeTerminalWebglAddon };

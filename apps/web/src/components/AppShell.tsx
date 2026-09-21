@@ -10,8 +10,7 @@ import { NeuralGraph } from "./NeuralGraph";
 import ConnectorsPanel from "./ConnectorsPanel";
 import { PluginsPanel } from "./PluginsPanel";
 import { ArtifactsPanel } from "./ArtifactsPanel";
-import CodeWorkspace from "./CodeWorkspace";
-import ElevenCoder from "./ElevenCoder";
+import ElevenOrca from "./ElevenOrca";
 import { MediaGallery } from "./MediaGallery";
 import { MobileAgent } from "./MobileAgent";
 import { MobileDevicePanel } from "./MobileDevicePanel";
@@ -164,12 +163,7 @@ export function AppShell({
             )}
             {activeNav === "code" && (
               <div className="h-full">
-                <CodeWorkspace />
-              </div>
-            )}
-            {activeNav === "coder" && (
-              <div className="h-full">
-                <ElevenCoder />
+                <ElevenOrca />
               </div>
             )}
             {activeNav === "media" && (

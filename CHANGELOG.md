@@ -20,6 +20,14 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.16-alpha — 2026-09-21
+
+- Integra UI completa do Orca (stablyai/orca) como bundle único embutido na aba "Eleven Code" (`ElevenOrca.tsx` + `public/orca-inline/`)
+- Remove sistema "Eleven Coder" (ElevenCoder, CodeSystem/CodeWorkspace, CodePanel, TerminalPane/TerminalPanel) e dependências Monaco/XTerm do web
+- Aba `coder` removida do `Sidebar`; "Eleven Code" continua disponível em desktop-app, desktop-web e mobile-app
+- Entry ESM do bundle carrega via `import(/* webpackIgnore */ url)` e monta via `mountOrca(el)` — sem iframe, sem servidor próprio (pareamento via WebConnect)
+- `public/orca-inline/**` adicionado ao ignore do ESLint (bundle de terceiros, ~2300 arquivos)
+
 ## v2.10.15-alpha — 2026-09-19
 
 - Fix build Vercel: caminho dos scripts no buildCommand — cwd do Vercel é `apps/web` (rootDirectory), paths corrigidos para `../../scripts/*`; scripts `clear-next-cache.mjs`/`build-monaco-workers.mjs` agora detectam cwd e limpam/geram no lugar certo

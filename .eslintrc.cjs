@@ -11,7 +11,7 @@ module.exports = {
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['**/dist/**', '**/node_modules/**', '**/.next/**', '**/coverage/**', '**/build/**'],
+  ignorePatterns: ['**/dist/**', '**/node_modules/**', '**/.next/**', '**/coverage/**', '**/build/**', 'apps/web/public/orca-inline/**'],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

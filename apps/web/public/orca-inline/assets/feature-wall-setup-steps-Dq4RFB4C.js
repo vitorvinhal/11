@@ -1,0 +1,67 @@
+const FEATURE_WALL_SETUP_PARALLEL_WORK_STEP_IDS = ["two-worktrees", "browser"], FEATURE_WALL_SETUP_STEPS = [
+	{
+		id: "two-worktrees",
+		name: "Multi-task",
+		subtitle: "Multi-task",
+		description: "Work in 2 different worktrees at once. Each one is isolated (even in the same project). Perfect for working on 2 features at once."
+	},
+	{
+		id: "browser",
+		name: "Use Orca's browser",
+		subtitle: "Use Orca's browser",
+		description: "Browse your web app without leaving Orca. Grab any element and send its exact source and styles to an agent with one click."
+	},
+	{
+		id: "notifications",
+		name: "Turn on notifications",
+		subtitle: "Turn on notifications",
+		description: "Know the moment an agent finishes, needs attention, or gets blocked."
+	},
+	{
+		id: "default-agent",
+		name: "Choose your default agent",
+		subtitle: "Choose your default agent",
+		description: "Start new work faster with your preferred agent already selected."
+	},
+	{
+		id: "agent-capabilities",
+		name: "Enable Orca CLI",
+		subtitle: "Enable Orca CLI",
+		description: "Register the Orca shell command and install agent skills for browser, computer, and orchestration workflows."
+	},
+	{
+		id: "task-sources",
+		name: "Connect integrations",
+		subtitle: "Connect integrations",
+		description: "Start an agent from a task in one click and keep PR status in view."
+	},
+	{
+		id: "setup-script",
+		name: "Automate workspace setup",
+		subtitle: "Automate workspace setup",
+		description: "Run install and setup commands automatically so every new worktree is ready for agents."
+	},
+	{
+		id: "add-two-repos",
+		name: "Start work in multiple repos",
+		subtitle: "Start work in multiple repos",
+		description: "Bring your key repos into Orca so you can start agent work without hunting for folders."
+	}
+], FEATURE_WALL_SETUP_STEP_IDS = FEATURE_WALL_SETUP_STEPS.map((e) => e.id);
+function getFeatureWallSetupSteps() {
+	return FEATURE_WALL_SETUP_STEPS;
+}
+function getFeatureWallSetupSectionId(o) {
+	return FEATURE_WALL_SETUP_PARALLEL_WORK_STEP_IDS.includes(o) ? "parallel-work" : "setup";
+}
+function getFeatureWallSetupStepsForSection(e) {
+	return FEATURE_WALL_SETUP_STEPS.filter((o) => getFeatureWallSetupSectionId(o.id) === e);
+}
+function getFirstIncompleteFeatureWallSetupStepId(e) {
+	let s = getFeatureWallSetupStepsForSection("setup").find((o) => !e[o.id]);
+	return s ? s.id : getFeatureWallSetupStepsForSection("parallel-work").find((o) => !e[o.id])?.id ?? FEATURE_WALL_SETUP_STEPS[0].id;
+}
+function isFeatureWallSetupStepId(e) {
+	return typeof e == "string" && FEATURE_WALL_SETUP_STEP_IDS.includes(e);
+}
+export { getFeatureWallSetupStepsForSection as a, getFeatureWallSetupSteps as i, FEATURE_WALL_SETUP_STEP_IDS as n, getFirstIncompleteFeatureWallSetupStepId as o, getFeatureWallSetupSectionId as r, isFeatureWallSetupStepId as s, FEATURE_WALL_SETUP_STEPS as t };
