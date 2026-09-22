@@ -1,10 +1,9 @@
 {
-  "version": "2.12.3-alpha",
-  "versionCode": 21,
+  "version": "2.12.4-alpha",
+  "versionCode": 22,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Ollama local agora chamado direto do app/WebView (funciona em mobile e desktop; servidor nuvem não enxerga localhost)",
-    "Novo provider 'Zen / API OpenAI' no chat: base URL + modelo + key configuráveis no Perfil → IA Provider"
+    "Fix updates nos apps: alias app-sage apontando p/ deploy atual; app usaria domínio de produção (candlefish.vercel.app); fetch de versão sem cache + botão 'Recarregar o app'"
   ]
 }

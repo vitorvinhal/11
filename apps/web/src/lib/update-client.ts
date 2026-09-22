@@ -60,7 +60,7 @@ export function primeVersionCheck(code: number): void {
 
 export async function fetchUpdates(): Promise<UpdateInfo | null> {
   try {
-    const res = await fetch("/api/updates");
+    const res = await fetch("/api/updates", { cache: "no-store" });
     if (!res.ok) return null;
     return (await res.json()) as UpdateInfo;
   } catch {

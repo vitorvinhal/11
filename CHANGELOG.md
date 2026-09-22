@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.4-alpha — 2026-09-22
+
+- Fix updates nos apps: alias app-sage apontando p/ deploy atual; app usaria domínio de produção (candlefish.vercel.app); fetch de versão sem cache + botão 'Recarregar o app'
+
 ## v2.12.3-alpha — 2026-09-22
 
 - Ollama local agora chamado direto do app/WebView (funciona em mobile e desktop; servidor nuvem não enxerga localhost)

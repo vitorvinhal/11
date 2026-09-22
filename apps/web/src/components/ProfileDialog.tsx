@@ -162,7 +162,7 @@ export function ProfileDialog({
   useEffect(() => {
     if (open) {
       void loadSettings();
-      fetch("/api/version")
+      fetch("/api/version", { cache: "no-store" })
         .then((r) => r.json())
         .then((v) => {
           setAppVersion(v.version ?? "");
@@ -1061,6 +1061,18 @@ export function ProfileDialog({
                         >
                           <Download className="h-3.5 w-3.5" />
                           Baixar nova versão
+                        </button>
+                      )}
+                      {updHasNew && upd && (
+                        <button
+                          onClick={() => {
+                            acknowledgeVersion(upd.versionCode);
+                            window.location.reload();
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] transition"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Recarregar o app
                         </button>
                       )}
                     </div>

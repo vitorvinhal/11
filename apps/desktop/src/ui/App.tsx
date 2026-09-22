@@ -6,7 +6,7 @@ import React, { useEffect } from "react";
  */
 export default function App() {
   const webUrl =
-    import.meta.env.VITE_WEB_URL ?? "https://11-app-sage.vercel.app";
+    import.meta.env.VITE_WEB_URL ?? "https://candlefish.vercel.app";
 
   useEffect(() => {
     window.location.href = webUrl;
