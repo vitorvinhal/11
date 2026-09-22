@@ -1,10 +1,11 @@
 {
-  "version": "2.16.2-alpha",
-  "versionCode": 31,
+  "version": "2.16.3-alpha",
+  "versionCode": 32,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Restauração do Ollama local: case 'ollama' no provider, routeOllama() direto para localhost:11434, modelo default qwen3:4b, ollamaModel enviado do painel ao backend",
-    "Fallback inteligente: threshold <10 chars + detecção de acknowledgments (não, ok, sim, etc.) + fallback cascade para providers remotos"
+    "Modelo Ollama default corrigido para llama3.2:3b (antes llama3.2 sem tag causava 404 model not found)",
+    "Fallback automático de modelo inexistente: detecta 404, consulta /api/tags e repete com o primeiro modelo instalado (client-side em chatOpenAICompat e server-side em routeOllama)",
+    "Suporte Llama no Ollama: OLLAMA_POPULAR ampliado com llama3.2:3b, llama3.1, llama3 e llama2"
   ]
 }

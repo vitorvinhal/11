@@ -20,6 +20,17 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.3-alpha — 2026-09-22
+
+### Fix
+
+- **Modelo Ollama default inválido**: `getOllamaConfig()` usava `llama3.2` sem tag, mas o modelo instalado é `llama3.2:3b` — causava `404 model not found` para usuário sem config salva; default corrigido para `llama3.2:3b`
+- **Fallback automático de modelo inexistente**: `chatOpenAICompat()` agora detecta `404 model not found`, consulta `/api/tags` do Ollama e repete a chamada com o primeiro modelo instalado; `routeOllama()` server-side recebe o mesmo tratamento (lista de candidatos)
+
+### Features
+
+- **Suporte Llama no Ollama**: `OLLAMA_POPULAR` ampliado com `llama3.2:3b`, `llama3.1`, `llama3` e `llama2` (1-clique no painel Ollama)
+
 ## v2.16.2-alpha — 2026-09-22
 
 ### Fix
