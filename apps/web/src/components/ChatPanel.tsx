@@ -29,6 +29,12 @@ import { useAuth } from "../lib/auth";
 import { getDeviceContext } from "../lib/device-client";
 import { onAgentEvent, type AgentJobResumeEvent } from "../lib/agent-bus";
 import {
+  getOllamaConfig,
+  getZenConfig,
+  chatOpenAICompat,
+  type CompatConfig,
+} from "../lib/local-llm";
+import {
   isNetworkError,
   enqueueChatOffline,
   registerChatSync,
@@ -214,6 +220,45 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     [setMessages],
   );
 
+  // Ollama / Zen — chamada local direto do device (a nuvem não alcança localhost).
+  const sendLocalCompat = useCallback(
+    async (prompt: string, history: ChatMessage[]) => {
+      let cfg: CompatConfig;
+      if (provider === "ollama") {
+        cfg = getOllamaConfig();
+      } else {
+        cfg = getZenConfig();
+        if (!cfg.baseUrl || !cfg.model) {
+          patchAssistant(
+            "Configure a API Zen no Perfil → IA Provider (base URL + modelo).",
+          );
+          setBusy(false);
+          return;
+        }
+      }
+      const messages = history.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      let acc = "";
+      try {
+        const r = await chatOpenAICompat(cfg, messages, {
+          onDelta: (d) => {
+            acc += d;
+            patchAssistant(acc);
+          },
+        });
+        if (!acc) patchAssistant(r.text || "(resposta vazia)");
+      } catch (err) {
+        patchAssistant(
+          `(Provedor local indisponível: ${(err as Error).message}. Ollama rodando? Para site https, use OLLAMA_ORIGINS="*" no seu PC.)`,
+        );
+      }
+      setBusy(false);
+    },
+    [provider, patchAssistant, setBusy],
+  );
+
   // Continua a conversa quando um job do Agente de Dispositivo é aprovado e executado.
   const resumeAfterDeviceJob = useCallback(
     async (ev: AgentJobResumeEvent) => {
@@ -294,6 +339,12 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       setInput("");
       setBusy(true);
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      // Local LLM (Ollama/Zen): chama direto do device — a nuvem não enxerga localhost.
+      if (provider === "ollama" || provider === "zen") {
+        await sendLocalCompat(text, next);
+        return;
+      }
 
       const token = user ? await getAccessToken() : null;
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
@@ -933,6 +984,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
                     { id: "gemini", label: "Google Gemini" },
                     { id: "anthropic", label: "Anthropic Claude" },
                     { id: "ollama", label: "Ollama (local)" },
+                    { id: "zen", label: "Zen / API OpenAI" },
                   ].map((p) => (
                     <DropdownMenu.Item
                       key={p.id}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { testOllama } from "../lib/local-llm";
 
 interface OllamaModel {
   name: string;
@@ -18,37 +19,21 @@ export default function OllamaPanel() {
 
   const testConnection = async () => {
     setTesting(true);
-    try {
-      const res = await fetch("/api/settings/test-ollama", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ endpoint }),
-      });
-      const data = await res.json();
-      setConnected(data.ok === true);
-      if (data.models) {
-        setModels(data.models);
-        if (data.models.length > 0 && !selectedModel) {
-          setSelectedModel(data.models[0].name);
-        }
+    const data = await testOllama(endpoint);
+    setConnected(data.ok === true);
+    if (data.models) {
+      setModels(data.models);
+      if (data.models.length > 0 && !selectedModel) {
+        setSelectedModel(data.models[0].name);
       }
-    } catch {
-      setConnected(false);
     }
     setTesting(false);
   };
 
   const refreshModels = async () => {
     setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/settings/test-ollama?endpoint=${encodeURIComponent(endpoint)}`,
-      );
-      const data = await res.json();
-      if (data.models) setModels(data.models);
-    } catch {
-      /* ignore */
-    }
+    const data = await testOllama(endpoint);
+    if (data.models) setModels(data.models);
     setLoading(false);
   };
 
@@ -151,6 +136,10 @@ export default function OllamaPanel() {
         <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 text-center">
           <p className="text-[11px] text-white/30">
             Instale o Ollama para usar modelos locais offline.
+          </p>
+          <p className="mt-1 text-[10px] text-white/20">
+            Em site https, libere o CORS no Ollama:{" "}
+            <code className="text-white/40">OLLAMA_ORIGINS=&quot;*&quot;</code>
           </p>
           <a
             href="https://ollama.com"

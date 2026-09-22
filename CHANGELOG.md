@@ -20,6 +20,11 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.3-alpha — 2026-09-22
+
+- Ollama local agora chamado direto do app/WebView (funciona em mobile e desktop; servidor nuvem não enxerga localhost)
+- Novo provider 'Zen / API OpenAI' no chat: base URL + modelo + key configuráveis no Perfil → IA Provider
+
 ## v2.12.2-alpha — 2026-09-22
 
 - Re-trigger do agente após aprovação: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)

@@ -38,6 +38,7 @@ import { PluginsPanel } from "./PluginsPanel";
 import ConnectorsPanel from "./ConnectorsPanel";
 import AvatarUpload from "./AvatarUpload";
 import OllamaPanel from "./OllamaPanel";
+import ZenPanel from "./ZenPanel";
 import SessionsPanel from "./SessionsPanel";
 
 type SettingsTab =
@@ -866,6 +867,17 @@ export function ProfileDialog({
                       </span>
                     </div>
                     <OllamaPanel />
+                  </div>
+
+                  {/* Zen / OpenAI compat */}
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Zap className="h-4 w-4 text-white/40" />
+                      <span className="text-xs font-medium text-text-primary">
+                        Zen / OpenAI-compatível
+                      </span>
+                    </div>
+                    <ZenPanel />
                   </div>
                 </div>
               )}
