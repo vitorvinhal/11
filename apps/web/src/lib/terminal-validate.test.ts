@@ -184,6 +184,18 @@ describe("terminal-validate — security", () => {
       expect(validate("node -e \"console.log('hi')\"", fakeCwd).ok).toBe(true);
     });
 
+    test("node arquivo.js → BLOQUEADO (sem flag de eval)", () => {
+      expect(validate("node arquivo.js", fakeCwd).ok).toBe(false);
+    });
+
+    test('python -c "print(1)" → permitido (flag de eval)', () => {
+      expect(validate('python -c "print(1)"', fakeCwd).ok).toBe(true);
+    });
+
+    test("python script.py → BLOQUEADO (sem flag de eval)", () => {
+      expect(validate("python script.py", fakeCwd).ok).toBe(false);
+    });
+
     test("pnpm install → permitido", () => {
       expect(validate("pnpm install", fakeCwd).ok).toBe(true);
     });

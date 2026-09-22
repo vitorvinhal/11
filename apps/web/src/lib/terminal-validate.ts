@@ -18,6 +18,7 @@ export const ALLOWED_ROOTS = (process.env.BRIDGE_ALLOWED_DIRS ?? process.cwd())
   .filter(Boolean);
 
 // Comandos permitidos (SEM env/printenv/set/export — expõem secrets)
+// NOTA: scripting engines (node, python, etc.) são restritos a flags específicas
 export const ALLOWED = new Set([
   "ls",
   "dir",
@@ -110,6 +111,26 @@ export const ALLOWED = new Set([
   "ver",
   "systeminfo",
 ]);
+
+// Scripting engines — só permitem flags específicas de eval, NÃO shell interativo
+const SCRIPTING_ENGINES = new Set([
+  "node",
+  "deno",
+  "python",
+  "python3",
+  "java",
+  "javac",
+]);
+const SCRIPTING_FLAGS = [
+  "-e",
+  "--eval",
+  "-c",
+  "--command",
+  "-p",
+  "--print",
+  "-r",
+  "--require",
+];
 
 // Padrões destrutivos que nunca são permitidos
 export const DANGEROUS = [
@@ -356,6 +377,20 @@ export function validate(
     ALLOWED.has(base) || PS_SAFE_PREFIXES.some((p) => base.startsWith(p));
   if (!allowed) {
     return { ok: false, error: `Comando não permitido: ${base}` };
+  }
+
+  // BLOQUEIO 4b: Scripting engines só permitem flags de eval, NÃO execução arbitrária
+  if (SCRIPTING_ENGINES.has(base)) {
+    const parts = command.trim().split(/\s+/);
+    const hasAllowedFlag = parts
+      .slice(1)
+      .some((p) => SCRIPTING_FLAGS.includes(p));
+    if (!hasAllowedFlag) {
+      return {
+        ok: false,
+        error: `Scripting engine restrito: ${base} só aceita flags de eval (-e, -c, -p). Use: ${base} -e "código"`,
+      };
+    }
   }
 
   // BLOQUEIO 5: Cwd fora das raízes

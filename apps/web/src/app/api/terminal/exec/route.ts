@@ -1,7 +1,10 @@
 ﻿import { spawn } from "child_process";
 import { existsSync, statSync } from "fs";
 import { loadRootEnv } from "../../../../lib/server-env";
-import { getAuthClient } from "../../../../lib/server-supabase";
+import {
+  getAuthClient,
+  getServerClient,
+} from "../../../../lib/server-supabase";
 import {
   ALLOWED_ROOTS,
   IS_WINDOWS,
@@ -21,8 +24,55 @@ type Sess = {
   history: string[];
   createdAt: number;
   userId: string;
+  /** Rate limiting: timestamps dos últimos comandos */
+  commandTimestamps: number[];
 };
 const sessions = new Map<string, Sess>();
+
+// ─── Rate limiting por sessão ──────────────────────────────────────────────
+
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minuto
+const RATE_LIMIT_MAX_COMMANDS = 30; // máximo 30 comandos/min por sessão
+
+function isRateLimited(sess: Sess): boolean {
+  const now = Date.now();
+  // Remove timestamps fora da janela
+  sess.commandTimestamps = sess.commandTimestamps.filter(
+    (t) => now - t < RATE_LIMIT_WINDOW_MS,
+  );
+  return sess.commandTimestamps.length >= RATE_LIMIT_MAX_COMMANDS;
+}
+
+// ─── Max output size ───────────────────────────────────────────────────────
+
+const MAX_OUTPUT_BYTES = 512 * 1024; // 512KB
+
+// ─── Audit logging ─────────────────────────────────────────────────────────
+
+async function logAuditEntry(
+  userId: string,
+  command: string,
+  cwd: string,
+  exitCode: number,
+  outputBytes: number,
+  blocked: boolean,
+  blockReason?: string,
+) {
+  try {
+    const sb = getServerClient();
+    await sb.from("terminal_audit_log").insert({
+      user_id: userId,
+      command,
+      cwd,
+      exit_code: exitCode,
+      output_bytes: outputBytes,
+      blocked,
+      block_reason: blockReason ?? null,
+    });
+  } catch {
+    // Audit log é best-effort — não bloqueia execução
+  }
+}
 
 function defaultCwd(): string {
   const first = ALLOWED_ROOTS[0];
@@ -46,25 +96,52 @@ function resolveCwd(sessionId: string, requested?: string): string {
   return p;
 }
 
-/** Filtra variáveis de ambiente sensíveis antes de passar ao spawn. */
+/**
+ * WHITELIST de env vars — só passa variáveis explicitamente permitidas.
+ * Nunca herda process.env inteiro (mesmo com blacklist, é arriscado).
+ */
 function safeEnv(): Record<string, string | undefined> {
+  const ALLOWED_ENV = new Set([
+    "PATH",
+    "HOME",
+    "USER",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TERM",
+    "SHELL",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    "NODE_ENV",
+    "USERPROFILE",
+    "APPDATA",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "ProgramFiles",
+    "ProgramFiles(x86)",
+    "ProgramData",
+    "LOCALAPPDATA",
+    // Dev tools
+    "EDITOR",
+    "VISUAL",
+    "PAGER",
+    "NVM_DIR",
+    "FNM_DIR",
+    "VOLTA_HOME",
+    // Build tools
+    "CC",
+    "CXX",
+    "CMAKE",
+    "MAKEFLAGS",
+  ]);
+
   const filtered: Record<string, string | undefined> = {};
-  const SENSITIVE_KEYS = [
-    /SECRET/i,
-    /KEY/i,
-    /TOKEN/i,
-    /PASSWORD/i,
-    /CREDENTIAL/i,
-    /SUPABASE_SERVICE_ROLE/i,
-    /PRIVATE/i,
-    /AUTH/i,
-  ];
-  for (const [k, v] of Object.entries(process.env)) {
-    if (SENSITIVE_KEYS.some((p) => p.test(k))) {
-      filtered[k] = undefined;
-    } else {
-      filtered[k] = v;
-    }
+  for (const key of Array.from(ALLOWED_ENV)) {
+    filtered[key] = process.env[key];
   }
   return filtered;
 }
@@ -124,8 +201,17 @@ export async function POST(req: Request) {
     history: [],
     createdAt: Date.now(),
     userId,
+    commandTimestamps: [],
   };
   sessions.set(key, sess);
+
+  // ── Rate limiting ──
+  if (isRateLimited(sess)) {
+    return sseResponse(
+      ["[rate limit] Máximo de 30 comandos por minuto. Aguarde.\n"],
+      1,
+    );
+  }
 
   // Comando especial: cd → troca o cwd da sessão sem spawn.
   const trimmed = command.trim();
@@ -142,17 +228,23 @@ export async function POST(req: Request) {
         );
       }
       sess.cwd = target;
+      sess.commandTimestamps.push(Date.now());
+      sess.history.push(trimmed);
       return sseResponse([`${target}\n`], 0);
     }
     return sseResponse([`cd: diretório não encontrado: ${target}\n`], 1);
   }
 
   const check = validate(trimmed, sess.cwd);
-  if (!check.ok) return sseResponse([`${check.error}\n`], 1);
+  if (!check.ok) {
+    logAuditEntry(userId, trimmed, sess.cwd, 1, 0, true, check.error);
+    return sseResponse([`${check.error}\n`], 1);
+  }
 
   sess.history.push(trimmed);
+  sess.commandTimestamps.push(Date.now());
 
-  // Envia ambiente filtrado (sem secrets)
+  // Envia ambiente whitelisted (só variáveis seguras)
   const env = safeEnv() as NodeJS.ProcessEnv;
 
   return new Response(
@@ -165,10 +257,16 @@ export async function POST(req: Request) {
           );
 
         let closed = false;
+        let outputBytes = 0;
+        let outputTruncated = false;
         const finish = (code: number) => {
           if (closed) return;
           closed = true;
+          if (outputTruncated) {
+            send("stderr", "\n[output truncado — limite de 512KB]\n");
+          }
           send("exit", String(code));
+          logAuditEntry(userId, trimmed, sess.cwd, code, outputBytes, false);
           controller.close();
         };
 
@@ -199,6 +297,15 @@ export async function POST(req: Request) {
           }
         } catch (err) {
           send("stderr", (err as Error).message + "\n");
+          logAuditEntry(
+            userId,
+            trimmed,
+            sess.cwd,
+            1,
+            0,
+            false,
+            (err as Error).message,
+          );
           finish(1);
           return;
         }
@@ -215,8 +322,19 @@ export async function POST(req: Request) {
         // eco do prompt
         send("stdout", "");
 
-        child.stdout?.on("data", (d: Buffer) => send("stdout", d.toString()));
-        child.stderr?.on("data", (d: Buffer) => send("stderr", d.toString()));
+        child.stdout?.on("data", (d: Buffer) => {
+          outputBytes += d.length;
+          if (outputBytes > MAX_OUTPUT_BYTES) {
+            outputTruncated = true;
+            return;
+          }
+          send("stdout", d.toString());
+        });
+        child.stderr?.on("data", (d: Buffer) => {
+          outputBytes += d.length;
+          if (outputBytes > MAX_OUTPUT_BYTES) return;
+          send("stderr", d.toString());
+        });
         child.on("error", (e: Error) => {
           send("stderr", e.message + "\n");
         });
