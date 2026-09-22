@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * Builda o bundle único do cliente web do Orca (renderer) e publica em
  * `apps/web/public/orca-inline/` para o app 11 montar sem iframe.
@@ -310,7 +310,15 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), createPdfjsViewerAssetsPlugin()],
   define: {
-    ORCA_FEATURE_WALL_ENABLED: 'true'
+    ORCA_FEATURE_WALL_ENABLED: 'true',
+    'process.env.NODE_ENV': '"production"',
+    'process.env': '({ NODE_ENV: "production" })',
+    'process.platform': '"web"',
+    'process.arch': '"js"',
+    'process.version': '"v24.0.0"',
+    'process.cwd': '(() => "/")',
+    'process.nextTick': '((fn) => Promise.resolve().then(fn))',
+    'Buffer': 'undefined'
   },
   resolve: {
     alias: {
