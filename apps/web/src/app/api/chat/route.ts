@@ -86,21 +86,29 @@ export async function POST(req: Request) {
       : withSearch;
     const selected = provider ?? "astra";
     let reply = await routeByProvider(selected, withMemory, body);
-    // Validação: resposta muito curta ou só caracteres especiais → tenta fallback
-    if (
+    // Validação: resposta muito curta, só especiais, ouacknowledgment genérico → fallback
+    const trimmed = (reply ?? "").trim();
+    const isLowQuality =
       !reply ||
-      reply.trim().length < 2 ||
-      /^[\s#*_`-]+$/.test(reply.trim())
-    ) {
+      trimmed.length < 10 ||
+      /^[\s#*_`-]+$/.test(trimmed) ||
+      /^(sim|não|nao|ok|vou|yes|no|done|pronto|entendi|ok\.|blz|beleza|tá|ta|certo)$/i.test(
+        trimmed,
+      );
+    if (isLowQuality) {
       const fallbackProviders = ["9router", "gemini", "anthropic"];
       for (const fp of fallbackProviders) {
         if (fp === selected.toLowerCase()) continue;
         const fallback = await routeByProvider(fp, withMemory, body);
-        if (
-          fallback &&
-          fallback.trim().length >= 2 &&
-          !/^[\s#*_`-]+$/.test(fallback.trim())
-        ) {
+        const fbTrimmed = (fallback ?? "").trim();
+        const fbLowQuality =
+          !fallback ||
+          fbTrimmed.length < 10 ||
+          /^[\s#*_`-]+$/.test(fbTrimmed) ||
+          /^(sim|não|nao|ok|vou|yes|no|done|pronto|entendi|ok\.|blz|beleza|tá|ta|certo)$/i.test(
+            fbTrimmed,
+          );
+        if (!fbLowQuality) {
           reply = fallback;
           break;
         }
@@ -590,7 +598,7 @@ async function routeOllama(
   model?: string,
 ): Promise<string | null> {
   const endpoint = process.env["OLLAMA_ENDPOINT"] ?? "http://localhost:11434";
-  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2:3b";
+  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "qwen3:4b";
   try {
     const res = await fetch(`${endpoint}/api/chat`, {
       method: "POST",

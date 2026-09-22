@@ -603,7 +603,9 @@ export default function SessionsPanel() {
             <div className="text-xl font-semibold text-primary">
               {metrics.totalActiveMinutes < 60
                 ? `${metrics.totalActiveMinutes}m`
-                : `${Math.floor(metrics.totalActiveMinutes / 60)}h`}
+                : metrics.totalActiveMinutes < 1440
+                  ? `${Math.floor(metrics.totalActiveMinutes / 60)}h${metrics.totalActiveMinutes % 60 > 0 ? `${metrics.totalActiveMinutes % 60}m` : ""}`
+                  : `${(metrics.totalActiveMinutes / 1440).toFixed(1)}d`}
             </div>
             <div className="text-[10px] uppercase tracking-wider text-text-dim">
               Tempo Total
