@@ -20,6 +20,37 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.0-alpha — 2026-09-22
+
+- Security: 5 critical fixes (RCE, SSRF, JWT, auth, sandbox) + 7 features (sandbox, approval center, audit/replay, cost dashboard, presence, rate limit, health check)
+
+## v2.16.0-alpha — 2026-09-22
+
+### SEGURANÇA — 5 fixes críticos (release blocker)
+
+- **Item 1 — RCE via terminal**: detecção de chaining operators (`;`, `&&`, `||`, `|`, `` ` ``, `$()`), remoção de `env`/`printenv`/`set`/`export` da allowlist, validação de argumentos de arquivo contra raízes permitidas, detecção de arquivos sensíveis (`.env`, `secrets.json`, `.ssh/`), restrição de scripting engines (node, python) a flags de eval (`-e`, `-c`, `-p`), 44 testes unitários
+- **Item 2 — SSRF em test-ollama**: autenticação obrigatória (401 sem token), whitelist de hosts (só `localhost`), bloqueio de cloud metadata IPs (`169.254.169.254`) e redes privadas
+- **Item 3 — JWT_SECRET hardcoded no Tauri**: geração de UUID v4 aleatório na primeira execução, persistência em `%APPDATA%/11/jwt_secret` (Unix: `~/.config/11/`), permissões 600 no Unix, fail-fast se persistência falhar
+- **Item 4 — Terminal GET sem auth + sessão não vinculada**: autenticação em GET e POST, sessões vinculadas a `userId` via chave `${userId}:${sessionId}`
+- **Item 5 — Canvas sandbox**: remoção de `allow-same-origin` do iframe sandbox (mantido apenas `allow-scripts`)
+
+### Features novas
+
+- **Terminal sandbox real** (`exec/route.ts`): env whitelist (PATH, HOME, NODE_ENV, etc.) em vez de blacklist, rate limiting 30 comandos/min por sessão, max output 512KB com truncamento, audit log persistente no Supabase (`terminal_audit_log`)
+- **Central de aprovação mobile** (`MobileAgent.tsx`): risk badges visuais (SEGURO/REVERSÍVEL/DESTRUTIVO), descrições legíveis por tool (24 tools documentadas), seleção múltipla com checkboxes, botões bulk approve/reject, indicador de TTL para aprovações pendentes, migration `expires_at` + `device_job_approvals` audit table
+- **Auditoria/replay de comandos**: `GET /api/terminal/audit` com filtros (blocked, limit, offset), `POST /api/terminal/audit/replay` para repetir comandos via SSE
+- **Dashboard de custo 9Router**: `GET /api/health/cost` com métricas agregadas por modelo e dia, custo estimado por 1K tokens (GPT-4o, Claude, Gemini)
+- **Presença tempo real**: `POST /api/presence` com heartbeat 30s TTL e lista de usuários ativos por página
+- **Rate limiting por endpoint**: `lib/rate-limit.ts` com sliding window counter e presets (default 100/min, chat 30/min, auth 10/min, upload 10/min, settings 5/min)
+- **Health check agregado**: `GET /api/health/all` verifica web, router, supabase, plugins, skills em paralelo, retorna status consolidado
+
+### Migrações
+
+- `20260922_terminal_audit_log`: tabela `terminal_audit_log` com RLS (user_id, command, exit_code, blocked, block_reason)
+- `20260922_device_jobs_ttl`: coluna `expires_at` em `device_jobs` + tabela `device_job_approvals` audit trail
+
+---
+
 ## v2.14.0-alpha — 2026-09-22
 
 - Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)

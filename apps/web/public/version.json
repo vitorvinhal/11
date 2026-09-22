@@ -1,11 +1,16 @@
 {
-  "version": "2.14.0-alpha",
-  "versionCode": 21,
+  "version": "2.16.0-alpha",
+  "versionCode": 23,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)",
-    "Favicon e Ícones novos do 11 (web, Windows, Android) gerados a partir do SVG oficial",
-    "Zen/OpenAI pré-configurado (default Ollama local) + troca rápida de modelo no campo de mensagem"
+    "SEGURANÇA: 5 fixes críticos — RCE via terminal (env whitelist, chaining detection, scripting engine restrictions), SSRF em test-ollama (auth + host validation), JWT_SECRET hardcoded no Tauri (geração UUID + persistência), Terminal GET sem auth, Canvas sandbox allow-same-origin removido",
+    "Terminal sandbox real: env vars whitelisted (só PATH, HOME, etc.), rate limiting 30cmd/min por sessão, max output 512KB, audit log no Supabase",
+    "Central de aprovação mobile: risk badges (SEGURO/REVERSÍVEL/DESTRUTIVO), descrições legíveis por tool, seleção múltipla (bulk approve/reject), TTL para aprovações pendentes",
+    "Auditoria/replay de comandos: histórico consultável com filtros, replay via SSE",
+    "Dashboard de custo 9Router: métricas agregadas por modelo e dia, custo estimado por 1K tokens",
+    "Presença tempo real: heartbeat 30s, lista usuários ativos por página",
+    "Rate limiting por endpoint: sliding window com presets (default 100/min, chat 30/min, auth 10/min)",
+    "Health check agregado: verifica web, router, supabase, plugins, skills em paralelo"
   ]
 }
