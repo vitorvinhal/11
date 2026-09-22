@@ -38,6 +38,7 @@ interface ChatBody {
   geminiKey?: string;
   anthropicKey?: string;
   nineRouterKey?: string;
+  ollamaModel?: string;
   files?: { label: string; snippet?: string }[];
   webSearch?: boolean;
   memory?: boolean;
@@ -400,6 +401,8 @@ async function routeByProvider(
       return routeGemini(messages, body.geminiKey);
     case "anthropic":
       return routeAnthropic(messages, body.anthropicKey);
+    case "ollama":
+      return routeOllama(messages, body.ollamaModel);
     case "astra":
     case "minimax":
     default: {
@@ -429,7 +432,7 @@ async function routeByProvider(
         if (out) return out;
       }
       // Último recurso: Ollama local (offline fallback).
-      return routeOllama(messages);
+      return routeOllama(messages, body.ollamaModel);
     }
   }
 }
@@ -587,7 +590,7 @@ async function routeOllama(
   model?: string,
 ): Promise<string | null> {
   const endpoint = process.env["OLLAMA_ENDPOINT"] ?? "http://localhost:11434";
-  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2";
+  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2:3b";
   try {
     const res = await fetch(`${endpoint}/api/chat`, {
       method: "POST",

@@ -321,6 +321,20 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
               geminiKey: (keys.gemini ?? "").trim(),
               anthropicKey: (keys.anthropic ?? "").trim(),
               nineRouterKey: (keys.nineRouter ?? "").trim(),
+              ...(provider === "ollama"
+                ? (() => {
+                    try {
+                      const cfg = JSON.parse(
+                        localStorage.getItem("ollama_config") ?? "{}",
+                      );
+                      return cfg.selectedModel
+                        ? { ollamaModel: cfg.selectedModel }
+                        : {};
+                    } catch {
+                      return {};
+                    }
+                  })()
+                : {}),
               files: attached.map((a) => ({
                 label: a.label,
                 snippet: a.snippet,

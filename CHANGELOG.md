@@ -20,15 +20,20 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.14.0-alpha — 2026-09-22
+
+- Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)
+- Favicon e Ícones novos do 11 (web, Windows, Android) gerados a partir do SVG oficial
+- Zen/OpenAI pré-configurado (default Ollama local) + troca rápida de modelo no campo de mensagem
+
 ## v2.12.2-alpha ΓÇö 2026-09-22
 
 - Re-trigger do agente ap├│s aprova├º├úo: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)
 - PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local
-  <<<<<<< HEAD
-- Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; sa├¡da do servidor Node separada em dist-server (vite j├í n├úo apaga server.js)
-- Deploy em produ├º├úo: merge na main (PR #2) + buildCommand do Vercel cwd-independente ΓåÆ produ├º├úo live (11-app-sage.vercel.app)
-- Builds 2.12.2: URLs padr├úo apontando p/ produ├º├úo; permiss├╡es iOS (c├ómera/fotos/microfone) prontas no Capacitor; /downloads atualizados
-- **Eleven Code = Orca**: UI completa do Orca (stablyai/orca) embutida como bundle ├║nico na aba "Eleven Code" (sem iframe/servidor pr├│prio); sistema legacy "Eleven Coder" + Monaco/XTerm removidos; bundle regenerado no deploy via `scripts/build-orca-bundle.mjs` (clone pinned `e476193b` → `vite.eleven.config.ts` → `mountOrca`) com fallback resiliente (status 0) no buildCommand do Vercel; lint 0 erros · testes web 130/130 · build OK
+- Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; saída do servidor Node separada em dist-server (vite já não apaga server.js)
+- Deploy em produção: merge na main (PR #2) + buildCommand do Vercel cwd-independente → produção live (11-app-sage.vercel.app)
+- Builds 2.12.2: URLs padrão apontando p/ produção; permissões iOS (câmera/fotos/microfone) prontas no Capacitor; /downloads atualizados
+- **Eleven Code = Orca**: UI completa do Orca (stablyai/orca) embutida como bundle único na aba "Eleven Code" (sem iframe/servidor próprio); sistema legacy "Eleven Coder" + Monaco/XTerm removidos; bundle regenerado no deploy via `scripts/build-orca-bundle.mjs` (clone pinned `e476193b` → `vite.eleven.config.ts` → `mountOrca`) com fallback resiliente (status 0) no buildCommand do Vercel; lint 0 erros · testes web 130/130 · build OK
 - fix(ci): node 24 no GitHub Actions (Playwright exige 20+); webhooks usa `node:crypto` (compat node 18)
 
 ## v2.12.1-alpha ΓÇö 2026-09-21
