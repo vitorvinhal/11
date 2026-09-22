@@ -27,6 +27,7 @@ import Image from "next/image";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "../lib/auth";
 import { getDeviceContext } from "../lib/device-client";
+import { onAgentEvent, type AgentJobResumeEvent } from "../lib/agent-bus";
 import {
   isNetworkError,
   enqueueChatOffline,
@@ -212,6 +213,55 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     },
     [setMessages],
   );
+
+  // Continua a conversa quando um job do Agente de Dispositivo é aprovado e executado.
+  const resumeAfterDeviceJob = useCallback(
+    async (ev: AgentJobResumeEvent) => {
+      if (!sessionId || busy) return;
+      const { job, deviceId } = ev;
+      setBusy(true);
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      const resultText =
+        typeof job.result === "string"
+          ? job.result
+          : JSON.stringify(job.result ?? {});
+      const prompt = `A ferramenta ${job.name} foi executada no seu dispositivo (agente de dispositivo). Resultado:\n${resultText}\nResuma o que foi feito.`;
+      try {
+        const token = user ? await getAccessToken() : null;
+        const res = await fetch("/api/agent", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            prompt,
+            sessionId,
+            deviceId,
+            stream: false,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { content?: string };
+        patchAssistant(data.content ?? "");
+      } catch (err) {
+        patchAssistant(
+          `Ação executada no dispositivo (${job.name}), mas não consegui continuar: ${(err as Error).message}`,
+        );
+      } finally {
+        setBusy(false);
+      }
+    },
+    [sessionId, busy, user, getAccessToken, patchAssistant, setMessages],
+  );
+
+  useEffect(() => {
+    const off = onAgentEvent<AgentJobResumeEvent>(
+      "agent:job-resume",
+      (ev) => void resumeAfterDeviceJob(ev),
+    );
+    return off;
+  }, [resumeAfterDeviceJob]);
 
   // Persiste um artefato de código no servidor (antes: só localStorage, nunca gravado).
   const saveArtifact = useCallback(

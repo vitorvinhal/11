@@ -73,7 +73,14 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") ?? "http://localhost:3000",
+    origin: process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(",")
+      : [
+          process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000",
+          "http://localhost:3000",
+          "http://localhost:1420",
+          "https://11-five-umber.vercel.app",
+        ],
     credentials: true,
   }),
 );

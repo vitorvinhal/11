@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.2-alpha — 2026-09-22
+
+- Re-trigger do agente após aprovação: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)
+- PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local
+- Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; saída do servidor Node separada em dist-server (vite já não apaga server.js)
+
 ## v2.12.1-alpha — 2026-09-21
 
 - Downloads da nova versão hospedados no site (/downloads): 11-desktop-setup.exe, 11-desktop.msi e 11-mobile.apk — /api/updates aponta para eles por padrão

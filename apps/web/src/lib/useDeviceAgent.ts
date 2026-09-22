@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { getDeviceContext, registerAppDevice } from "./device-client";
+import { emitAgentEvent } from "./agent-bus";
 
 export type DeviceAgentStatus = "idle" | "polling" | "running" | "error";
 
@@ -209,6 +210,46 @@ export function useDeviceAgent() {
     if (refreshTick > 0) void refreshPending();
   }, [refreshTick, refreshPending]);
 
+  const awaitJobUntilTerminal = useCallback(
+    async (
+      jobId: string,
+      token: string,
+      timeoutMs = 30_000,
+    ): Promise<DeviceJobView | null> => {
+      const deadline = Date.now() + timeoutMs;
+      const { deviceId } = getDeviceContext();
+      while (Date.now() < deadline) {
+        try {
+          const res = await fetch(
+            `/api/devices/jobs?deviceId=${deviceId ?? ""}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          const data = (await res.json()) as { jobs: DeviceJobView[] };
+          const job = data.jobs.find((j) => j.id === jobId);
+          if (
+            job &&
+            [
+              "completed",
+              "failed",
+              "rejected",
+              "cancelled",
+              "timeout",
+            ].includes(job.status)
+          ) {
+            return job;
+          }
+        } catch {
+          /* tenta de novo */
+        }
+        await new Promise((r) => setTimeout(r, 800));
+      }
+      return null;
+    },
+    [],
+  );
+
   const approveJob = useCallback(
     async (id: string, approved: boolean) => {
       const token = await getAccessToken();
@@ -221,9 +262,29 @@ export function useDeviceAgent() {
         },
         body: JSON.stringify({ approved }),
       });
+
+      if (approved) {
+        // Aguarda a execução no dispositivo e dispara a continuação no chat.
+        void (async () => {
+          const finished = await awaitJobUntilTerminal(id, token);
+          if (finished && finished.status === "completed") {
+            const ctx = getDeviceContext();
+            emitAgentEvent("agent:job-resume", {
+              job: {
+                id: finished.id,
+                name: finished.name,
+                args: finished.args ?? {},
+                result: finished.result,
+                status: finished.status,
+              },
+              deviceId: ctx.deviceId,
+            });
+          }
+        })();
+      }
       await refreshPending();
     },
-    [getAccessToken, refreshPending],
+    [getAccessToken, refreshPending, awaitJobUntilTerminal],
   );
 
   const start = useCallback(() => {

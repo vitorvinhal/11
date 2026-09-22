@@ -53,3 +53,6 @@ apps/web/public/vs/
 
 supabase/.temp/
 
+
+apps/desktop/dist-server/
+

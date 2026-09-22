@@ -244,9 +244,19 @@ async function settingsGet(args: any) {
       );
       return { key, value: b };
     }
+    case "timezone": {
+      const tz = await tryPS("(Get-TimeZone).Id");
+      return { key, value: tz };
+    }
+    case "region": {
+      const region = await tryPS(
+        '(Get-Culture).Name + " - " + (Get-Culture).DisplayName',
+      );
+      return { key, value: region };
+    }
     default:
       throw new Error(
-        `Chave de configuração sem suporte: ${key}. Suportadas: wallpaper, theme, brightness.`,
+        `Chave de configuração sem suporte: ${key}. Suportadas: wallpaper, theme, brightness, timezone, region.`,
       );
   }
 }
@@ -283,9 +293,14 @@ async function settingsSet(args: any) {
         };
       return { key, value: n };
     }
+    case "timezone": {
+      if (!value.trim()) throw new Error("timezone vazio");
+      await runPS(`Set-TimeZone -Id "${value.replace(/"/g, "")}"`);
+      return { key, value };
+    }
     default:
       throw new Error(
-        `Chave de configuração sem suporte: ${key}. Suportadas: wallpaper, theme, brightness.`,
+        `Chave de configuração sem suporte: ${key}. Suportadas: wallpaper, theme, brightness, timezone.`,
       );
   }
 }
