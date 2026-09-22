@@ -4,6 +4,6 @@
   "webDir": "www",
   "server": {
     "androidScheme": "https",
-    "url": "https://11-five-umber.vercel.app"
+    "url": "https://candlefish.vercel.app"
   }
 }

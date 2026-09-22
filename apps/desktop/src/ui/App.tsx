@@ -5,12 +5,14 @@ import React, { useEffect } from "react";
  * Navega direto para a Vercel (sem iframe → sem bloqueio CSP/mistura de conteúdo).
  */
 export default function App() {
-  const webUrl =
-    import.meta.env.VITE_WEB_URL ?? "https://candlefish.vercel.app";
+  const webUrl = "https://candlefish.vercel.app";
 
   useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(console.error);
+    }
     window.location.href = webUrl;
-  }, [webUrl]);
+  }, []);
 
   return (
     <div

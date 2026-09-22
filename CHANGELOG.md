@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.3-alpha — 2026-09-22
+
+- Sem notas de release.
+
 ## v2.16.2-alpha — 2026-09-22
 
 ### Fix
