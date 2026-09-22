@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.14.3-alpha — 2026-09-22
+
+- Correção: API e downloads nunca ficam em cache do SW (buscar atualização e baixar agora funcionam)
+- Login mais resiliente nos apps: refresh de sessão ao voltar ao foreground + logout limpa identidade do device
+- Downloads funcionam no WebView (sem popup) + feedback de 'Buscar atualizações'
+
 ## v2.14.2-alpha — 2026-09-22
 
 - Rede Neural: melhor distribuição (espaçamento, clusters afastados, labels legíveis)

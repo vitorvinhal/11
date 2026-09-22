@@ -167,6 +167,16 @@ export function openDownloadForPlatform(
 ): boolean {
   const url = getDownloadUrlForPlatform(downloads, platform);
   if (!url) return false;
-  window.open(url, "_blank", "noopener,noreferrer");
+  // Apps (WebView Tauri/Capacitor): navega na mesma aba (popup costuma ser bloqueado).
+  if (platform === "desktop-app" || platform === "mobile-app") {
+    window.location.href = url;
+    return true;
+  }
+  try {
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) window.location.href = url;
+  } catch {
+    window.location.href = url;
+  }
   return true;
 }

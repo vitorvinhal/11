@@ -107,12 +107,21 @@ export function ProfileDialog({
   const [upd, setUpd] = useState<UpdateInfo | null>(null);
   const [updBusy, setUpdBusy] = useState(false);
   const [updHasNew, setUpdHasNew] = useState(false);
+  const [updCheckMsg, setUpdCheckMsg] = useState<string | null>(null);
 
   const checkUpdates = useCallback(async () => {
     setUpdBusy(true);
+    setUpdCheckMsg(null);
     const res = await checkForUpdate();
     setUpd(res.info);
     setUpdHasNew(res.hasUpdate);
+    setUpdCheckMsg(
+      res.hasUpdate
+        ? "Nova versão encontrada — role abaixo para baixar."
+        : res.info
+          ? "Verificado — sua versão está atualizada."
+          : "Não foi possível verificar agora (sem conexão?).",
+    );
     setUpdBusy(false);
   }, []);
 
@@ -1073,6 +1082,13 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {updCheckMsg && (
+                    <p
+                      className={`mt-2 text-[11px] ${updCheckMsg.startsWith("Nova") ? "text-amber-400" : updCheckMsg.startsWith("Verificado") ? "text-emerald-400" : "text-red-400"}`}
+                    >
+                      {updCheckMsg}
+                    </p>
+                  )}
                   {/* Downloads por plataforma */}
                   {upd ? (
                     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

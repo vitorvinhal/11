@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { loadRootEnv } from "../../../lib/server-env";
 
@@ -17,20 +17,30 @@ type VersionJson = {
   changelog?: string[];
 };
 
+function findVersionJson(): VersionJson | null {
+  const candidates = [
+    resolve(process.cwd(), "public/version.json"),
+    resolve(process.cwd(), "apps/web/public/version.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      if (!existsSync(p)) continue;
+      return JSON.parse(readFileSync(p, "utf8"));
+    } catch {
+      /* próxima candidate */
+    }
+  }
+  return null;
+}
+
 export async function GET() {
-  let data: VersionJson = {
+  const data: VersionJson = findVersionJson() ?? {
     version: "0.0.0",
     versionCode: 0,
     channel: "stable",
     name: "11",
     changelog: [],
   };
-  try {
-    const versionPath = resolve(process.cwd(), "public/version.json");
-    data = { ...data, ...JSON.parse(readFileSync(versionPath, "utf8")) };
-  } catch {
-    /* fallback acima */
-  }
 
   return NextResponse.json({
     version: data.version,

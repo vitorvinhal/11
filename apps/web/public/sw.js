@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const SHELL_CACHE = '11-shell-v2';
+const SHELL_CACHE = '11-shell-v3';
 const SHELL_URLS = ['/', '/manifest.json', '/icon.svg', '/favicon.ico'];
 
 self.addEventListener('install', (event) => {
@@ -161,6 +161,25 @@ self.addEventListener('fetch', (event) => {
             .match(request)
             .then((cached) => cached || Response.error())
         )
+    );
+    return;
+  }
+
+  // API: sempre rede (sem cache-first) — versionCode/updates nunca velho.
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        if (request.mode === 'navigate') return caches.match('/');
+        return Response.error();
+      })
+    );
+    return;
+  }
+
+  // Downloads (/downloads/*): sempre a versão NOVA (rede primeiro, sem cache).
+  if (url.pathname.startsWith('/downloads/')) {
+    event.respondWith(
+      fetch(request).catch(() => Response.error())
     );
     return;
   }

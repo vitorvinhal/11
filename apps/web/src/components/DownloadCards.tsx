@@ -89,8 +89,7 @@ export function DownloadCards({
             {c.url ? (
               <a
                 href={c.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                download={c.url.split("/").pop()}
                 className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/20 px-2 py-1.5 text-[11px] font-medium text-primary hover:bg-primary/30 transition"
               >
                 <Download className="h-3 w-3" /> Baixar

@@ -110,7 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     supabase.auth.getSession().then(({ data, error }) => {
+      if (cancelled) return;
       const u = data.session?.user ?? null;
       setUser(u);
       setLoading(false); // nunca deixar UI presa em "Autenticando…"
@@ -119,14 +121,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         void registerDeviceSession(data.session.access_token);
       }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") setUser(null);
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.access_token) {
         void registerDeviceSession(session.access_token);
       }
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Ao voltar ao foreground (apps/WebView), re-valida/atualiza a sessão —
+    // evita "sessão expirada / precisa logar de novo" após pausa.
+    let lastVisible = true;
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && !lastVisible) {
+        void supabase.auth
+          .getSession()
+          .then(({ data: d }) => {
+            if (d.session?.access_token) {
+              void registerDeviceSession(d.session.access_token);
+            }
+          })
+          .catch(() => undefined);
+      }
+      lastVisible = document.visibilityState === "visible";
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [supabase]);
 
   const signUp = async (email: string, password: string) => {
@@ -152,6 +178,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Limpa identidade do dispositivo (deviceId/secret pareado) e acks de versão.
+    try {
+      localStorage.removeItem("eleven_device_id_v1");
+      localStorage.removeItem("eleven_device_secret_v1");
+      localStorage.removeItem("eleven_ack_version_code_v1");
+      localStorage.removeItem("eleven_notified_version_code_v1");
+    } catch {
+      /* ignore */
+    }
   };
 
   const getAccessToken = async (): Promise<string | null> => {
