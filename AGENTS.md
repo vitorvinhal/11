@@ -129,5 +129,115 @@ Toda alteração de código que modifique funcionalidade, corrija bug ou adicion
 - `apps/web/src/lib/platform.ts` + `platform-guard.ts`: detecção de plataforma (desktop/mobile/web) e guards de UI.
 - `packages/ia` = core de IA (router, safety, agent, plugins/skills). `packages/api` = NestJS **legacy**, mantido por compat.
 - `infra/supabase` = migrations; `scripts/deploy-vps.sh|ps1` = deploy VPS (Oracle Cloud A1 ARM).
-- **Sem CI configurado**: `.github/` está vazio (README menciona GitHub Actions → Vercel, mas não existe workflow). Deploy é manual via Vercel + VPS.
+- **CI existe (básico)**: `.github/workflows/` tem `build.yml` (lint+test+build em `main`), `ci.yml`, `supabase-keepalive.yml`, `build-android.yml` (APK release) e `build-ios.yml` (IPA em macOS runner). **Ainda sem**: testes para `api`/`cli`/`desktop`/`mobile`, suíte de regressão de segurança, e cobertura de deploy (Vercel é disparado por push a `main` + `vercel --prod` manual). Deploy web em produção: domínio `candlefish.vercel.app` (alias `11-app-sage.vercel.app` é manual — re-apontar após deploy).
 - Skills da IA 11 moram em `skills/` (ex.: `responder-em-portugues`), não em `.claude/`. Responder sempre pt-BR com usuário; códigos, logs, commits e comandos podem ficar em inglês.
+
+---
+
+# REGRAS DE SEGURANÇA — NUNCA REGREDIR
+
+Estas correções já foram aplicadas e verificadas. Qualquer PR/tarefa que
+reintroduza um destes padrões deve ser bloqueado na revisão, mesmo que a
+motivação pareça razoável (ex.: "evitar crash", "facilitar dev local").
+
+- **Nunca hardcode um valor de fallback para secret/token/JWT_SECRET em
+  nenhuma camada** — nem no Node, nem no launcher Tauri (`src-tauri/`), nem
+  em scripts de dev. Regra: ausente = FAIL FAST, nunca um valor conhecido.
+  (Regrediu uma vez em `apps/desktop/src-tauri/src/lib.rs` depois de já
+  corrigido em `pc-agent/server.ts` e `router9/index.ts` — o bug volta em
+  qualquer nova camada que gere/injete env vars antes do processo Node subir.
+  ✅ Corrigido novamente em `lib.rs` — o spawn agora apenas herda o env.)
+- **Nunca valide um comando de shell só pela primeira palavra e depois
+  execute a string inteira via `bash -lc`/`powershell -Command`.** Allowlist
+  de string não funciona contra shell completo (`;`, `&&`, `|`, backtick,
+  `$()` sempre furam). Ver `apps/web/src/lib/terminal-validate.ts` — se
+  esse arquivo for tocado, os testes de bypass por encadeamento (`;`, `&&`,
+  `|`) são obrigatórios antes de merge.
+- **Nunca valide sandbox de path com `string.startsWith(root)`.** Sempre
+  `path.relative(root, target)` + checar que não começa com `..` (ver
+  `isInsideRoot()` em `router9/index.ts` e `isWithinRoot()` em
+  `terminal-validate.ts` como referência de implementação correta).
+  `startsWith` aceita diretórios irmãos com prefixo igual
+  (`/app/root` vs `/app/root-evil`).
+- **Nunca combine `sandbox="allow-scripts allow-same-origin"` num iframe
+  que renderiza conteúdo gerado por IA/usuário** (`CanvasPanel.tsx` e
+  qualquer preview futuro). Essa combinação anula o isolamento de origem.
+- **Toda rota nova em `apps/web/src/app/api/**` que não seja pública por
+  design precisa de `requireUser()` logo na primeira linha do handler** —
+  incluindo `GET`, não só `POST`/`PATCH`/`DELETE` (já regrediu uma vez:
+  `GET /api/terminal/exec` ficou sem auth enquanto o `POST` tinha).
+- **Toda rota que aceita uma URL/endpoint vindo do body ou query e faz
+  `fetch()` nela no servidor precisa validar contra allowlist de host**
+  antes do fetch (SSRF) — nunca aceitar URL arbitrária do cliente.
+  (Regrediu em `/api/settings/test-ollama`; ✅ a rota foi **removida** —
+  o teste do Ollama agora é client-side via `apps/web/src/lib/local-llm.ts`,
+  sem rota de proxy no servidor. Nova rota de proxy LLM só com allowlist.)
+- **Toda `Map`/estrutura de sessão em memória (não banco) precisa ser
+  indexada por `userId`, nunca só por um id gerado pelo cliente** — senão
+  vira sessão cross-user por adivinhação/colisão de id.
+
+# TESTING — estado real (não confiar em "deve funcionar")
+
+- `pnpm typecheck` está quebrado na raiz (nenhum workspace define o
+  script) — não usar como sinal de "tipo ok". Rodar
+  `pnpm --filter <pkg> build` ou `tsc -p <pkg>/tsconfig.json` direto.
+- Cobertura de teste real hoje: `apps/web`, `packages/ia`, `packages/shared`
+  via jest. **`api`, `cli`, `desktop`, `mobile` não têm testes** — qualquer
+  mudança nesses pacotes é validada só por build + smoke test manual
+  (`scripts/smoke-test.mjs`), não por CI automatizado.
+- Testes de segurança (path traversal, auth bypass, SSRF, command
+  injection) não têm suíte própria ainda — ao corrigir qualquer item da
+  seção acima, criar o teste no mesmo PR, não depois.
+- **Smoke do desktop (local services)**: `pnpm --filter @11/desktop router`
+  sobe Router9 (3002) + PC Agent (3001); validar com
+  `curl http://localhost:3001/health` (espera `paired: true`) e
+  `curl http://localhost:3001/device/tools` (espera as 21 tools).
+- **LLM local (Ollama/Zen)**: chamadas agora são **client-side** direto do
+  WebView (a nuvem não enxerga `localhost`). Ao testar, usar o override de
+  plataforma (`localStorage.setItem('eleven_platform_override','desktop-app')`).
+
+# CI — estado real (linha do tempo)
+
+`.github/workflows/` hoje tem: `build.yml` (lint+test+build em `main`,
+ubuntu), `ci.yml`, `supabase-keepalive.yml`, `build-android.yml` (APK release
+via Actions) e `build-ios.yml` (IPA em runner macOS, sem código + sideload).
+**Ainda não coberto por CI**: testes de `api`/`cli`/`desktop`/`mobile`,
+suíte de regressão de segurança, e deploy automatizado (produção sobe por
+push a `main` — GitHub/Vercel — e por `vercel --prod` manual; o alias
+`11-app-sage.vercel.app` precisa ser re-apontado para o último deploy
+sempre que rodar deploy manual ou mergear a main).
+
+Até a suíte de segurança existir, tratar a checklist manual como obrigatória,
+não opcional — principalmente antes de qualquer merge que toque nos arquivos
+listados na seção de segurança acima. Husky `pre-commit` (eslint+prettier nos
+staged) não cobre o repositório inteiro, só o que foi alterado.
+
+# CONSOLIDAÇÃO COM CLAUDE.md
+
+`CLAUDE.md` (diretiva de engenharia de 170+ itens) e este `AGENTS.md` têm
+propósitos diferentes: este arquivo é o contexto operacional do dia a dia
+(comandos, gotchas, protocolo de relatório); `CLAUDE.md` é o roadmap de
+fases de longo prazo. Ao editar um, checar se o outro ficou desatualizado —
+nenhuma seção deveria contradizer a outra (ex.: se uma fase de segurança
+do `CLAUDE.md` já foi concluída, isso deveria refletir aqui como regra
+permanente, como as da seção acima).
+
+# 9Router — lembrete operacional
+
+- `ROUTER9_MODEL` pode ser o nome de um **combo** (cadeia de fallback
+  configurada no dashboard do 9Router), não só um model id isolado —
+  nenhuma mudança de código é necessária pra trocar de modelo pra combo,
+  só a env var.
+- Se `ROUTER9_ENDPOINT`/túnel estiver acessível fora de `localhost`,
+  confirmar `REQUIRE_API_KEY=true` no `.env` do **próprio 9Router**
+  (serviço separado, não confundir com o `.env` deste projeto) — sem isso,
+  qualquer um que ache a URL do túnel gasta sua cota sem autenticação.
+
+# PR — formato mínimo
+
+- Título: `[<área>] <resumo curto>` — ex. `[terminal] corrige bypass de allowlist via shell`
+- Corpo: o que mudou, por que, quais testes rodaram (colar output real, não
+  descrever), e se algum item da seção "REGRAS DE SEGURANÇA" foi tocado —
+  se sim, linkar o teste de regressão correspondente.
+- Nunca abrir PR com `pnpm typecheck` como evidência de tipo (está
+  quebrado, ver seção Testing) — usar `build` do pacote afetado.

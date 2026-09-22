@@ -1,9 +1,11 @@
 {
-  "version": "2.12.4-alpha",
-  "versionCode": 22,
+  "version": "2.12.5-alpha",
+  "versionCode": 23,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Fix updates nos apps: alias app-sage apontando p/ deploy atual; app usaria domínio de produção (candlefish.vercel.app); fetch de versão sem cache + botão 'Recarregar o app'"
+    "SW: navegações network-first + cache v2 (corrige tela branca / update travado nos apps); registro propaga SW novo com reload único",
+    "Segurança: removido JWT_SECRET fallback do launcher Tauri (fail fast) e removida rota SSRF /api/settings/test-ollama",
+    "AGENTS.md: seções de segurança/CI/PR atualizadas"
   ]
 }

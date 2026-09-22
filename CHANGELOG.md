@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.5-alpha — 2026-09-22
+
+- SW: navegações network-first + cache v2 (corrige tela branca / update travado nos apps); registro propaga SW novo com reload único
+- Segurança: removido JWT_SECRET fallback do launcher Tauri (fail fast) e removida rota SSRF /api/settings/test-ollama
+- AGENTS.md: seções de segurança/CI/PR atualizadas
+
 ## v2.12.4-alpha — 2026-09-22
 
 - Fix updates nos apps: alias app-sage apontando p/ deploy atual; app usaria domínio de produção (candlefish.vercel.app); fetch de versão sem cache + botão 'Recarregar o app'
