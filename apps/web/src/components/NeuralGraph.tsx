@@ -11,6 +11,7 @@ import {
   Code,
   Layers,
   MessageCircle,
+  Network,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 
@@ -18,6 +19,8 @@ const OLED_BG = "#05050A";
 const CYAN = "#00e5ff";
 const MAGENTA = "#e040fb";
 const VIOLET = "#b388ff";
+const GREEN = "#69f0ae";
+const BLUE = "#80d8ff";
 const WHITE_DIM = "#ffffffaa";
 const WHITE_BRIGHT = "#ffffff";
 const FONT = "JetBrains Mono, ui-monospace, SFMono-Regular, monospace";
@@ -65,14 +68,39 @@ const KIND_CONFIG: Record<
   memory: { color: CYAN, label: "Memoria", icon: Database, cluster: 1 },
   skill: { color: MAGENTA, label: "Skill", icon: Layers, cluster: 2 },
   project: { color: VIOLET, label: "Projeto", icon: Code, cluster: 3 },
-  code: { color: "#69f0ae", label: "Codigo", icon: Code, cluster: 4 },
-  session: {
-    color: "#80d8ff",
-    label: "Conversa",
-    icon: MessageCircle,
-    cluster: 5,
-  },
+  code: { color: GREEN, label: "Codigo", icon: Code, cluster: 4 },
+  session: { color: BLUE, label: "Conversa", icon: MessageCircle, cluster: 5 },
 };
+
+const DEMO_SKILLS = [
+  { id: "s-responder-pt", name: "Responder em PT" },
+  { id: "s-seo", name: "SEO Otimização" },
+  { id: "s-code-review", name: "Code Review" },
+  { id: "s-design", name: "Design System" },
+  { id: "s数据分析", name: "Análise de Dados" },
+  { id: "s-docs", name: "Documentação" },
+];
+
+const DEMO_MEMORIES = [
+  { id: "m-1", title: "Preferência de idioma" },
+  { id: "m-2", title: "Stack do projeto" },
+  { id: "m-3", title: "Regras de código" },
+  { id: "m-4", title: "Endpoints da API" },
+  { id: "m-5", title: "Estrutura de pastas" },
+  { id: "m-6", title: "Variáveis de ambiente" },
+  { id: "m-7", title: "Deploy config" },
+  { id: "m-8", title: "Banco de dados schema" },
+  { id: "m-9", title: "Testes unitários" },
+  { id: "m-10", title: "CI/CD pipeline" },
+  { id: "m-11", title: "Auth flow" },
+  { id: "m-12", title: "Cache strategy" },
+];
+
+const DEMO_PROJECTS = [
+  { id: "p-web", name: "11 Web App" },
+  { id: "p-desktop", name: "11 Desktop" },
+  { id: "p-api", name: "API Server" },
+];
 
 function simulatePhysics(
   nodes: GraphNode[],
@@ -95,7 +123,6 @@ function simulatePhysics(
   }
   clusterCenters[0] = { x: cx, y: cy };
 
-  // Inicializar nodes não-core em posições aleatórias próximas ao centro do cluster
   for (const n of ns) {
     if (n.kind !== "core") {
       const cc = clusterCenters[n.cluster] ?? clusterCenters[0];
@@ -110,7 +137,6 @@ function simulatePhysics(
 
   for (let iter = 0; iter < iterations; iter++) {
     const alpha = 0.4 * (1 - iter / iterations);
-    // Forças de spring (arestas)
     for (const e of edges) {
       const s = ns.find((n) => n.id === e.source);
       const t = ns.find((n) => n.id === e.target);
@@ -125,7 +151,6 @@ function simulatePhysics(
       t.vx -= (dx / dist) * f;
       t.vy -= (dy / dist) * f;
     }
-    // Atração ao centro do cluster (mais forte)
     for (const n of ns) {
       if (n.kind === "core") continue;
       const cc = clusterCenters[n.cluster] ?? clusterCenters[0];
@@ -136,7 +161,6 @@ function simulatePhysics(
       n.vx += (dx / dist) * f;
       n.vy += (dy / dist) * f;
     }
-    // Repulsão entre todos os pares (Coulomb simplificado)
     for (let i = 0; i < ns.length; i++) {
       for (let j = i + 1; j < ns.length; j++) {
         const a = ns[i],
@@ -154,7 +178,6 @@ function simulatePhysics(
         }
       }
     }
-    // Gravidade ao centro + atualização de posição
     for (const n of ns) {
       if (n.kind === "core") {
         n.vx += (cx - n.x) * 0.05;
@@ -179,6 +202,116 @@ function hexAlpha(hex: string, alpha: number): string {
   return hex + a.toString(16).padStart(2, "0");
 }
 
+function buildFallbackNodes(w: number, h: number) {
+  const gNodes: GraphNode[] = [];
+  const gEdges: GraphEdge[] = [];
+
+  gNodes.push({
+    id: "core-11",
+    label: "11",
+    kind: "core",
+    x: w / 2,
+    y: h / 2,
+    vx: 0,
+    vy: 0,
+    radius: 22,
+    baseRadius: 22,
+    pulsePhase: 0,
+    opacity: 1,
+    targetX: w / 2,
+    targetY: h / 2,
+    cluster: 0,
+  });
+
+  DEMO_PROJECTS.forEach((p, i) => {
+    const id = p.id;
+    gNodes.push({
+      id,
+      label: p.name,
+      kind: "project",
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: 10,
+      baseRadius: 10,
+      pulsePhase: i * 0.7,
+      opacity: 1,
+      targetX: 0,
+      targetY: 0,
+      cluster: 3,
+    });
+    gEdges.push({
+      source: id,
+      target: "core-11",
+      strength: 1,
+      pulseOffset: i * 0.3,
+    });
+  });
+
+  DEMO_SKILLS.forEach((s, i) => {
+    const id = s.id;
+    gNodes.push({
+      id,
+      label: s.name,
+      kind: "skill",
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: 7,
+      baseRadius: 7,
+      pulsePhase: i * 0.5,
+      opacity: 1,
+      targetX: 0,
+      targetY: 0,
+      cluster: 2,
+    });
+    gEdges.push({
+      source: id,
+      target: "core-11",
+      strength: 0.7,
+      pulseOffset: i * 0.4,
+    });
+    if (DEMO_PROJECTS[0]) {
+      gEdges.push({
+        source: id,
+        target: DEMO_PROJECTS[0].id,
+        strength: 0.4,
+        pulseOffset: i * 0.2,
+      });
+    }
+  });
+
+  DEMO_MEMORIES.forEach((m, i) => {
+    const id = m.id;
+    gNodes.push({
+      id,
+      label: m.title,
+      kind: "memory",
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: 4,
+      baseRadius: 4,
+      pulsePhase: i * 0.3,
+      opacity: 1,
+      targetX: 0,
+      targetY: 0,
+      cluster: 1,
+    });
+    gEdges.push({
+      source: id,
+      target: "core-11",
+      strength: 0.3,
+      pulseOffset: i * 0.15,
+    });
+  });
+
+  return { nodes: gNodes, edges: gEdges };
+}
+
 export function NeuralGraph() {
   const { user, getAccessToken } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -195,29 +328,9 @@ export function NeuralGraph() {
   const frameRef = useRef(0);
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const token = await getAccessToken();
-      const auth = token ? { Authorization: `Bearer ${token}` } : {};
-      const [skResult, memResult, projResult] = await Promise.allSettled([
-        fetch(`/api/skills?userId=${user.id}`, { headers: auth }).then((r) =>
-          r.json(),
-        ),
-        fetch(`/api/memories?userId=${user.id}`, { headers: auth }).then((r) =>
-          r.json(),
-        ),
-        fetch(`/api/projects?userId=${user.id}`, { headers: auth }).then((r) =>
-          r.json(),
-        ),
-      ]);
-      const sk =
-        skResult.status === "fulfilled" ? skResult.value : { skills: [] };
-      const mem = memResult.status === "fulfilled" ? memResult.value : [];
-      const proj = projResult.status === "fulfilled" ? projResult.value : [];
-      const skills = sk?.skills ?? (Array.isArray(sk) ? sk : []);
-      const memories = Array.isArray(mem) ? mem : [];
-      const projects = Array.isArray(proj) ? proj : [];
+      let hasRealData = false;
       const gNodes: GraphNode[] = [];
       const gEdges: GraphEdge[] = [];
 
@@ -238,97 +351,137 @@ export function NeuralGraph() {
         cluster: 0,
       });
 
-      projects.forEach((p: any, i: number) => {
-        const id = `p-${p.id}`;
-        gNodes.push({
-          id,
-          label: p.name,
-          kind: "project",
-          x: 0,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          radius: 10,
-          baseRadius: 10,
-          pulsePhase: i * 0.7,
-          opacity: 1,
-          targetX: 0,
-          targetY: 0,
-          cluster: 3,
-        });
-        gEdges.push({
-          source: id,
-          target: "core-11",
-          strength: 1,
-          pulseOffset: i * 0.3,
-        });
-      });
+      if (user) {
+        try {
+          const token = await getAccessToken();
+          const auth = token ? { Authorization: `Bearer ${token}` } : {};
+          const [skResult, memResult, projResult] = await Promise.allSettled([
+            fetch(`/api/skills?userId=${user.id}`, { headers: auth }).then(
+              (r) => r.json(),
+            ),
+            fetch(`/api/memories?userId=${user.id}`, { headers: auth }).then(
+              (r) => r.json(),
+            ),
+            fetch(`/api/projects?userId=${user.id}`, { headers: auth }).then(
+              (r) => r.json(),
+            ),
+          ]);
 
-      skills.forEach((s: any, i: number) => {
-        const id = `s-${s.id}`;
-        gNodes.push({
-          id,
-          label: s.name,
-          kind: "skill",
-          x: 0,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          radius: 7,
-          baseRadius: 7,
-          pulsePhase: i * 0.5,
-          opacity: 1,
-          targetX: 0,
-          targetY: 0,
-          cluster: 2,
-        });
-        gEdges.push({
-          source: id,
-          target: "core-11",
-          strength: 0.7,
-          pulseOffset: i * 0.4,
-        });
-        if (projects[0])
-          gEdges.push({
-            source: id,
-            target: `p-${projects[0].id}`,
-            strength: 0.4,
-            pulseOffset: i * 0.2,
-          });
-      });
+          const sk =
+            skResult.status === "fulfilled" ? skResult.value : { skills: [] };
+          const mem = memResult.status === "fulfilled" ? memResult.value : [];
+          const proj =
+            projResult.status === "fulfilled" ? projResult.value : [];
+          const skills = sk?.skills ?? (Array.isArray(sk) ? sk : []);
+          const memories = Array.isArray(mem) ? mem : [];
+          const projects = Array.isArray(proj) ? proj : [];
 
-      memories.forEach((m: any, i: number) => {
-        if (i < 40) {
-          const id = `m-${m.id}`;
-          gNodes.push({
-            id,
-            label: m.title ?? m.content?.slice(0, 20) ?? "Memoria",
-            kind: "memory",
-            x: 0,
-            y: 0,
-            vx: 0,
-            vy: 0,
-            radius: 4,
-            baseRadius: 4,
-            pulsePhase: i * 0.3,
-            opacity: 1,
-            targetX: 0,
-            targetY: 0,
-            cluster: 1,
-          });
-          gEdges.push({
-            source: id,
-            target: "core-11",
-            strength: 0.3,
-            pulseOffset: i * 0.15,
-          });
+          if (skills.length > 0 || memories.length > 0 || projects.length > 0) {
+            hasRealData = true;
+            projects.forEach((p: any, i: number) => {
+              const id = `p-${p.id}`;
+              gNodes.push({
+                id,
+                label: p.name,
+                kind: "project",
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                radius: 10,
+                baseRadius: 10,
+                pulsePhase: i * 0.7,
+                opacity: 1,
+                targetX: 0,
+                targetY: 0,
+                cluster: 3,
+              });
+              gEdges.push({
+                source: id,
+                target: "core-11",
+                strength: 1,
+                pulseOffset: i * 0.3,
+              });
+            });
+
+            skills.forEach((s: any, i: number) => {
+              const id = `s-${s.id}`;
+              gNodes.push({
+                id,
+                label: s.name,
+                kind: "skill",
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                radius: 7,
+                baseRadius: 7,
+                pulsePhase: i * 0.5,
+                opacity: 1,
+                targetX: 0,
+                targetY: 0,
+                cluster: 2,
+              });
+              gEdges.push({
+                source: id,
+                target: "core-11",
+                strength: 0.7,
+                pulseOffset: i * 0.4,
+              });
+              if (projects[0]) {
+                gEdges.push({
+                  source: id,
+                  target: `p-${projects[0].id}`,
+                  strength: 0.4,
+                  pulseOffset: i * 0.2,
+                });
+              }
+            });
+
+            memories.slice(0, 40).forEach((m: any, i: number) => {
+              const id = `m-${m.id}`;
+              gNodes.push({
+                id,
+                label: m.title ?? m.content?.slice(0, 20) ?? "Memoria",
+                kind: "memory",
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                radius: 4,
+                baseRadius: 4,
+                pulsePhase: i * 0.3,
+                opacity: 1,
+                targetX: 0,
+                targetY: 0,
+                cluster: 1,
+              });
+              gEdges.push({
+                source: id,
+                target: "core-11",
+                strength: 0.3,
+                pulseOffset: i * 0.15,
+              });
+            });
+          }
+        } catch {
+          /* auth failed, use fallback */
         }
-      });
+      }
+
+      if (!hasRealData) {
+        const fallback = buildFallbackNodes(dimensions.w, dimensions.h);
+        gNodes.push(...fallback.nodes.filter((n) => n.id !== "core-11"));
+        gEdges.push(...fallback.edges);
+      }
 
       setNodes(gNodes);
       setEdges(gEdges);
     } catch (err) {
       console.error("[NeuralGraph] fetchData error:", err);
+      const fallback = buildFallbackNodes(dimensions.w, dimensions.h);
+      setNodes(fallback.nodes);
+      setEdges(fallback.edges);
     }
     setLoading(false);
   }, [user, getAccessToken, dimensions.w, dimensions.h]);
@@ -365,16 +518,18 @@ export function NeuralGraph() {
     ctx.scale(dpr, dpr);
 
     if (particlesRef.current.length === 0) {
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 80; i++) {
         particlesRef.current.push({
           x: Math.random() * dimensions.w,
           y: Math.random() * dimensions.h,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
           life: Math.random() * 200,
           maxLife: 200 + Math.random() * 200,
-          color: [CYAN, MAGENTA, VIOLET][Math.floor(Math.random() * 3)],
-          size: 0.5 + Math.random() * 1.5,
+          color: [CYAN, MAGENTA, VIOLET, GREEN, BLUE][
+            Math.floor(Math.random() * 5)
+          ],
+          size: 0.8 + Math.random() * 2,
         });
       }
     }
@@ -387,7 +542,8 @@ export function NeuralGraph() {
       ctx.fillStyle = OLED_BG;
       ctx.fillRect(0, 0, w, h);
 
-      ctx.strokeStyle = "#ffffff06";
+      // Grid
+      ctx.strokeStyle = "#ffffff08";
       ctx.lineWidth = 0.5;
       const gridSize = 60;
       for (let x = 0; x < w; x += gridSize) {
@@ -403,22 +559,24 @@ export function NeuralGraph() {
         ctx.stroke();
       }
 
+      // Particles
       for (const p of particlesRef.current) {
         p.x += p.vx;
         p.y += p.vy;
         p.life++;
-        if (p.life > p.maxLife) {
+        if (p.life > p.maxLife || p.x < 0 || p.x > w || p.y < 0 || p.y > h) {
           p.x = Math.random() * w;
           p.y = Math.random() * h;
           p.life = 0;
         }
-        const alpha = Math.sin((p.life / p.maxLife) * Math.PI) * 0.4;
+        const alpha = Math.sin((p.life / p.maxLife) * Math.PI) * 0.5;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = hexAlpha(p.color, alpha);
         ctx.fill();
       }
 
+      // Edges
       for (const e of edges) {
         const s = layoutNodes.find((n) => n.id === e.source);
         const t = layoutNodes.find((n) => n.id === e.target);
@@ -432,33 +590,36 @@ export function NeuralGraph() {
         ctx.moveTo(s.x, s.y);
         ctx.lineTo(t.x, t.y);
         const grad = ctx.createLinearGradient(s.x, s.y, t.x, t.y);
-        grad.addColorStop(0, hexAlpha(edgeColor, 0.35));
+        grad.addColorStop(0, hexAlpha(edgeColor, 0.4));
         grad.addColorStop(0.5, hexAlpha(edgeColor, 0.2));
-        grad.addColorStop(1, hexAlpha(edgeColor, 0.35));
+        grad.addColorStop(1, hexAlpha(edgeColor, 0.4));
         ctx.strokeStyle = grad;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        // Glow edge
         ctx.beginPath();
         ctx.moveTo(s.x, s.y);
         ctx.lineTo(t.x, t.y);
-        ctx.strokeStyle = hexAlpha(edgeColor, 0.08);
-        ctx.lineWidth = 5;
+        ctx.strokeStyle = hexAlpha(edgeColor, 0.1);
+        ctx.lineWidth = 6;
         ctx.stroke();
 
+        // Pulse dot
         const pulsePos = (frame * 0.008 + e.pulseOffset) % 1;
         const px = s.x + (t.x - s.x) * pulsePos;
         const py = s.y + (t.y - s.y) * pulsePos;
-        const pulseGrad = ctx.createRadialGradient(px, py, 0, px, py, 6);
-        pulseGrad.addColorStop(0, hexAlpha(edgeColor, 0.8));
-        pulseGrad.addColorStop(0.5, hexAlpha(edgeColor, 0.25));
+        const pulseGrad = ctx.createRadialGradient(px, py, 0, px, py, 8);
+        pulseGrad.addColorStop(0, hexAlpha(edgeColor, 0.9));
+        pulseGrad.addColorStop(0.5, hexAlpha(edgeColor, 0.3));
         pulseGrad.addColorStop(1, hexAlpha(edgeColor, 0));
         ctx.beginPath();
-        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
         ctx.fillStyle = pulseGrad;
         ctx.fill();
       }
 
+      // Nodes
       for (const n of layoutNodes) {
         const conf = KIND_CONFIG[n.kind];
         const isHovered = hoveredId === n.id;
@@ -472,6 +633,7 @@ export function NeuralGraph() {
           n.label.toLowerCase().includes(searchQuery.toLowerCase());
         const dim = matchesSearch ? 1 : 0.15;
 
+        // Core field
         if (isCore) {
           const fieldR = r + 30 + Math.sin(frame * 0.015) * 10;
           const fieldGrad = ctx.createRadialGradient(
@@ -482,8 +644,8 @@ export function NeuralGraph() {
             n.y,
             fieldR,
           );
-          fieldGrad.addColorStop(0, hexAlpha(CYAN, 0.09));
-          fieldGrad.addColorStop(0.5, hexAlpha(MAGENTA, 0.04));
+          fieldGrad.addColorStop(0, hexAlpha(CYAN, 0.12));
+          fieldGrad.addColorStop(0.5, hexAlpha(MAGENTA, 0.05));
           fieldGrad.addColorStop(1, hexAlpha(CYAN, 0));
           ctx.beginPath();
           ctx.arc(n.x, n.y, fieldR, 0, Math.PI * 2);
@@ -495,13 +657,14 @@ export function NeuralGraph() {
             const rot = frame * 0.008 * (ring % 2 === 0 ? 1 : -1);
             ctx.beginPath();
             ctx.arc(n.x, n.y, ringR, rot, rot + Math.PI * 1.5);
-            ctx.strokeStyle = hexAlpha(ring % 2 === 0 ? CYAN : MAGENTA, 0.19);
+            ctx.strokeStyle = hexAlpha(ring % 2 === 0 ? CYAN : MAGENTA, 0.22);
             ctx.lineWidth = 1.5;
             ctx.stroke();
           }
         }
 
-        const glowR = r + (isCore ? 20 : 10);
+        // Glow
+        const glowR = r + (isCore ? 24 : 14);
         const glowGrad = ctx.createRadialGradient(
           n.x,
           n.y,
@@ -510,13 +673,14 @@ export function NeuralGraph() {
           n.y,
           glowR,
         );
-        glowGrad.addColorStop(0, hexAlpha(conf.color, 0.16 * dim));
+        glowGrad.addColorStop(0, hexAlpha(conf.color, 0.2 * dim));
         glowGrad.addColorStop(1, hexAlpha(conf.color, 0));
         ctx.beginPath();
         ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
         ctx.fillStyle = glowGrad;
         ctx.fill();
 
+        // Body
         const bodyGrad = ctx.createRadialGradient(
           n.x - r * 0.3,
           n.y - r * 0.3,
@@ -525,14 +689,15 @@ export function NeuralGraph() {
           n.y,
           r,
         );
-        bodyGrad.addColorStop(0, hexAlpha(conf.color, 0.86 * dim));
-        bodyGrad.addColorStop(0.7, hexAlpha(conf.color, 0.55 * dim));
-        bodyGrad.addColorStop(1, hexAlpha(conf.color, 0.31 * dim));
+        bodyGrad.addColorStop(0, hexAlpha(conf.color, 0.9 * dim));
+        bodyGrad.addColorStop(0.7, hexAlpha(conf.color, 0.6 * dim));
+        bodyGrad.addColorStop(1, hexAlpha(conf.color, 0.35 * dim));
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
         ctx.fillStyle = bodyGrad;
         ctx.fill();
 
+        // Highlight
         const hlGrad = ctx.createRadialGradient(
           n.x - r * 0.2,
           n.y - r * 0.4,
@@ -541,17 +706,18 @@ export function NeuralGraph() {
           n.y,
           r,
         );
-        hlGrad.addColorStop(0, hexAlpha("#ffffff", 0.12 * dim));
+        hlGrad.addColorStop(0, hexAlpha("#ffffff", 0.15 * dim));
         hlGrad.addColorStop(1, hexAlpha("#ffffff", 0));
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
         ctx.fillStyle = hlGrad;
         ctx.fill();
 
+        // Selection ring
         if (isSelected) {
           ctx.beginPath();
-          ctx.arc(n.x, n.y, r + 5, 0, Math.PI * 2);
-          ctx.strokeStyle = hexAlpha(WHITE_BRIGHT, 0.38);
+          ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2);
+          ctx.strokeStyle = hexAlpha(WHITE_BRIGHT, 0.4);
           ctx.lineWidth = 2;
           ctx.setLineDash([4, 4]);
           ctx.stroke();
@@ -559,13 +725,14 @@ export function NeuralGraph() {
         }
         if (isHovered && !isSelected) {
           ctx.beginPath();
-          ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2);
-          ctx.strokeStyle = hexAlpha(conf.color, 0.31);
+          ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2);
+          ctx.strokeStyle = hexAlpha(conf.color, 0.35);
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
 
-        if (r > 5 || isHovered || isSelected || isCore) {
+        // Label
+        if (r > 4 || isHovered || isSelected || isCore) {
           const label =
             n.label.length > 16 ? n.label.slice(0, 14) + "..." : n.label;
           ctx.fillStyle = isCore
@@ -657,7 +824,7 @@ export function NeuralGraph() {
               background: "linear-gradient(135deg, #00e5ff20, #e040fb20)",
             }}
           >
-            <Brain className="h-4 w-4" style={{ color: CYAN }} />
+            <Network className="h-4 w-4" style={{ color: CYAN }} />
           </div>
           <div>
             <h3
