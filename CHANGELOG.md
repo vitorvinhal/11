@@ -25,6 +25,8 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 - Re-trigger do agente após aprovação: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)
 - PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local
 - Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; saída do servidor Node separada em dist-server (vite já não apaga server.js)
+- Deploy em produção: merge na main (PR #2) + buildCommand do Vercel cwd-independente → produção live (11-app-sage.vercel.app)
+- Builds 2.12.2: URLs padrão apontando p/ produção; permissões iOS (câmera/fotos/microfone) prontas no Capacitor; /downloads atualizados
 
 ## v2.12.1-alpha — 2026-09-21
 

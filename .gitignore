@@ -56,3 +56,4 @@ supabase/.temp/
 
 apps/desktop/dist-server/
 
+.env*
