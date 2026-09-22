@@ -1,5 +1,5 @@
 export interface AgentState {
-  mood: 'calma' | 'caotica' | 'focada' | 'prestativa';
+  mood: "calma" | "caotica" | "focada" | "prestativa";
   lastUpdated: string;
 }
 
@@ -18,3 +18,5 @@ export interface Product {
   description: string;
   price: number;
 }
+
+export * from "./device";

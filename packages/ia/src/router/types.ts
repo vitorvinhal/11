@@ -66,6 +66,6 @@ export interface ProviderAdapter {
   readonly isPaid: boolean;
   complete(
     messages: CanonicalMessage[],
-    opts: { sessionId: string; model?: string },
+    opts: { sessionId: string; model?: string; tools?: unknown[] },
   ): Promise<GatewayCompletionResult>;
 }

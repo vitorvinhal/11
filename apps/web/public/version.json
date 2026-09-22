@@ -1,9 +1,11 @@
 {
-  "version": "2.10.17-alpha",
-  "versionCode": 18,
-  "name": "11 — Inteligência Autônoma",
+  "version": "2.12.2-alpha",
+  "versionCode": 20,
+  "name": "11 ΓÇö Intelig├¬ncia Aut├┤noma",
   "channel": "alpha",
   "changelog": [
-    "Deploy fix: monorepo rootDirectory apps/web (Next builder encontra .next) + vercel.json alinhado"
+    "Re-trigger do agente ap├│s aprova├º├úo: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)",
+    "PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local",
+    "Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; sa├¡da do servidor Node separada em dist-server (vite j├í n├úo apaga server.js)"
   ]
 }

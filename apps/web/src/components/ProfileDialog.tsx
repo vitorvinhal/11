@@ -21,8 +21,18 @@ import {
   Globe,
   Cog,
   Zap,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import {
+  checkForUpdate,
+  acknowledgeVersion,
+  openDownloadForPlatform,
+  getDownloadUrlForPlatform,
+  type UpdateInfo,
+} from "../lib/update-client";
+import { getPlatform } from "../lib/platform";
 import { SkillsPanel } from "./SkillsPanel";
 import { PluginsPanel } from "./PluginsPanel";
 import ConnectorsPanel from "./ConnectorsPanel";
@@ -37,12 +47,20 @@ type SettingsTab =
   | "ai"
   | "sessions"
   | "privacy"
+  | "updates"
   | "customize";
 
 export function ProfileDialog({
   open: externalOpen,
   onOpenChange,
-}: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
+  initialTab,
+  updateBadge = false,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialTab?: SettingsTab;
+  updateBadge?: boolean;
+} = {}) {
   const { user, supabase, signOut, getAccessToken } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen ?? internalOpen;
@@ -84,6 +102,23 @@ export function ProfileDialog({
   const [customizeTab, setCustomizeTab] = useState<
     "skills" | "connectors" | "plugins"
   >("skills");
+
+  const [upd, setUpd] = useState<UpdateInfo | null>(null);
+  const [updBusy, setUpdBusy] = useState(false);
+  const [updHasNew, setUpdHasNew] = useState(false);
+
+  const checkUpdates = useCallback(async () => {
+    setUpdBusy(true);
+    const res = await checkForUpdate();
+    setUpd(res.info);
+    setUpdHasNew(res.hasUpdate);
+    setUpdBusy(false);
+  }, []);
+
+  useEffect(() => {
+    if (settingsTab === "updates" && !upd) void checkUpdates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsTab]);
 
   const loadSettings = useCallback(async () => {
     if (!user) return;
@@ -135,6 +170,11 @@ export function ProfileDialog({
         .catch(() => {});
     }
   }, [open, loadSettings]);
+
+  // Abre direto numa aba específica (ex.: notificação de atualização).
+  useEffect(() => {
+    if (open && initialTab) setSettingsTab(initialTab);
+  }, [open, initialTab]);
 
   const changePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
@@ -310,6 +350,12 @@ export function ProfileDialog({
     { id: "sessions", icon: Smartphone, label: "Sessões" },
     { id: "privacy", icon: Lock, label: "Privacidade" },
     {
+      id: "updates",
+      icon: RefreshCw,
+      label: "Atualizações",
+      section: "System",
+    },
+    {
       id: "customize",
       icon: Puzzle,
       label: "Customização",
@@ -321,10 +367,13 @@ export function ProfileDialog({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <button
-          className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-text-muted transition hover:text-text-primary"
+          className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-text-muted transition hover:text-text-primary relative"
           aria-label="Configurações"
         >
           <Cog className="h-4 w-4" />
+          {updateBadge && (
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary ring-2 ring-[#05050A]" />
+          )}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -932,6 +981,114 @@ export function ProfileDialog({
                       {saved ? "Salvo ✓" : "Salvar capabilities"}
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* ── UPDATES ── */}
+              {settingsTab === "updates" && (
+                <div className="space-y-5 max-w-lg">
+                  <div>
+                    <h2 className="text-lg font-semibold text-text-primary">
+                      Atualizações
+                    </h2>
+                    <p className="text-[11px] text-text-dim mt-0.5">
+                      A cada nova versão você é notificado aqui. Fique em dia
+                      com o sistema (mobile e desktop).
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] text-text-dim">
+                          Versão atual
+                        </p>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {appVersion || "—"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] text-text-dim">
+                          {updHasNew ? "Nova versão" : "Sistema atualizado"}
+                        </p>
+                        {upd && (
+                          <p className="text-[11px] font-medium text-primary">
+                            {updHasNew
+                              ? `v${upd.version} disponível`
+                              : `v${upd.version}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => void checkUpdates()}
+                        disabled={updBusy}
+                        className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/[0.06] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] hover:text-text-primary transition disabled:opacity-40"
+                      >
+                        {updBusy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        )}
+                        Buscar atualizações
+                      </button>
+                      {updHasNew && upd && (
+                        <button
+                          onClick={() => {
+                            const ok = openDownloadForPlatform(
+                              upd.downloads,
+                              getPlatform(),
+                            );
+                            if (ok) {
+                              acknowledgeVersion(upd.versionCode);
+                              setUpdHasNew(false);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg bg-primary/20 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/30 transition"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Baixar nova versão
+                        </button>
+                      )}
+                    </div>
+                    {updHasNew && (
+                      <p className="mt-2 text-[10px] text-text-dim/60">
+                        O download abre o instalador/app da nova versão na
+                        plataforma atual.
+                      </p>
+                    )}
+                  </div>
+
+                  {upd && upd.changelog.length > 0 && (
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                      <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-dim">
+                        Novidades
+                      </p>
+                      <ul className="space-y-1.5">
+                        {upd.changelog.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex gap-2 text-[12px] text-text-muted"
+                          >
+                            <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-400" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {upd &&
+                    !getDownloadUrlForPlatform(
+                      upd.downloads,
+                      getPlatform(),
+                    ) && (
+                      <p className="text-[10px] text-text-dim/50">
+                        Sem link de download configurado para esta plataforma
+                        (defina NEXT_PUBLIC_DOWNLOAD_*_URL no deploy).
+                      </p>
+                    )}
                 </div>
               )}
 

@@ -1,13 +1,13 @@
 {
   "name": "@11/desktop",
-  "version": "2.10.17-alpha",
+  "version": "2.12.2-alpha",
   "private": true,
   "scripts": {
     "dev": "pnpm tauri dev",
     "dev:web": "vite",
     "build:web": "vite build",
     "build": "pnpm build:web && pnpm tauri build",
-    "router": "tsc -p tsconfig.json && node dist/server.js",
+    "router": "tsc -p tsconfig.json && node dist-server/server.js",
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {

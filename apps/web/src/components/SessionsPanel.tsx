@@ -196,12 +196,9 @@ function SecurityBadge({
 
 function CountryFlag({ code }: { code: string | null }) {
   if (!code || code === "LC") return null;
-  const codeLower = code.toLowerCase();
   return (
-    <span className="text-[11px]" title={code} role="img" aria-label={code}>
-      {String.fromCodePoint(
-        ...Array.from(codeLower).map((c) => 0x1f1e6 - 65 + c.charCodeAt(0)),
-      )}
+    <span className="inline-flex items-center rounded bg-white/[0.06] px-1 py-0.5 text-[8px] font-bold text-white/50 leading-none">
+      {code}
     </span>
   );
 }
@@ -540,16 +537,18 @@ export default function SessionsPanel() {
   const revokeSession = async (id: string) => {
     try {
       const token = await getAccessToken();
-      await fetch(`/api/devices?id=${id}`, {
+      const res = await fetch(`/api/devices?id=${id}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      if (res.ok) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     } catch {
       /* ignore */
     }
@@ -579,8 +578,6 @@ export default function SessionsPanel() {
   const currentSessionId = useMemo(() => {
     const current = sessions.find(
       (s) =>
-        s.app_name === "web" &&
-        s.platform === "desktop-web" &&
         s.last_active &&
         Date.now() - new Date(s.last_active).getTime() < 120000,
     );

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
 import { getPlatform } from "./platform";
+import { registerAppDevice } from "./device-client";
 
 let cachedClient: SupabaseClient | null = null;
 
@@ -84,6 +85,9 @@ async function registerDeviceSession(token: string) {
         app_name: appName,
       }),
     });
+
+    // Pareamento do Agente de Dispositivo (só apps nativos).
+    void registerAppDevice(token);
   } catch {
     /* best-effort */
   }

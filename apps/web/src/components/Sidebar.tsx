@@ -232,13 +232,13 @@ export function Sidebar({
       id: "agent",
       label: "Agente PC",
       icon: Terminal,
-      platforms: ["desktop-app", "desktop-web"],
+      platforms: ["desktop-app"],
     },
     {
       id: "mobile",
       label: "Agente Mobile",
       icon: Smartphone,
-      platforms: ["mobile-app", "mobile-web"],
+      platforms: ["mobile-app"],
     },
     {
       id: "plugins",

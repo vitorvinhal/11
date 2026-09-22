@@ -316,5 +316,3 @@ export function createRouter9Server(): Express {
 
 // Re-export para uso programático
 export { db, ROOT_DIR, safePath };
-
-export default handler;
