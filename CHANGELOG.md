@@ -20,6 +20,11 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.10.17-alpha — 2026-09-22
+
+- Rebuild do bundle do Orca no deploy: novo `scripts/build-orca-bundle.mjs` clona `stablyai/orca` (commit pinado `e476193b`) em cache gitignored `vendor/.orca-src`, injeta entry de embed (`eleven-mount.tsx` → `mountOrca`) + `vite.eleven.config.ts`, builda bundle ESM único e republica em `apps/web/public/orca-inline/`
+- `vercel.json` buildCommand agora roda `node ../../scripts/build-orca-bundle.mjs` antes do `next build` — bundle do Orca regenerado a cada deploy com fallback resiliente (se clone/install/build falhar, sai com status 0 e o bundle commitado continua servido)
+
 ## v2.10.16-alpha — 2026-09-21
 
 - Integra UI completa do Orca (stablyai/orca) como bundle único embutido na aba "Eleven Code" (`ElevenOrca.tsx` + `public/orca-inline/`)

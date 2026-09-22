@@ -47,6 +47,9 @@ _*.png
 # UI test screenshots (local evidence, not source)
 apps/web/_shots/
 
+# Source temporário do Orca (clonado no build em vendor/.orca-src)
+vendor/.orca-src/
+
 # Workers/wasm do Monaco gerados no build
 apps/web/public/vs/
 
