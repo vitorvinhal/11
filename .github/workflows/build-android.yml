@@ -1,0 +1,50 @@
+name: Android Build (APK release)
+
+# Gera o APK release assinado (keystore debug — instala direto no aparelho).
+# Uso pessoal: baixar o artifact no GitHub Actions.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/android/**'
+      - 'apps/mobile/capacitor.config.*'
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm i -g pnpm@8.15.9
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36,build-tools;36.0.0'
+
+      - name: Capacitor sync
+        working-directory: apps/mobile
+        run: npx cap sync android
+        env:
+          VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
+
+      - name: Build APK release
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: 11-mobile-release
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
