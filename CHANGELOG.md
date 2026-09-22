@@ -22,19 +22,15 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ## v2.16.0-alpha — 2026-09-22
 
-- Security: 5 critical fixes (RCE, SSRF, JWT, auth, sandbox) + 7 features (sandbox, approval center, audit/replay, cost dashboard, presence, rate limit, health check)
-
-## v2.16.0-alpha — 2026-09-22
-
 ### SEGURANÇA — 5 fixes críticos (release blocker)
 
-- **Item 1 — RCE via terminal**: detecção de chaining operators (`;`, `&&`, `||`, `|`, `` ` ``, `$()`), remoção de `env`/`printenv`/`set`/`export` da allowlist, validação de argumentos de arquivo contra raízes permitidas, detecção de arquivos sensíveis (`.env`, `secrets.json`, `.ssh/`), restrição de scripting engines (node, python) a flags de eval (`-e`, `-c`, `-p`), 44 testes unitários
-- **Item 2 — SSRF em test-ollama**: autenticação obrigatória (401 sem token), whitelist de hosts (só `localhost`), bloqueio de cloud metadata IPs (`169.254.169.254`) e redes privadas
-- **Item 3 — JWT_SECRET hardcoded no Tauri**: geração de UUID v4 aleatório na primeira execução, persistência em `%APPDATA%/11/jwt_secret` (Unix: `~/.config/11/`), permissões 600 no Unix, fail-fast se persistência falhar
-- **Item 4 — Terminal GET sem auth + sessão não vinculada**: autenticação em GET e POST, sessões vinculadas a `userId` via chave `${userId}:${sessionId}`
-- **Item 5 — Canvas sandbox**: remoção de `allow-same-origin` do iframe sandbox (mantido apenas `allow-scripts`)
+- **RCE via terminal**: detecção de chaining operators (`;`, `&&`, `||`, `|`, `` ` ``, `$()`), remoção de `env`/`printenv`/`set`/`export` da allowlist, validação de argumentos de arquivo contra raízes permitidas, detecção de arquivos sensíveis (`.env`, `secrets.json`, `.ssh/`), restrição de scripting engines (node, python) a flags de eval (`-e`, `-c`, `-p`), 44 testes unitários
+- **SSRF em test-ollama**: autenticação obrigatória (401 sem token), whitelist de hosts (só `localhost`), bloqueio de cloud metadata IPs (`169.254.169.254`) e redes privadas
+- **JWT_SECRET hardcoded no Tauri**: geração de UUID v4 aleatório na primeira execução, persistência em `%APPDATA%/11/jwt_secret` (Unix: `~/.config/11/`), permissões 600 no Unix, fail-fast se persistência falhar
+- **Terminal GET sem auth + sessão não vinculada**: autenticação em GET e POST, sessões vinculadas a `userId` via chave `${userId}:${sessionId}`
+- **Canvas sandbox**: remoção de `allow-same-origin` do iframe sandbox (mantido apenas `allow-scripts`)
 
-### Features novas
+### Features
 
 - **Terminal sandbox real** (`exec/route.ts`): env whitelist (PATH, HOME, NODE_ENV, etc.) em vez de blacklist, rate limiting 30 comandos/min por sessão, max output 512KB com truncamento, audit log persistente no Supabase (`terminal_audit_log`)
 - **Central de aprovação mobile** (`MobileAgent.tsx`): risk badges visuais (SEGURO/REVERSÍVEL/DESTRUTIVO), descrições legíveis por tool (24 tools documentadas), seleção múltipla com checkboxes, botões bulk approve/reject, indicador de TTL para aprovações pendentes, migration `expires_at` + `device_job_approvals` audit table
@@ -43,6 +39,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 - **Presença tempo real**: `POST /api/presence` com heartbeat 30s TTL e lista de usuários ativos por página
 - **Rate limiting por endpoint**: `lib/rate-limit.ts` com sliding window counter e presets (default 100/min, chat 30/min, auth 10/min, upload 10/min, settings 5/min)
 - **Health check agregado**: `GET /api/health/all` verifica web, router, supabase, plugins, skills em paralelo, retorna status consolidado
+- **Ollama local**: case `"ollama"` no provider (chama `routeOllama()` direto), modelo default `qwen3:4b`, modelo selecionado no painel é enviado ao chat via `ollamaModel`
+- **Fix aba Rede Neural**: canvas sem altura agora ocupa a tela
+- **Favicon e Ícones novos** do 11 (web, Windows, Android) gerados a partir do SVG oficial
+- **Zen/OpenAI pré-configurado** (default Ollama local) + troca rápida de modelo no campo de mensagem
+- **Stats de sessões reais**: tempo ativo baseado em minutos únicos do `session_activity_log` (30 dias), não mais `last_active - created_at`
+- **Fallback inteligente**: respostas <10 chars ou acknowledgments ("Não", "Vou", "ok") disparam fallback automático para providers remotos
 
 ### Migrações
 
@@ -51,13 +53,7 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
-## v2.14.0-alpha — 2026-09-22
-
-- Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)
-- Favicon e Ícones novos do 11 (web, Windows, Android) gerados a partir do SVG oficial
-- Zen/OpenAI pré-configurado (default Ollama local) + troca rápida de modelo no campo de mensagem
-
-## v2.12.2-alpha ΓÇö 2026-09-22
+## v2.12.2-alpha — 2026-09-22
 
 - Re-trigger do agente ap├│s aprova├º├úo: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)
 - PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local
