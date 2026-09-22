@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  process.env.SUPABASE_ANON_KEY!,
 );
 
 /** Cliente mantido para personalização futura de estilos por usuário (opcional). */
@@ -18,7 +18,7 @@ export async function seedPersonas() {
   // Multi-tenant: sem perfis fixos. O sistema cria conta sob demanda
   // via AuthGate + RPC `select_one`. Este seed é intencionalmente NO-OP
   // para garantir que nenhum Vitor/Giovana/Renata pré-criado existe.
-  console.log("Seed de personas desativado — sistema 100% multi-tenant.");
+  console.warn("Seed de personas desativado — sistema 100% multi-tenant.");
 }
 
 if (require.main === module) {

@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { getAuthClient } from '../../../../lib/server-supabase';
+import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
+import { getAuthClient } from "../../../../lib/server-supabase";
 
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 100;
@@ -14,9 +14,11 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
  *  2) JWT legado assinado com JWT_SECRET (claims userId/email) — compatibilidade.
  * Sem JWT_SECRET configurado, o legado é recusado (nada de default inseguro).
  */
-export async function verifyToken(req: NextRequest): Promise<{ userId: string; email: string } | null> {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+export async function requireUser(
+  req: NextRequest,
+): Promise<{ userId: string; email: string } | null> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
   const token = authHeader.substring(7);
@@ -26,9 +28,11 @@ export async function verifyToken(req: NextRequest): Promise<{ userId: string; e
   try {
     const { data, error } = await auth.auth.getUser(token);
     if (!error && data?.user) {
-      return { userId: data.user.id, email: data.user.email ?? '' };
+      return { userId: data.user.id, email: data.user.email ?? "" };
     }
-  } catch { /* tenta legado abaixo */ }
+  } catch {
+    /* tenta legado abaixo */
+  }
 
   // 2) JWT legado com JWT_SECRET (sem fallback default).
   const secret = process.env.JWT_SECRET;
@@ -36,11 +40,19 @@ export async function verifyToken(req: NextRequest): Promise<{ userId: string; e
     try {
       const decoded = jwt.verify(token, secret) as Record<string, unknown>;
       const userId =
-        typeof decoded.userId === 'string' ? decoded.userId
-        : typeof decoded.sub === 'string' ? decoded.sub
-        : null;
-      if (userId) return { userId, email: typeof decoded.email === 'string' ? decoded.email : '' };
-    } catch { /* inválido */ }
+        typeof decoded.userId === "string"
+          ? decoded.userId
+          : typeof decoded.sub === "string"
+            ? decoded.sub
+            : null;
+      if (userId)
+        return {
+          userId,
+          email: typeof decoded.email === "string" ? decoded.email : "",
+        };
+    } catch {
+      /* inválido */
+    }
   }
 
   return null;
@@ -51,7 +63,10 @@ export function checkRateLimit(identifier: string): boolean {
   const record = rateLimitStore.get(identifier);
 
   if (!record || record.resetAt < now) {
-    rateLimitStore.set(identifier, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    rateLimitStore.set(identifier, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW,
+    });
     return true;
   }
 
@@ -65,30 +80,63 @@ export function checkRateLimit(identifier: string): boolean {
 
 export function sanitizeCommand(command: string): string {
   // Remove dangerous characters and sequences
-  return command
-    .replace(/[;&|`$(){}[\]]/g, '')
-    .trim();
+  return command.replace(/[;&|`$(){}[\]]/g, "").trim();
 }
 
 export function sanitizeArgs(args: string[]): string[] {
-  return args.map(arg => arg
-    .replace(/[;&|`$(){}[\]]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return args.map((arg) =>
+    arg
+      .replace(/[;&|`$(){}[\]]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
   );
 }
 
 export const ALLOWED_COMMANDS = [
-  'ls', 'cd', 'pwd', 'cat', 'head', 'tail', 'grep', 'find',
-  'git', 'npm', 'pnpm', 'yarn', 'node', 'python', 'python3',
-  'go', 'cargo', 'make', 'cmake', 'docker', 'kubectl',
-  'echo', 'mkdir', 'rm', 'cp', 'mv', 'chmod', 'chown',
-  'ps', 'kill', 'top', 'htop', 'df', 'du', 'free',
-  'curl', 'wget', 'ssh', 'scp', 'rsync'
+  "ls",
+  "cd",
+  "pwd",
+  "cat",
+  "head",
+  "tail",
+  "grep",
+  "find",
+  "git",
+  "npm",
+  "pnpm",
+  "yarn",
+  "node",
+  "python",
+  "python3",
+  "go",
+  "cargo",
+  "make",
+  "cmake",
+  "docker",
+  "kubectl",
+  "echo",
+  "mkdir",
+  "rm",
+  "cp",
+  "mv",
+  "chmod",
+  "chown",
+  "ps",
+  "kill",
+  "top",
+  "htop",
+  "df",
+  "du",
+  "free",
+  "curl",
+  "wget",
+  "ssh",
+  "scp",
+  "rsync",
 ];
 
 export function isCommandAllowed(command: string): boolean {
-  const baseCommand = command.split('/').pop()?.split(' ')[0];
+  const baseCommand = command.split("/").pop()?.split(" ")[0];
   return baseCommand ? ALLOWED_COMMANDS.includes(baseCommand) : false;
 }
 

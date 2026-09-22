@@ -1,10 +1,8 @@
 ﻿import { spawn } from "child_process";
 import { existsSync, statSync } from "fs";
 import { loadRootEnv } from "../../../../lib/server-env";
-import {
-  getAuthClient,
-  getServerClient,
-} from "../../../../lib/server-supabase";
+import { getServerClient } from "../../../../lib/server-supabase";
+import { requireUser } from "../../../../lib/auth-unify";
 import {
   ALLOWED_ROOTS,
   IS_WINDOWS,
@@ -153,32 +151,19 @@ interface ExecBody {
 }
 
 /**
- * Autentica o request. Retorna userId ou null se não autenticado.
- */
-async function authenticate(req: Request): Promise<string | null> {
-  const hasSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!hasSupabase) {
-    if (process.env.NODE_ENV === "production") return null;
-    return "dev-user";
-  }
-  const auth = getAuthClient(req);
-  const { data } = await auth.auth.getUser();
-  return data?.user?.id ?? null;
-}
-
-/**
  * POST /api/terminal/exec
  * Executa um comando e transmite stdout/stderr em tempo real via SSE.
  * Body: { command, sessionId, cwd? }
  * Sessões são vinculadas ao userId autenticado.
  */
 export async function POST(req: Request) {
-  const userId = await authenticate(req);
-  if (!userId) {
+  const auth = await requireUser(req);
+  if (!auth) {
     return new Response(JSON.stringify({ error: "Não autenticado" }), {
       status: 401,
     });
   }
+  const userId = auth.userId;
 
   let body: ExecBody;
   try {
@@ -395,10 +380,11 @@ function sseResponse(lines: string[], code: number): Response {
  * REQUER AUTENTICAÇÃO e só retorna dados do próprio usuário.
  */
 export async function GET(req: Request) {
-  const userId = await authenticate(req);
-  if (!userId) {
+  const auth = await requireUser(req);
+  if (!auth) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
+  const userId = auth.userId;
 
   const url = new URL(req.url);
   const sessionId = url.searchParams.get("sessionId") ?? "default";

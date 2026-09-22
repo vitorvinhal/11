@@ -56,8 +56,8 @@ async function generateFullStack(specPath) {
             .map((l) => `// ${l}`)
             .join('\n')}\n`;
         await fs.writeFile(path.join(outDir, fileName), content, 'utf8');
-        console.log(`Gerado: ${path.join(outDir, fileName)}`);
+        console.warn(`Gerado: ${path.join(outDir, fileName)}`);
     }
-    console.log('Código full‑stack gerado a partir de', specPath);
+    console.warn('Código full‑stack gerado a partir de', specPath);
 }
 void TEMPLATE_ROOT;

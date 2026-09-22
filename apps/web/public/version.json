@@ -1,9 +1,9 @@
 {
-  "version": "2.16.1-alpha",
-  "versionCode": 30,
+  "version": "2.16.2-alpha",
+  "versionCode": 31,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Unificação das sessões: features da linha candlefish (downloads/updates, Zen local, ícones, rede neural, login resiliente, SW fixes) integradas à base da outra sessão (presence, stats, approvals, terminal sandbox, audit)"
+    "Unificação de auth: requireUser centralizado em auth-unify; remoção de authenticate/verifyToken; console.log→warn; remove item coder do CLAUDE.md"
   ]
 }

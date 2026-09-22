@@ -54,7 +54,6 @@ All nav items in `Sidebar.tsx` must specify `platforms` array. Default: all plat
 | artifacts  | Artifacts       | desktop-app, desktop-web             |
 | canvas     | Canvas          | desktop-app, desktop-web             |
 | code       | Code & Terminal | desktop-app, desktop-web, mobile-app |
-| coder      | Eleven Coder    | desktop-app, desktop-web, mobile-app |
 | neural     | Rede Neural     | desktop-app, desktop-web             |
 | memoria    | Memória         | desktop-app, desktop-web, mobile-web |
 | finops     | FinOps          | desktop-app, desktop-web             |

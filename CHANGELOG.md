@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.2-alpha — 2026-09-22
+
+- Unificação de auth: requireUser centralizado em auth-unify; remoção de authenticate/verifyToken; console.log→warn; remove item coder do CLAUDE.md
+
 ## v2.16.1-alpha — 2026-09-22
 
 - Sem notas de release.
