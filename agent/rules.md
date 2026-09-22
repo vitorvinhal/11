@@ -28,3 +28,12 @@ Nenhuma linha de código ou arquivo de projeto pode ser alterada sem que o segui
 - Estágio 1 (pré): plano com Objetivo Geral, Metas, Roteiro, arquivos afetados.
 - Estágio 2 (durante): diário de execução com erros/anexos.
 - Estágio 3 (pós): status final + resumo das alterações efetivadas + ocorrências resolvidas.
+
+## Governança Multi-Agente
+
+Quando múltiplos terminais/instâncias trabalham simultaneamente:
+
+1. **Isolamento de escopo:** nunca alterar arquivos fora da tarefa designada.
+2. **Checagem prévia:** verificar se a versão anterior foi finalizada antes de iniciar.
+3. **Leitura enxuta:** carregar apenas regras globais, escopo do módulo e relatório da versão anterior.
+4. **Relatório obrigatório:** criar/atualizar `relatorios_agente/ID_[TASK_ID]_[TIMESTAMP]_plano.md` antes e depois de qualquer alteração (template completo em `AGENTS.md` seção 5).

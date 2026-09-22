@@ -1,87 +1,9 @@
-# Responda sempre em português do Brasil.
-
-Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
-
-## REGRA DE RESILIÊNCIA E RECUPERAÇÃO AUTOMÁTICA DE SESSÃO
-
-### Criação de rastro em tempo real (`.task_state.md`)
-
-- Objetivo Global: <descrição sucinta da tarefa ativa>
-- Concluído: <lista de passos já executados>
-- Em Andamento: <arquivo/função/módulo atual>
-- Próximo Passo: <ação exata a ser executada>
-
-### Micro‑checkpoints de Git
-
-- Commit local a cada sub‑etapa concluída que não quebre o build.
-
-### Protocolo de inicialização / recovery (toda nova sessão)
-
-1. Ler `.task_state.md` (se existir).
-2. Executar `git status` e `git diff`.
-3. Executar `git log -n 3 --oneline`.
-4. Apresentar resumo de 3 linhas ao usuário e pedir confirmação para prosseguir.
-
-### Regra de recuperação de crash
-
-- Antes de qualquer comando ou edição, manter `.task_state.md` atualizado com:
-  - Objetivo Atual: <resumo>
-  - Concluído: <lista>
-  - Em Andamento: <arquivo/função>
-  - Próximo Passo: <ação pendente>
-
----
-
-# PROTOCOLO DE PLANEJAMENTO, AUDITORIA E SYSTEM PROMPT DO AGENTE
-
-Protocolo oficial de referência: `docs/AGENTE.md`. System Prompt carregado: `agent/system_prompt.md`. Regras: `agent/rules.md`.
-
-## Regra absoluta do fluxo de trabalho
-
-Nenhuma linha de código ou arquivo de projeto pode ser alterada sem o ciclo abaixo (obrigatório para tarefas com ID, ex.: `TASK-123`):
-
-```
-[1. RECEBER ID DA TAREFA]
-         ↓
-[2. GERAR PLANO PRÉ-ALTERAÇÃO (.md)]  <-- Salvo em relatorios_agente/
-         ↓
-[3. EXECUTAR ALTERAÇÕES & REGISTRAR ERROS EM TEMPO REAL]
-         ↓
-[4. ATUALIZAR RELATÓRIO PÓS-ALTERAÇÃO (.md)]
-```
-
-## Ciclo de execução obrigatório
-
-1. **PRÉ-ALTERAÇÃO (antes de codar):** criar `relatorios_agente/ID_[TASK_ID]_[TIMESTAMP]_plano.md` com Objetivo Geral, Metas Esperadas, Roteiro passo a passo e arquivos afetados. Só então editar código.
-2. **EXECUÇÃO E LOG (em tempo real):** erros, exceptions e avisos devem ser registrados imediatamente no `.md` da tarefa.
-3. **PÓS-ALTERAÇÃO (ao concluir):** atualizar rodapé do `.md` com Status Final (`🟢 CONCLUÍDO COM SUCESSO` / `🔴 FINALIZADO COM ERROS`) + resumo das alterações.
-
-## Estrutura do relatório .md (`relatorios_agente/`)
-
-- Estágio 1 — pré: `# 📋 PLANO DE EXECUÇÃO - TAREFA [ID]`, status inicial `🟡 PLANO CRIADO (PRÉ-ALTERAÇÃO)`, Objetivo, Metas `- [ ]`, Roteiro com O que fazer / Como fazer / Arquivos afetados.
-- Estágio 2 — durante: `## 🔄 Diário de Execução em Tempo Real`, blocos `> 🚨 **PROBLEMA/ERRO DETECTADO [HH:MM:SS]**`.
-- Estágio 3 — pós: `## 🏁 Relatório Pós-Alteração (Status Final)`, resumo das alterações `- [x] ...` e ocorrências resolvidas.
-
-## Arquivos do protocolo
-
-- `agent/system_prompt.md` — System Prompt oficial do agente (usar como instruções do sistema).
-- `agent/rules.md` — regras de conduta e estrutura dos relatórios.
-
-## Regra obrigatória de Versionamento e Changelog
-
-Toda alteração de código que modifique funcionalidade, corrija bug ou adicione feature **deve** atualizar:
-
-1. **Versão** — Bump no `package.json` raiz e em todos os workspaces (`apps/*`, `packages/*`) usando `pnpm version:patch`, `pnpm version:minor` ou `pnpm version:major`. A versão segue o padrão `v0.{MAJOR}.{MINOR}-{canal}` (alpha → rc → estável).
-2. **CHANGELOG.md** — Adicionar entrada na raiz do projeto (`CHANGELOG.md`) com a versão, data e descrição das mudanças.
-3. **`apps/web/public/version.json`** — Atualizar `version` e `buildTime` (feito automaticamente pelo script `scripts/version.js`).
-
-**Fluxo obrigatório ao concluir tarefa:**
-
-```
+kl```
 [pós-alteração]
-  → rodar pnpm version:patch (ou minor/major conforme impacto)
-  → adicionar entrada no CHANGELOG.md
-  → commit incluindo: version bump + changelog + código alterado
+→ rodar pnpm version:patch (ou minor/major conforme impacto)
+→ adicionar entrada no CHANGELOG.md
+→ commit incluindo: version bump + changelog + código alterado
+
 ```
 
 **NUNCA** fazer commit de alterações funcionais sem bump de versão e atualização do CHANGELOG.
@@ -241,3 +163,196 @@ permanente, como as da seção acima).
   se sim, linkar o teste de regressão correspondente.
 - Nunca abrir PR com `pnpm typecheck` como evidência de tipo (está
   quebrado, ver seção Testing) — usar `build` do pacote afetado.
+
+
+# Master Engineering Directive — 11
+
+## Identity & Context
+
+This is the **11** monorepo — an autonomous AI assistant platform. Architecture: Next.js 13 web app, Tauri desktop, Capacitor mobile, shared `@11/ia` package.
+
+**Stack:** TypeScript, Supabase (auth + DB + storage), 9Router AI gateway, Vercel deployment.
+
+## Core Principles
+
+1. **Resilience over perfection** — Every feature must degrade gracefully. Never show blank screens. Always show meaningful error states.
+2. **Platform parity** — Features must work on desktop-web, desktop-app, mobile-web, mobile-app unless explicitly excluded.
+3. **Auth first** — Every API route must check authentication. No exceptions.
+4. **Best-effort persistence** — Chat, memories, usage tracking are best-effort. Never block user interaction for background writes.
+5. **No silent failures** — Every catch block must log. Every error boundary must show fallback UI.
+
+## Code Conventions
+
+- **Components:** `'use client'` at top. Functional components only. Lazy-load heavy deps (xterm, force-graph).
+- **API routes:** `export const runtime = "nodejs"; export const dynamic = "force-dynamic";`
+- **Styling:** Tailwind + inline styles for OLED theme (`#05050A` background, glassmorphism, `#00e5ff` accent).
+- **State:** `useState` + `useRef` for mutable state. `useCallback` for stable references.
+- **Error handling:** `try/catch` with `console.error`. Never swallow silently.
+- **No comments** in code unless explaining non-obvious logic.
+
+## Architecture
+
+```
+
+apps/web/ → Next.js 13 (App Router)
+apps/desktop/ → Tauri (Rust + WebView)
+apps/mobile/ → Capacitor (iOS/Android)
+packages/ia/ → Shared AI logic (router, skills, plugins, metrics)
+packages/api/ → Shared API types
+packages/shared/ → Shared utilities
+infra/ → Supabase migrations, deploy scripts
+
+````
+
+## Platform Detection
+
+```typescript
+// apps/web/src/lib/platform.ts
+type Platform = "desktop-app" | "mobile-app" | "desktop-web" | "mobile-web";
+// Detection: __TAURI__ → desktop-app, Capacitor → mobile-app, UA regex → mobile-web, else → desktop-web
+````
+
+## Navigation Items
+
+All nav items in `Sidebar.tsx` must specify `platforms` array. Default: all platforms.
+
+| ID         | Label           | Platforms                            |
+| ---------- | --------------- | ------------------------------------ |
+| conversas  | Conversas       | desktop-app, desktop-web, mobile-web |
+| projetos   | Projects        | desktop-app, desktop-web             |
+| artifacts  | Artifacts       | desktop-app, desktop-web             |
+| canvas     | Canvas          | desktop-app, desktop-web             |
+| code       | Code & Terminal | desktop-app, desktop-web, mobile-app |
+| coder      | Eleven Coder    | desktop-app, desktop-web, mobile-app |
+| neural     | Rede Neural     | desktop-app, desktop-web             |
+| memoria    | Memória         | desktop-app, desktop-web, mobile-web |
+| finops     | FinOps          | desktop-app, desktop-web             |
+| skills     | Skills          | desktop-app, desktop-web             |
+| connectors | Connectors      | desktop-app, desktop-web             |
+| media      | Mídia           | desktop-app, desktop-web, mobile-web |
+| agent      | Agente PC       | desktop-app                          |
+| mobile     | Agente Mobile   | mobile-app, mobile-web               |
+| plugins    | Plugins         | desktop-app, desktop-web             |
+
+## API Routes Pattern
+
+Every route must:
+
+1. Import `loadRootEnv()` and call it at top
+2. Export `runtime = "nodejs"` and `dynamic = "force-dynamic"`
+3. Use `requireUser(req)` for auth (returns `{ userId }` or null)
+4. Return proper HTTP status codes (401, 400, 404, 500, 502)
+5. Use `createClient(SUPABASE_URL, SERVICE_ROLE_KEY)` for admin operations
+
+## Terminal Architecture
+
+- **REST+SSE** pattern (NOT socket.io)
+- `POST /api/terminal/exec` → spawns process, returns SSE stream
+- `GET /api/terminal/exec?sessionId=X` → returns current cwd
+- xterm.js with FitAddon, WebLinksAddon
+- Command whitelist in `terminal-validate.ts`
+
+## Chat Provider Cascade
+
+```
+9Router (tunnel → endpoint → Arcenal → fallbacks) → Gemini → Anthropic → Ollama (local)
+```
+
+Each provider is a function: `route9Router()`, `routeGemini()`, `routeAnthropic()`, `routeOllama()`.
+
+## Settings Structure (7 tabs)
+
+1. **Geral** — Avatar, name, instructions, changelog, backup
+2. **Conta** — Email, password, delete account
+3. **Aparência** — Theme, fonts, motion
+4. **IA Provider** — 9Router keys + Ollama config
+5. **Sessões** — Active devices, revoke
+6. **Privacidade** — Incognito, export, capabilities
+7. **Customização** — Skills | Connectors | Plugins
+
+## Forbidden Patterns
+
+- ❌ `console.log` in production code (use `console.error` or `console.warn`)
+- ❌ `any` type without justification
+- ❌ Hardcoded secrets or API keys
+- ❌ Silent `catch {}` without logging
+- ❌ `Promise.all` where `Promise.allSettled` is more appropriate
+- ❌ Socket.io (use REST+SSE)
+- ❌ CSS-in-JS libraries (use Tailwind + inline)
+
+## Deploy Pipeline
+
+1. `git push` → triggers Vercel preview deploy
+2. Preview URL tested manually
+3. Merge to main → production deploy
+4. Post-deploy: smoke test chat, terminal, settings
+
+## Emergency Procedures
+
+- **Chat down:** Check ngrok tunnel, 9Router gateway, API keys
+- **Terminal down:** Check `/api/terminal/exec` endpoint, spawn permissions
+- **Auth down:** Check Supabase URL, anon key, service role key
+- **Vercel down:** Check build logs, environment variables, function limits
+
+# PROTOCOLO DE GOVERNANÇA, CONCORRÊNCIA E ARQUITETURA MULTI-AGENTE
+
+Este documento estabelece as regras rígidas que todos os agentes (terminais e instâncias) devem seguir obrigatoriamente para evitar conflitos de versão, sobreposição de código, estouro de contexto e perda de alterações.
+
+---
+
+## 1. Regra de Ouro (Isolamento de Escopo e Concorrência)
+
+- **Escopo Estrito:** Nunca altere arquivos fora do escopo ou da função atribuída à sua instância específica.
+- **Checagem de Dependência:** Verifique se a etapa ou versão anterior da qual sua tarefa depende foi devidamente finalizada e validada antes de iniciar.
+
+---
+
+## 2. Gestão de Contexto e Economia de Memória
+
+- **Leitura Enxuta:** Não carregue históricos de chat longos ou arquivos desnecessários. Leia apenas as regras deste arquivo, o escopo do seu módulo e o relatório imediato da versão anterior (ex: `agent-v[N-1]-report.md`).
+- **Respeito ao Arquivo de Resumo:** Se houver um arquivo `docs/reports/archive-summary.md`, consulte-o apenas se precisar de contexto histórico profundo.
+
+---
+
+## 3. Rotina Obrigatória de Relatório (`.md`)
+
+Antes e depois de qualquer alteração no código, você deve criar ou atualizar o seu arquivo de rastreabilidade na pasta de relatórios (`docs/reports/agent-[ID]-report.md`). O arquivo deve seguir **exatamente** esta estrutura:
+
+```markdown
+# RELATÓRIO DE EXECUÇÃO DE TAREFA - [ID_DO_AGENTE / VERSÃO]
+
+## 1. Metadados da Tarefa
+
+- **ID do Agente / Terminal:** [Ex: Agent-1, Agent-Llama, Agent-QuickFix]
+- **Data e Hora de Início:** [YYYY-MM-DD HH:MM]
+- **Status Atual:** [EM ANDAMENTO / CONCLUÍDO / FALHA / BLOQUEADO]
+- **Escopo Atribuído:** [Ex: src/components/eleven-coder/]
+
+## 2. Diagnóstico Prévio (Pré-Execução)
+
+_(Preencha obrigatoriamente antes de modificar qualquer linha de código)_
+
+- **Arquivos Alvo:**
+  - `caminho/para/arquivo1.py`
+- **Estado de Dependência:** [Explique se depende de outra versão ou se há risco de conflito]
+- **Plano Detalhado de Implementação:**
+  1. [Passo técnico 1]
+  2. [Passo técnico 2]
+
+## 3. Log de Execução e Modificações
+
+_(Preencha durante ou logo após as alterações)_
+
+- **Modificações Realizadas:**
+  - `[ARQUIVO]`: [Descrição da alteração feita]
+- **Problemas Encontrados / Alertas de Conflito:**
+  - [Nenhum / Descrever divergências encontradas]
+
+## 4. Validação e Pós-Execução
+
+_(Preencha após salvar os códigos)_
+
+- **Status do Build / Testes:** [Passou / Falhou]
+- **Arquivos Liberados:** [Indique quais arquivos agora estão prontos para o próximo agente]
+- **Observações Finais para o Próximo Agente:** [Avisos importantes]
+```
