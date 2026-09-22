@@ -20,6 +20,13 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.2-alpha — 2026-09-22
+
+### Fix
+
+- **Restauração Ollama local**: `case "ollama"` no switch de providers (`route.ts`), `routeOllama()` chamando `localhost:11434` diretamente, modelo default `qwen3:4b`, campo `ollamaModel` adicionado ao `ChatBody` para receber o modelo selecionado no painel
+- **Fallback inteligente**: threshold elevado para `< 10 caracteres`, detecção de acknowledgments ("não", "ok", "sim", "obrigado", etc.) que disparam fallback automático para providers remotos
+
 ## v2.16.1-alpha — 2026-09-22
 
 - Sem notas de release.

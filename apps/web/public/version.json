@@ -1,9 +1,10 @@
 {
-  "version": "2.16.1-alpha",
-  "versionCode": 30,
+  "version": "2.16.2-alpha",
+  "versionCode": 31,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Unificação das sessões: features da linha candlefish (downloads/updates, Zen local, ícones, rede neural, login resiliente, SW fixes) integradas à base da outra sessão (presence, stats, approvals, terminal sandbox, audit)"
+    "Restauração do Ollama local: case 'ollama' no provider, routeOllama() direto para localhost:11434, modelo default qwen3:4b, ollamaModel enviado do painel ao backend",
+    "Fallback inteligente: threshold <10 chars + detecção de acknowledgments (não, ok, sim, etc.) + fallback cascade para providers remotos"
   ]
 }
