@@ -20,6 +20,36 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.12.2-alpha — 2026-09-22
+
+- Re-trigger do agente após aprovação: job aprovado e executado volta ao chat com o resultado (agent-bus + ChatPanel)
+- PC Agent: CORS default com mais origens; novas chaves settings (timezone set/get, region); spawn no Tauri com JWT_SECRET default local
+- Builds: APK release assinado (6.4MB), instaladores desktop 2.12.1; saída do servidor Node separada em dist-server (vite já não apaga server.js)
+
+## v2.12.1-alpha — 2026-09-21
+
+- Downloads da nova versão hospedados no site (/downloads): 11-desktop-setup.exe, 11-desktop.msi e 11-mobile.apk — /api/updates aponta para eles por padrão
+
+## v2.12.0-alpha — 2026-09-21
+
+- Sistema de atualização no app (mobile e desktop): notificação de nova versão, badge no perfil, aba Atualizações com download
+- Nova rota GET /api/updates (versão + changelog + links de download por plataforma)
+- Update client: versionCode como referência; acknowledge/notify persistido; notificação nativa via DeviceBridge (mobile) e PC Agent/browser (desktop)
+
+## v2.11.0-alpha — 2026-09-19
+
+### Agente de Dispositivo (PC + Mobile) — TASK-DEVICE-001
+
+- Agente PC e Agente Mobile agora são **agentes de dispositivo 100% funcionais** (base: nousresearch/hermes-agent, MIT): acesso a arquivos, fotos/mídia, apps, configurações, captura de tela e estado do sistema no dispositivo.
+- **Visibilidade nativa pura**: `Agente PC` só em `desktop-app` (Tauri), `Agente Mobile` só em `mobile-app` (Capacitor). Escondidos em qualquer browser.
+- **Pareamento real**: `devices` (deviceId persistente + secret) via `/api/devices/register`; deviceId em localStorage, segredo retornado uma única vez.
+- **Fila de jobs** `device_jobs` no Supabase + polling HTTP por dispositivo (transport Vercel-compatível; WS serverless não suportado) com rotas `poll`, `result`, `approve`.
+- **Function calling ligado**: adapter 9Router agora envia `tools` e parseia `tool_calls`; agentLoop expõe 21 tools `device.*` e roteia pelos jobs; aprovação DESTRUCTIVE → `awaiting_approval` → UI.
+- **PC (desktop)**: executor de tools em `device-tools.ts` (Windows/Node+PowerShell), rotas `/device/pair` + `/device/tool`, spawn automático dos serviços locais no boot do Tauri.
+- **Mobile**: 8 plugins Capacitor instalados (filesystem, camera, device, network, clipboard, app, preferences, local-notifications) + `DeviceBridge` injetado no WebView executando tools nativamente.
+- **UI**: painéis Agente PC/Mobile reescritos (status, jobs em execução, aprovações, histórico, comando rápido); chat usa `/api/agent` com deviceId nos apps nativos; fix do painel mobile que chamava rota inexistente `/api/agent/mobile`.
+- Testes: 3 novos no adapter 9Router (tools no body, parse tool_calls, retrocompat) — 257 total no `@11/ia`.
+
 ## v2.10.15-alpha — 2026-09-19
 
 - Fix build Vercel: caminho dos scripts no buildCommand — cwd do Vercel é `apps/web` (rootDirectory), paths corrigidos para `../../scripts/*`; scripts `clear-next-cache.mjs`/`build-monaco-workers.mjs` agora detectam cwd e limpam/geram no lugar certo

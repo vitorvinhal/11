@@ -7,6 +7,12 @@
 export { agentLoop } from "./agent-core";
 export { executeTool } from "./tool-executor";
 export {
+  createDeviceJob,
+  waitForDeviceJob,
+  resolveDeviceJob,
+  claimDeviceJob,
+} from "./device-jobs";
+export {
   createSession,
   getSession,
   updateSessionStatus,
@@ -43,6 +49,8 @@ export type {
   AgentToolResult,
   AgentMessage,
 } from "./agent-core";
+
+export type { DeviceJob, DeviceToolName } from "./device-jobs";
 
 export type {
   ExecutionContext,

@@ -1,36 +1,33 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Wifi,
-  WifiOff,
   Terminal,
   Play,
   Square,
-  CheckCircle,
-  XCircle,
-  Clock,
   Loader2,
+  CheckCircle,
+  Clock,
+  ShieldCheck,
+  ShieldX,
+  RefreshCw,
+  Zap,
+  Send,
 } from "lucide-react";
-import { useMobileAgent, MobileSession } from "../lib/useMobileAgent";
+import { useDeviceAgent, DeviceJobView } from "../lib/useDeviceAgent";
+import { useAuth } from "../lib/auth";
+import { getDeviceContext } from "../lib/device-client";
 
 function statusColor(status: string) {
   if (status === "completed") return "text-emerald-400";
   if (status === "failed" || status === "rejected") return "text-red-400";
   if (status === "running") return "text-blue-400";
-  if (status === "pending") return "text-yellow-400";
-  return "text-muted-foreground";
+  if (status === "awaiting_approval") return "text-yellow-400";
+  return "text-text-dim";
 }
 
-function statusIcon(status: string) {
-  if (status === "completed") return CheckCircle;
-  if (status === "failed" || status === "rejected") return XCircle;
-  if (status === "running") return Loader2;
-  if (status === "pending") return Clock;
-  return Square;
-}
-
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr?: string): string {
+  if (!dateStr) return "—";
   const diff = Date.now() - new Date(dateStr).getTime();
   const secs = Math.floor(diff / 1000);
   if (secs < 60) return `${secs}s`;
@@ -40,221 +37,278 @@ function timeAgo(dateStr: string): string {
 }
 
 export function MobileAgent() {
-  const [wsUrl, setWsUrl] = useState("ws://localhost:3001");
-  const {
-    connected,
-    connecting,
-    sessions,
-    connect,
-    disconnect,
-    createSession,
-    approveSession,
-    cancelSession,
-  } = useMobileAgent({ wsUrl });
+  const agent = useDeviceAgent();
+  const { getAccessToken } = useAuth();
+  const [history, setHistory] = useState<DeviceJobView[]>([]);
   const [command, setCommand] = useState("");
-  const [args, setArgs] = useState("");
-  const [selectedSession, setSelectedSession] = useState<MobileSession | null>(
-    null,
-  );
-  const outputRef = useRef<HTMLDivElement>(null);
+  const ctx = getDeviceContext();
+
+  const fetchHistory = useCallback(async () => {
+    const token = await getAccessToken();
+    if (!token) return;
+    try {
+      const res = await fetch(
+        `/api/devices/jobs?deviceId=${ctx.deviceId ?? ""}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const data = (await res.json()) as { jobs: DeviceJobView[] };
+        setHistory(data.jobs);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [getAccessToken, ctx.deviceId]);
 
   useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
-  }, [selectedSession?.output]);
+    fetchHistory();
+    const t = setInterval(fetchHistory, 5000);
+    return () => clearInterval(t);
+  }, [fetchHistory]);
 
-  const handleCreate = useCallback(() => {
-    if (!command.trim()) return;
-    const argsList = args.trim() ? args.split(/\s+/) : [];
-    const session = createSession(command.trim(), argsList);
-    if (session) {
-      setSelectedSession(session);
+  const running = agent.status === "polling" || agent.status === "running";
+
+  const sendCommand = useCallback(async () => {
+    const token = await getAccessToken();
+    if (!token || !ctx.deviceId || !command.trim()) return;
+    try {
+      await fetch("/api/devices/jobs", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          deviceId: ctx.deviceId,
+          name: "device.exec",
+          args: { command: command.trim() },
+        }),
+      });
       setCommand("");
-      setArgs("");
+      fetchHistory();
+    } catch {
+      /* ignore */
     }
-  }, [command, args, createSession]);
+  }, [command, ctx.deviceId, getAccessToken, fetchHistory]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
-            <Terminal className="h-4 w-4 text-white" />
+      <div className="border-b border-white/5 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
+              <Terminal className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">
+                Agente PC
+              </h3>
+              <p className="text-[10px] text-text-dim">
+                {ctx.deviceId ? ctx.deviceId.slice(0, 8) : "não pareado"} ·{" "}
+                {agent.localPaired ? (
+                  <span className="text-emerald-400">servidor local OK</span>
+                ) : (
+                  <span
+                    className={
+                      running ? "text-emerald-400" : "text-text-dim/60"
+                    }
+                  >
+                    {running ? "ativo" : "parado"}
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold">Agente PC</h3>
-            <p className="text-[10px] text-muted-foreground">
-              {connected
-                ? "Conectado"
-                : connecting
-                  ? "Conectando..."
-                  : "Desconectado"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {connected ? (
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={disconnect}
-              className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-400 hover:bg-red-500/20 transition"
+              onClick={() => {
+                void agent.refreshPending();
+                fetchHistory();
+              }}
+              className="rounded-lg bg-white/5 p-1.5 text-text-dim hover:bg-white/10 hover:text-text-primary transition"
             >
-              <WifiOff className="h-3 w-3" /> Desconectar
+              <RefreshCw className="h-3.5 w-3.5" />
             </button>
-          ) : (
-            <button
-              onClick={connect}
-              disabled={connecting}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-[11px] text-emerald-400 hover:bg-emerald-500/20 transition disabled:opacity-50"
-            >
-              {connecting ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Wifi className="h-3 w-3" />
-              )}
-              Conectar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Connection config */}
-      {!connected && (
-        <div className="px-4 py-3 border-b border-border">
-          <label className="text-[10px] text-muted-foreground mb-1 block">
-            WebSocket URL
-          </label>
-          <div className="flex gap-2">
-            <input
-              value={wsUrl}
-              onChange={(e) => setWsUrl(e.target.value)}
-              className="flex-1 rounded-lg bg-white/[0.05] px-3 py-2 text-xs text-text-primary outline-none"
-              placeholder="ws://localhost:3001"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Command input */}
-      {connected && (
-        <div className="px-4 py-3 border-b border-border">
-          <div className="flex gap-2">
-            <input
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="flex-1 rounded-lg bg-white/[0.05] px-3 py-2 text-xs text-text-primary outline-none"
-              placeholder="Comando (ex: ls, git status, npm run dev)"
-            />
-            <input
-              value={args}
-              onChange={(e) => setArgs(e.target.value)}
-              className="w-32 rounded-lg bg-white/[0.05] px-3 py-2 text-xs text-text-primary outline-none"
-              placeholder="Args"
-            />
-            <button
-              onClick={handleCreate}
-              className="rounded-lg bg-primary/20 px-3 py-2 text-xs text-primary hover:bg-primary/30 transition"
-            >
-              <Play className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Sessions list */}
-      <div className="flex-1 overflow-y-auto">
-        {sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Terminal className="h-8 w-8 mb-2 opacity-30" />
-            <span className="text-xs">Nenhuma sessão</span>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {sessions.map((session) => {
-              const StatusIcon = statusIcon(session.status);
-              return (
-                <div
-                  key={session.id}
-                  onClick={() => setSelectedSession(session)}
-                  className={`px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition ${
-                    selectedSession?.id === session.id ? "bg-white/[0.04]" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <StatusIcon
-                      className={`h-3.5 w-3.5 ${statusColor(session.status)} ${session.status === "running" ? "animate-spin" : ""}`}
-                    />
-                    <span className="text-xs font-mono text-text-primary truncate flex-1">
-                      {session.command} {session.args.join(" ")}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {timeAgo(session.created_at)}
-                    </span>
-                  </div>
-                  {session.output && (
-                    <div className="mt-1.5 text-[10px] text-muted-foreground font-mono truncate">
-                      {session.output.split("\n").slice(-1)[0]?.slice(0, 80)}
-                    </div>
-                  )}
-                  {session.status === "pending" && (
-                    <div className="mt-2 flex gap-1.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          approveSession(session.id);
-                        }}
-                        className="rounded-md bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-400 hover:bg-emerald-500/20 transition"
-                      >
-                        Aprovar
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cancelSession(session.id);
-                        }}
-                        className="rounded-md bg-red-500/10 px-2 py-1 text-[10px] text-red-400 hover:bg-red-500/20 transition"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Output panel */}
-      {selectedSession && (
-        <div className="border-t border-border">
-          <div className="flex items-center justify-between px-4 py-2">
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {selectedSession.command} {selectedSession.args.join(" ")}
-            </span>
-            <button
-              onClick={() => setSelectedSession(null)}
-              className="text-muted-foreground hover:text-foreground text-xs"
-            >
-              ✕
-            </button>
-          </div>
-          <div
-            ref={outputRef}
-            className="h-40 overflow-y-auto bg-black/40 px-4 py-2 font-mono text-[11px] text-white/80 whitespace-pre-wrap"
-          >
-            {selectedSession.output ??
-              (selectedSession.status === "running"
-                ? "Executando..."
-                : "Sem saída")}
-            {selectedSession.error && (
-              <div className="text-red-400 mt-1">{selectedSession.error}</div>
+            {running ? (
+              <button
+                onClick={agent.stop}
+                className="rounded-lg bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20 transition"
+              >
+                <Square className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={agent.start}
+                className="rounded-lg bg-emerald-500/15 p-1.5 text-emerald-400 hover:bg-emerald-500/25 transition"
+              >
+                <Play className="h-3.5 w-3.5" />
+              </button>
             )}
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Comando rápido */}
+      <div className="border-b border-white/5 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center rounded-lg bg-white/5 border border-white/10 px-3 py-1.5">
+            <span className="mr-1.5 font-mono text-[11px] text-emerald-400">
+              $
+            </span>
+            <input
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendCommand()}
+              placeholder="Executar comando no PC (device.exec)…"
+              className="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-text-primary outline-none placeholder:text-text-dim/40"
+            />
+          </div>
+          <button
+            onClick={sendCommand}
+            disabled={!command.trim()}
+            className="rounded-lg bg-emerald-500/15 p-1.5 text-emerald-400 hover:bg-emerald-500/25 transition disabled:opacity-30"
+          >
+            <Send className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <p className="mt-1 text-[10px] text-text-dim/50">
+          A IA 11 também executa arquivos, media, apps, configurações e captura
+          de tela aqui.
+        </p>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+        {/* Estado do agente */}
+        {agent.status === "error" && agent.lastError && (
+          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2.5 text-[11px] text-red-400">
+            <p className="font-semibold">Erro</p>
+            <p className="mt-0.5 break-words font-mono">{agent.lastError}</p>
+          </div>
+        )}
+
+        {/* Job em execução */}
+        {agent.currentJob && (
+          <div className="rounded-lg border border-white/5 bg-white/[0.03] p-2.5">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
+              <code className="font-mono text-[11px] text-text-primary">
+                {agent.currentJob.name}
+              </code>
+            </div>
+            <pre className="mt-2 overflow-x-auto rounded bg-black/30 p-2 font-mono text-[10px] text-text-dim">
+              {JSON.stringify(agent.currentJob.args ?? {}, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {/* Último resultado */}
+        {agent.lastResult != null && (
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2.5">
+            <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
+              <CheckCircle className="h-3 w-3" /> Resultado
+            </p>
+            <pre className="max-h-48 overflow-auto whitespace-pre-wrap font-mono text-[10px] text-text-dim">
+              {typeof agent.lastResult === "string"
+                ? agent.lastResult
+                : JSON.stringify(agent.lastResult, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {/* Aprovações pendentes */}
+        <SectionTitle>
+          Aprovações ({agent.pendingApprovals.length})
+        </SectionTitle>
+        {agent.pendingApprovals.length === 0 ? (
+          <p className="text-[11px] text-text-dim/50">
+            Nenhuma ação aguardando.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {agent.pendingApprovals.map((job) => (
+              <div
+                key={job.id}
+                className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-2.5"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-yellow-400" />
+                  <code className="font-mono text-[11px] text-text-primary">
+                    {job.name}
+                  </code>
+                  <span className="ml-auto text-[9px] text-text-dim/40">
+                    {timeAgo(job.createdAt)}
+                  </span>
+                </div>
+                <pre className="mt-1.5 overflow-x-auto rounded bg-black/30 p-2 font-mono text-[10px] text-text-dim">
+                  {JSON.stringify(job.args ?? {}, null, 2)}
+                </pre>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => void agent.approveJob(job.id, true)}
+                    className="flex items-center gap-1 rounded-lg bg-emerald-500/15 px-2 py-1 text-[10px] text-emerald-400 hover:bg-emerald-500/25"
+                  >
+                    <ShieldCheck className="h-3 w-3" /> Aprovar
+                  </button>
+                  <button
+                    onClick={() => void agent.approveJob(job.id, false)}
+                    className="flex items-center gap-1 rounded-lg bg-red-500/10 px-2 py-1 text-[10px] text-red-400 hover:bg-red-500/20"
+                  >
+                    <ShieldX className="h-3 w-3" /> Rejeitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Histórico */}
+        <SectionTitle>Histórico</SectionTitle>
+        {history.length === 0 ? (
+          <p className="text-[11px] text-text-dim/50">
+            Nenhum job ainda. Peça algo no chat ou use o comando rápido acima.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {history.map((job) => (
+              <div
+                key={job.id}
+                className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-1.5"
+              >
+                {job.status === "completed" ? (
+                  <CheckCircle
+                    className={`h-3 w-3 shrink-0 ${statusColor(job.status)}`}
+                  />
+                ) : job.status === "running" ? (
+                  <Loader2 className="h-3 w-3 shrink-0 animate-spin text-blue-400" />
+                ) : (
+                  <Zap
+                    className={`h-3 w-3 shrink-0 ${statusColor(job.status)}`}
+                  />
+                )}
+                <code className="truncate font-mono text-[10px] text-text-primary">
+                  {job.name}
+                </code>
+                <span
+                  className={`ml-auto text-[9px] ${statusColor(job.status)}`}
+                >
+                  {job.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-text-dim">
+      {children}
+    </p>
   );
 }

@@ -4,12 +4,8 @@
  * Starts both Router9 (port 3002) and PC Agent (port 3001)
  */
 
-import { createServer } from "http";
 import { createRouter9Server } from "./router9";
-import {
-  app as pcAgentApp,
-  httpServer as pcAgentHttpServer,
-} from "./pc-agent/server";
+import { httpServer as pcAgentHttpServer } from "./pc-agent/server";
 
 // Ports
 const ROUTER9_PORT = parseInt(process.env.ROUTER9_PORT || "3002", 10);
@@ -20,12 +16,12 @@ async function start() {
 
   // Start Router9 (file operations, media analysis, STT)
   const router9Server = createRouter9Server();
-  router9Server.listen(ROUTER9_PORT, () => {
+  const router9Http = router9Server.listen(ROUTER9_PORT, () => {
     console.log(`[Router9] HTTP server running on port ${ROUTER9_PORT}`);
   });
 
   // Start PC Agent (session management, WebSocket)
-  pcAgentHttpServer.listen(PC_AGENT_PORT, () => {
+  const pcAgentHttp = pcAgentHttpServer.listen(PC_AGENT_PORT, () => {
     console.log(`[PC Agent] HTTP server running on port ${PC_AGENT_PORT}`);
     console.log(`[PC Agent] WebSocket server running on port ${PC_AGENT_PORT}`);
   });
@@ -33,15 +29,15 @@ async function start() {
   // Graceful shutdown
   process.on("SIGINT", () => {
     console.log("\n[Desktop] Shutting down...");
-    router9Server.close();
-    pcAgentHttpServer.close();
+    router9Http.close();
+    pcAgentHttp.close();
     process.exit(0);
   });
 
   process.on("SIGTERM", () => {
     console.log("\n[Desktop] Shutting down...");
-    router9Server.close();
-    pcAgentHttpServer.close();
+    router9Http.close();
+    pcAgentHttp.close();
     process.exit(0);
   });
 }
