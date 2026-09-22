@@ -121,7 +121,7 @@ export function CanvasPanel() {
         <div className="relative min-h-[300px] overflow-hidden rounded-xl border border-white/[0.07] bg-[#0a0a12]">
           <iframe
             title="preview"
-            sandbox="allow-scripts allow-same-origin"
+            sandbox="allow-scripts"
             srcDoc={srcDoc}
             className="absolute inset-0 h-full w-full border-0"
           />

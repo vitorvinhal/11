@@ -93,10 +93,20 @@ export async function GET(req: Request) {
       }
     }
 
-    // Activity log (last 24h)
+    // Activity log (last 30 days for metrics, 24h for chart)
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const twentyFourHAgo = new Date(
       Date.now() - 24 * 60 * 60 * 1000,
     ).toISOString();
+    const { data: activityAll } = await client
+      .from("session_activity_log")
+      .select("session_id, action, created_at")
+      .eq("user_id", auth.userId)
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: false });
+
     const { data: activity } = await client
       .from("session_activity_log")
       .select("session_id, action, created_at")
@@ -104,26 +114,33 @@ export async function GET(req: Request) {
       .gte("created_at", twentyFourHAgo)
       .order("created_at", { ascending: false });
 
-    // Metrics
+    // Metrics — baseados em activity log real, não em created_at/last_active
     const allSessions = sessions ?? [];
     const platformCounts: Record<string, number> = {};
-    let totalActiveMinutes = 0;
 
     for (const s of allSessions) {
       platformCounts[s.platform] = (platformCounts[s.platform] || 0) + 1;
-      const created = new Date(s.created_at).getTime();
-      const lastActive = new Date(s.last_active).getTime();
-      totalActiveMinutes += Math.max(0, (lastActive - created) / 60000);
     }
 
     const mostUsedPlatform =
       Object.entries(platformCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ??
       null;
 
-    // Peak hour from activity log
+    // Tempo ativo real: contagem de minutos únicos com atividade (últimos 30 dias)
+    const activeMinutesSet = new Set<string>();
+    for (const a of activityAll ?? []) {
+      const d = new Date(a.created_at);
+      // Chave por minuto (YYYY-MM-DD HH:MM)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      activeMinutesSet.add(key);
+    }
+    const totalActiveMinutes = activeMinutesSet.size;
+
+    // Peak hour: usa timezone local do servidor
     const hourCounts: Record<number, number> = {};
     for (const a of activity ?? []) {
-      const h = new Date(a.created_at).getHours();
+      const d = new Date(a.created_at);
+      const h = d.getHours();
       hourCounts[h] = (hourCounts[h] || 0) + 1;
     }
     const peakHour = Object.entries(hourCounts).sort(
@@ -132,7 +149,7 @@ export async function GET(req: Request) {
 
     const metrics = {
       totalSessions: allSessions.length,
-      totalActiveMinutes: Math.round(totalActiveMinutes),
+      totalActiveMinutes,
       mostUsedPlatform,
       peakHour: peakHour !== undefined ? `${peakHour}:00` : null,
     };

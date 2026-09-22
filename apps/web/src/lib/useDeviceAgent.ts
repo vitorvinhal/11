@@ -28,6 +28,7 @@ export interface DeviceJobView {
   result: unknown;
   error: string | null;
   createdAt: string;
+  expiresAt: string | null;
 }
 
 const POLL_INTERVAL_MS = 2_500;

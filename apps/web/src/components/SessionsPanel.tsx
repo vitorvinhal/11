@@ -68,7 +68,7 @@ const PLATFORM_META: Record<
     color: "text-violet-400",
     features: [
       "Terminal",
-      "Eleven Coder",
+      "Eleven Code",
       "Agente PC",
       "Canvas",
       "Neural Graph",
@@ -198,12 +198,9 @@ function SecurityBadge({
 
 function CountryFlag({ code }: { code: string | null }) {
   if (!code || code === "LC") return null;
-  const codeLower = code.toLowerCase();
   return (
-    <span className="text-[11px]" title={code} role="img" aria-label={code}>
-      {String.fromCodePoint(
-        ...Array.from(codeLower).map((c) => 0x1f1e6 - 65 + c.charCodeAt(0)),
-      )}
+    <span className="inline-flex items-center rounded bg-white/[0.06] px-1 py-0.5 text-[8px] font-bold text-white/50 leading-none">
+      {code}
     </span>
   );
 }
@@ -552,16 +549,18 @@ export default function SessionsPanel() {
   const revokeSession = async (id: string) => {
     try {
       const token = await getAccessToken();
-      await fetch(`/api/devices?id=${id}`, {
+      const res = await fetch(`/api/devices?id=${id}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      if (res.ok) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     } catch {
       /* ignore */
     }
@@ -632,7 +631,9 @@ export default function SessionsPanel() {
             <div className="text-xl font-semibold text-primary">
               {metrics.totalActiveMinutes < 60
                 ? `${metrics.totalActiveMinutes}m`
-                : `${Math.floor(metrics.totalActiveMinutes / 60)}h`}
+                : metrics.totalActiveMinutes < 1440
+                  ? `${Math.floor(metrics.totalActiveMinutes / 60)}h${metrics.totalActiveMinutes % 60 > 0 ? `${metrics.totalActiveMinutes % 60}m` : ""}`
+                  : `${(metrics.totalActiveMinutes / 1440).toFixed(1)}d`}
             </div>
             <div className="text-[10px] uppercase tracking-wider text-text-dim">
               Tempo Total

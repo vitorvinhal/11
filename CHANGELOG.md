@@ -25,6 +25,7 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 - Correção: API e downloads nunca ficam em cache do SW (buscar atualização e baixar agora funcionam)
 - Login mais resiliente nos apps: refresh de sessão ao voltar ao foreground + logout limpa identidade do device
 - Downloads funcionam no WebView (sem popup) + feedback de 'Buscar atualizações'
+- Merge com mantenção de outra sessão: rota `POST /api/presence`, stats de sessões com tempo ativo real (30 dias), fallback Ollama server-side p/ deploy local/VPS (default `qwen3:4b`), threshold de qualidade e resolução do conflito de versão (mantida 2.14.3)
 
 ## v2.14.2-alpha — 2026-09-22
 

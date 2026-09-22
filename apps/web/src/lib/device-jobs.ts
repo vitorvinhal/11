@@ -113,3 +113,51 @@ export async function approveDeviceJob(
   if (error) throw new Error(error.message);
   return data as DeviceJobRow;
 }
+
+/** Aprova ou rejeita múltiplos jobs de uma vez (bulk). */
+export async function bulkApproveDeviceJobs(
+  sb: SupabaseClient,
+  params: { userId: string; jobIds: string[]; approved: boolean },
+): Promise<{ updated: number }> {
+  const newStatus = params.approved ? "queued" : "rejected";
+  const updates: Record<string, unknown> = {
+    status: newStatus,
+  };
+  if (!params.approved) {
+    updates.error = "Rejeitado pelo usuário (bulk)";
+    updates.completed_at = new Date().toISOString();
+  } else {
+    updates.completed_at = null;
+  }
+
+  const { count, error } = await sb
+    .from("device_jobs")
+    .update(updates)
+    .eq("user_id", params.userId)
+    .eq("status", "awaiting_approval")
+    .in("id", params.jobIds);
+
+  if (error) throw new Error(error.message);
+  return { updated: count ?? 0 };
+}
+
+/** Rejeita jobs expirados (após TTL). Retorna quantos foram rejeitados. */
+export async function expirePendingJobs(
+  sb: SupabaseClient,
+  params: { userId: string; ttlMs: number },
+): Promise<{ expired: number }> {
+  const cutoff = new Date(Date.now() - params.ttlMs).toISOString();
+  const { count, error } = await sb
+    .from("device_jobs")
+    .update({
+      status: "rejected",
+      error: "Expirado (tempo limite de aprovação atingido)",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("user_id", params.userId)
+    .eq("status", "awaiting_approval")
+    .lt("created_at", cutoff);
+
+  if (error) throw new Error(error.message);
+  return { expired: count ?? 0 };
+}
