@@ -9,6 +9,21 @@ export type Platform =
 export function getPlatform(): Platform {
   if (typeof window === "undefined") return "desktop-web";
 
+  // Override para testes (console): localStorage.setItem('eleven_platform_override','desktop-app')
+  try {
+    const override = window.localStorage.getItem("eleven_platform_override");
+    if (
+      override === "desktop-app" ||
+      override === "mobile-app" ||
+      override === "desktop-web" ||
+      override === "mobile-web"
+    ) {
+      return override;
+    }
+  } catch {
+    /* ignore */
+  }
+
   // Tauri v2 (desktop app) — check multiple signals
   const w = window as any;
   if (w.__TAURI__ || w.__TAURI_INTERNALS__ || w.__TAURI_IPC__)
