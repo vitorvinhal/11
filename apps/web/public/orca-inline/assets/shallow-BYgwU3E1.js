@@ -1,0 +1,17 @@
+var isIterable = (e) => Symbol.iterator in e, hasIterableEntries = (e) => "entries" in e, compareEntries = (e, t) => {
+	let n = e instanceof Map ? e : new Map(e.entries()), r = t instanceof Map ? t : new Map(t.entries());
+	if (n.size !== r.size) return !1;
+	for (let [e, t] of n) if (!r.has(e) || !Object.is(t, r.get(e))) return !1;
+	return !0;
+}, compareIterables = (e, t) => {
+	let n = e[Symbol.iterator](), r = t[Symbol.iterator](), i = n.next(), a = r.next();
+	for (; !i.done && !a.done;) {
+		if (!Object.is(i.value, a.value)) return !1;
+		i = n.next(), a = r.next();
+	}
+	return !!i.done && !!a.done;
+};
+function shallow(i, a) {
+	return Object.is(i, a) ? !0 : typeof i != "object" || !i || typeof a != "object" || !a || Object.getPrototypeOf(i) !== Object.getPrototypeOf(a) ? !1 : isIterable(i) && isIterable(a) ? hasIterableEntries(i) && hasIterableEntries(a) ? compareEntries(i, a) : compareIterables(i, a) : compareEntries({ entries: () => Object.entries(i) }, { entries: () => Object.entries(a) });
+}
+export { shallow as t };

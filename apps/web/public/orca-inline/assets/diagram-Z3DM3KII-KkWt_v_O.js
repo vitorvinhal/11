@@ -1,0 +1,148 @@
+import "./chunk-FOHPRMQF-jGN_mPcr.js";
+import "./chunk-6AZGARVD-D1ny8Dca.js";
+import "./chunk-6TQVIW2G-CHMlWgIB.js";
+import "./chunk-6EIED4P4-DjkGTAw7.js";
+import "./chunk-KI3K4JFJ-eCcGGi-s.js";
+import "./chunk-5V3GS4D5-DYkDPM7n.js";
+import "./chunk-UY3FDG6J-D6_LwW2L.js";
+import "./chunk-3Z5EZCMW-B16HwcXn.js";
+import "./chunk-I5DQTOEV-rSUAP46y.js";
+import "./chunk-OUJLGHUK-D19rLc2h.js";
+import "./chunk-XHIXRSVI-CnOf2UBa.js";
+import "./chunk-2ZTRR5NV-CKnBemUj.js";
+import "./chunk-747NJXEK-CDGJEwRb.js";
+import "./chunk-IH6LHLGP-C5FZFsRW.js";
+import "./chunk-6K3QC6MW-DZR2s8UO.js";
+import "./chunk-ICYGCRZG-CKilpC9B.js";
+import { n as __name } from "./chunk-Y2CYZVJY-DRF5oPcR.js";
+import { m as log } from "./src-DXrlgw8l.js";
+import { H as setAccDescription, K as setDiagramTitle, U as setAccTitle, a as clear, b as getConfig, c as configureSvgSize, f as defaultConfig_default, v as getAccDescription, w as getDiagramTitle, y as getAccTitle } from "./chunk-DU6HZSFF-Rlm_otCx.js";
+import "./purify.es-Ddnop6vN.js";
+import "./dist-DRK-BflQ.js";
+import { a as cleanAndMerge } from "./chunk-75Z2AOVW-DlWr2fif.js";
+import { t as selectSvgElement } from "./chunk-CLGD4ZFX--a6S7Yag.js";
+import { t as populateCommonDb } from "./chunk-JWPE2WC7-Cv3uUh-s.js";
+import { n as parse } from "./mermaid-parser.core-D-n-19AD.js";
+var DEFAULT_PACKET_CONFIG = defaultConfig_default.packet, PacketDB = class {
+	constructor() {
+		this.packet = [], this.setAccTitle = setAccTitle, this.getAccTitle = getAccTitle, this.setDiagramTitle = setDiagramTitle, this.getDiagramTitle = getDiagramTitle, this.getAccDescription = getAccDescription, this.setAccDescription = setAccDescription;
+	}
+	static #e = __name(this, "PacketDB");
+	getConfig() {
+		let e = cleanAndMerge({
+			...DEFAULT_PACKET_CONFIG,
+			...getConfig().packet
+		});
+		return e.showBits && (e.paddingY += 10), e;
+	}
+	getPacket() {
+		return this.packet;
+	}
+	pushWord(e) {
+		e.length > 0 && this.packet.push(e);
+	}
+	clear() {
+		clear(), this.packet = [];
+	}
+}, maxPacketSize = 1e4, populate = /* @__PURE__ */ __name((e, f) => {
+	populateCommonDb(e, f);
+	let p = -1, m = [], h = 1, { bitsPerRow: g } = f.getConfig();
+	for (let { start: _, end: v, bits: y, label: b } of e.blocks) {
+		if (_ !== void 0 && v !== void 0 && v < _) throw Error(`Packet block ${_} - ${v} is invalid. End must be greater than start.`);
+		if (_ ??= p + 1, _ !== p + 1) throw Error(`Packet block ${_} - ${v ?? _} is not contiguous. It should start from ${p + 1}.`);
+		if (y === 0) throw Error(`Packet block ${_} is invalid. Cannot have a zero bit field.`);
+		for (v ??= _ + (y ?? 1) - 1, y ??= v - _ + 1, p = v, log.debug(`Packet block ${_} - ${p} with label ${b}`); m.length <= g + 1 && f.getPacket().length < maxPacketSize;) {
+			let [e, d] = getNextFittingBlock({
+				start: _,
+				end: v,
+				bits: y,
+				label: b
+			}, h, g);
+			if (m.push(e), e.end + 1 === h * g && (f.pushWord(m), m = [], h++), !d) break;
+			({start: _, end: v, bits: y, label: b} = d);
+		}
+	}
+	f.pushWord(m);
+}, "populate"), getNextFittingBlock = /* @__PURE__ */ __name((e, d, f) => {
+	if (e.start === void 0) throw Error("start should have been set during first phase");
+	if (e.end === void 0) throw Error("end should have been set during first phase");
+	if (e.start > e.end) throw Error(`Block start ${e.start} is greater than block end ${e.end}.`);
+	if (e.end + 1 <= d * f) return [e, void 0];
+	let p = d * f - 1, m = d * f;
+	return [{
+		start: e.start,
+		end: p,
+		label: e.label,
+		bits: p - e.start
+	}, {
+		start: m,
+		end: e.end,
+		label: e.label,
+		bits: e.end - m
+	}];
+}, "getNextFittingBlock"), parser = {
+	parser: { yy: void 0 },
+	parse: /* @__PURE__ */ __name(async (e) => {
+		let f = await parse("packet", e), p = parser.parser?.yy;
+		if (!(p instanceof PacketDB)) throw Error("parser.parser?.yy was not a PacketDB. This is due to a bug within Mermaid, please report this issue at https://github.com/mermaid-js/mermaid/issues.");
+		log.debug(f), populate(f, p);
+	}, "parse")
+}, draw = /* @__PURE__ */ __name((e, d, f, p) => {
+	let m = p.db, h = m.getConfig(), { rowHeight: g, paddingY: v, bitWidth: y, bitsPerRow: b } = h, x = m.getPacket(), S = m.getDiagramTitle(), C = g + v, w = C * (x.length + 1) - (S ? 0 : g), T = y * b + 2, E = selectSvgElement(d);
+	E.attr("viewBox", `0 0 ${T} ${w}`), configureSvgSize(E, w, T, h.useMaxWidth);
+	for (let [e, d] of x.entries()) drawWord(E, d, e, h);
+	E.append("text").text(S).attr("x", T / 2).attr("y", w - C / 2).attr("dominant-baseline", "middle").attr("text-anchor", "middle").attr("class", "packetTitle");
+}, "draw"), drawWord = /* @__PURE__ */ __name((e, d, f, { rowHeight: p, paddingX: m, paddingY: h, bitWidth: g, bitsPerRow: _, showBits: v }) => {
+	let y = e.append("g"), b = f * (p + h) + h;
+	for (let e of d) {
+		let d = e.start % _ * g + 1, f = (e.end - e.start + 1) * g - m;
+		if (y.append("rect").attr("x", d).attr("y", b).attr("width", f).attr("height", p).attr("class", "packetBlock"), y.append("text").attr("x", d + f / 2).attr("y", b + p / 2).attr("class", "packetLabel").attr("dominant-baseline", "middle").attr("text-anchor", "middle").text(e.label), !v) continue;
+		let h = e.end === e.start, x = b - 2;
+		y.append("text").attr("x", d + (h ? f / 2 : 0)).attr("y", x).attr("class", "packetByte start").attr("dominant-baseline", "auto").attr("text-anchor", h ? "middle" : "start").text(e.start), h || y.append("text").attr("x", d + f).attr("y", x).attr("class", "packetByte end").attr("dominant-baseline", "auto").attr("text-anchor", "end").text(e.end);
+	}
+}, "drawWord"), renderer = { draw }, defaultPacketStyleOptions = {
+	byteFontSize: "10px",
+	startByteColor: "black",
+	endByteColor: "black",
+	labelColor: "black",
+	labelFontSize: "12px",
+	titleColor: "black",
+	titleFontSize: "14px",
+	blockStrokeColor: "black",
+	blockStrokeWidth: "1",
+	blockFillColor: "#efefef"
+}, diagram = {
+	parser,
+	get db() {
+		return new PacketDB();
+	},
+	renderer,
+	styles: /* @__PURE__ */ __name(({ packet: e } = {}) => {
+		let d = cleanAndMerge(defaultPacketStyleOptions, e);
+		return `
+	.packetByte {
+		font-size: ${d.byteFontSize};
+	}
+	.packetByte.start {
+		fill: ${d.startByteColor};
+	}
+	.packetByte.end {
+		fill: ${d.endByteColor};
+	}
+	.packetLabel {
+		fill: ${d.labelColor};
+		font-size: ${d.labelFontSize};
+	}
+	.packetTitle {
+		fill: ${d.titleColor};
+		font-size: ${d.titleFontSize};
+	}
+	.packetBlock {
+		stroke: ${d.blockStrokeColor};
+		stroke-width: ${d.blockStrokeWidth};
+		fill: ${d.blockFillColor};
+	}
+	`;
+	}, "styles")
+};
+export { diagram };

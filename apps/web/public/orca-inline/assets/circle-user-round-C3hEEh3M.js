@@ -1,0 +1,20 @@
+import { u as createLucideIcon } from "./useMountedRef-De7bTfqf.js";
+var CircleUserRound = createLucideIcon("circle-user-round", [
+	["path", {
+		d: "M18 20a6 6 0 0 0-12 0",
+		key: "1qehca"
+	}],
+	["circle", {
+		cx: "12",
+		cy: "10",
+		r: "4",
+		key: "1h16sb"
+	}],
+	["circle", {
+		cx: "12",
+		cy: "12",
+		r: "10",
+		key: "1mglay"
+	}]
+]);
+export { CircleUserRound as t };

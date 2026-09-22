@@ -66,7 +66,7 @@ const PLATFORM_META: Record<
     color: "text-violet-400",
     features: [
       "Terminal",
-      "Eleven Coder",
+      "Eleven Code",
       "Agente PC",
       "Canvas",
       "Neural Graph",

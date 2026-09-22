@@ -1,0 +1,16 @@
+import "./react-BWRHcv7t.js";
+import "./react-dom-Cm0_4y6Q.js";
+import "./i18n-CakWKPtl.js";
+import "./useMountedRef-De7bTfqf.js";
+import "./store-C9f8FDJV.js";
+import "./jsx-runtime-CVy3GVGV.js";
+import "./renderer-app-platform--nJ6HYmL.js";
+import "./stale-document-visibility-rSdoU229.js";
+import "./dist-E3opdjfr.js";
+import "./telemetry-DdvWHaqb.js";
+import "./pane-metric-options-deferral-Bz211kas.js";
+import "./web-runtime-session-CeAC5QPx.js";
+import "./agent-paste-draft-Ddp-k6QZ.js";
+import "./agent-process-recognition-BUFJTuDF.js";
+import { n as canOpenWorkspaceBrowserTabOnSsh, r as openWorkspaceBrowserTab, t as canOpenWorkspaceBrowserTabOnRuntime } from "./workspace-browser-tab-open-BzgRRhYJ.js";
+export { openWorkspaceBrowserTab };

@@ -1,0 +1,15 @@
+import "./react-BWRHcv7t.js";
+import "./react-dom-Cm0_4y6Q.js";
+import "./i18n-CakWKPtl.js";
+import "./useMountedRef-De7bTfqf.js";
+import { Fd as toHostSessionTabId, Id as toWebTerminalSurfaceTabId, Md as HOST_TERMINAL_SURFACE_SEPARATOR, Nd as WEB_TERMINAL_SURFACE_TAB_PREFIX, Pd as isWebTerminalSurfaceTabId } from "./store-C9f8FDJV.js";
+import "./jsx-runtime-CVy3GVGV.js";
+import "./renderer-app-platform--nJ6HYmL.js";
+import "./stale-document-visibility-rSdoU229.js";
+import "./dist-E3opdjfr.js";
+import "./telemetry-DdvWHaqb.js";
+import "./pane-metric-options-deferral-Bz211kas.js";
+import { _ as refreshWebRuntimeSessionTabsSnapshot, a as splitWebRuntimeTerminal, c as moveWebRuntimeSessionTab, d as activateWebRuntimeSessionWorktree, f as createWebRuntimeSessionBrowserTab, h as createWebRuntimeSessionTerminal, i as setWebRuntimeTabProps, l as activateWebRuntimeSessionTab, m as createWebRuntimeAgentSessionTerminalWithLaunchDraft, n as closeWebRuntimeTerminal, o as updateWebRuntimePaneLayout, on as isWebRuntimeSessionActive, p as createWebRuntimeAgentSessionTerminal, r as consumePendingWebRuntimeSplitMirrorTelemetry, t as clearWebRuntimeTerminalBuffer, u as closeWebRuntimeSessionTab } from "./web-runtime-session-CeAC5QPx.js";
+import "./agent-paste-draft-Ddp-k6QZ.js";
+import "./agent-process-recognition-BUFJTuDF.js";
+export { closeWebRuntimeSessionTab, createWebRuntimeSessionBrowserTab, createWebRuntimeSessionTerminal, setWebRuntimeTabProps };
