@@ -1,6 +1,6 @@
 {
   "name": "@11/desktop",
-  "version": "2.14.3-alpha",
+  "version": "2.16.1-alpha",
   "private": true,
   "scripts": {
     "dev": "pnpm tauri dev",

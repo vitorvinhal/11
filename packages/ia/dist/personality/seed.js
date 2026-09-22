@@ -1,0 +1,37 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PERSONAS_SEED = void 0;
+/**
+ * Referência de estilos de persona (OPCIONAL).
+ * O sistema NÃO pré-cria perfis fixos — qualquer usuário cria conta própria
+ * com dados isolados por auth.uid(). Estas são apenas sugestões de tom
+ * para personalização sob demanda.
+ */
+exports.PERSONAS_SEED = {
+    referencia_personas: [
+        {
+            name: "Vitor",
+            style: {
+                tone: "militar",
+                keywords: ["automação", "IA", "devops", "eficiência"],
+                emojis: ["⚙️", "🚀"],
+            },
+        },
+        {
+            name: "Giovana",
+            style: {
+                tone: "estratégica",
+                keywords: ["jogos", "criatividade", "mistério", "estratégia"],
+                emojis: ["🕹️", "🎭"],
+            },
+        },
+        {
+            name: "Renata",
+            style: {
+                tone: "comercial",
+                keywords: ["loja", "moda", "legendas", "preços"],
+                emojis: ["👗", "💰"],
+            },
+        },
+    ],
+};

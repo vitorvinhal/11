@@ -1,11 +1,9 @@
 {
-  "version": "2.14.3-alpha",
-  "versionCode": 28,
+  "version": "2.16.1-alpha",
+  "versionCode": 30,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Correção: API e downloads nunca ficam em cache do SW (buscar atualização e baixar agora funcionam)",
-    "Login mais resiliente nos apps: refresh de sessão ao voltar ao foreground + logout limpa identidade do device",
-    "Downloads funcionam no WebView (sem popup) + feedback de 'Buscar atualizações'"
+    "Unificação das sessões: features da linha candlefish (downloads/updates, Zen local, ícones, rede neural, login resiliente, SW fixes) integradas à base da outra sessão (presence, stats, approvals, terminal sandbox, audit)"
   ]
 }
