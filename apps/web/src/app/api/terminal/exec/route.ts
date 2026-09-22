@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   sess.history.push(trimmed);
 
   // Envia ambiente filtrado (sem secrets)
-  const env = safeEnv();
+  const env = safeEnv() as NodeJS.ProcessEnv;
 
   return new Response(
     new ReadableStream({

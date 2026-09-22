@@ -15,7 +15,6 @@ import {
   validateFileArgs,
   isWithinRoot,
   ALLOWED,
-  baseCommand,
 } from "./terminal-validate";
 
 describe("terminal-validate — security", () => {
