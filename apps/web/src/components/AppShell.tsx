@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar, SidebarChat, NavTab } from "./Sidebar";
 import { ChatPanel, ChatMessage } from "./ChatPanel";
 import { ProfileDialog } from "./ProfileDialog";
@@ -10,8 +10,7 @@ import { NeuralGraph } from "./NeuralGraph";
 import ConnectorsPanel from "./ConnectorsPanel";
 import { PluginsPanel } from "./PluginsPanel";
 import { ArtifactsPanel } from "./ArtifactsPanel";
-import CodeWorkspace from "./CodeWorkspace";
-import ElevenCoder from "./ElevenCoder";
+import ElevenOrca from "./ElevenOrca";
 import { MediaGallery } from "./MediaGallery";
 import { MobileAgent } from "./MobileAgent";
 import { MobileDevicePanel } from "./MobileDevicePanel";
@@ -19,7 +18,15 @@ import { MemoriaPanel } from "./MemoriaPanel";
 import { FinOpsPanel } from "./FinOpsPanel";
 import { CanvasPanel } from "./CanvasPanel";
 import { useAuth } from "../lib/auth";
-import { Menu, Sparkles } from "lucide-react";
+import { getPlatform } from "../lib/platform";
+import {
+  checkForUpdate,
+  notifyNewVersion,
+  getNotifiedCode,
+  markVersionNotified,
+  type UpdateInfo,
+} from "../lib/update-client";
+import { Menu, Sparkles, Download } from "lucide-react";
 
 export function AppShell({
   initialNav = "conversas" as NavTab,
@@ -33,6 +40,33 @@ export function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeNav, setActiveNav] = useState<NavTab>(initialNav);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<"updates">();
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [hasUpdate, setHasUpdate] = useState(false);
+
+  // Checagem de atualização no boot: notifica a cada versão nova.
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      const res = await checkForUpdate();
+      if (cancelled || !res.info || !res.hasUpdate) return;
+      setUpdateInfo(res.info);
+      setHasUpdate(true);
+      if (getNotifiedCode() !== res.info.versionCode) {
+        markVersionNotified(res.info.versionCode);
+        void notifyNewVersion(res.info, getPlatform());
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const openUpdates = () => {
+    setSettingsInitialTab("updates");
+    setSettingsOpen(true);
+  };
 
   const newChat = () => {
     const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -73,6 +107,24 @@ export function AppShell({
           className="fixed inset-0 z-30 bg-black/60 md:hidden"
           onClick={() => setDrawerOpen(false)}
         />
+      )}
+      {hasUpdate && updateInfo && (
+        <button
+          onClick={openUpdates}
+          className="fixed bottom-4 right-4 z-50 flex max-w-[92vw] items-center gap-2.5 rounded-2xl border border-primary/25 bg-[#0d1020]/95 px-4 py-3 text-left shadow-2xl backdrop-blur transition hover:border-primary/50"
+        >
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15">
+            <Download className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-[12px] font-semibold text-text-primary">
+              Nova versão v{updateInfo.version}
+            </p>
+            <p className="text-[10px] text-text-dim">
+              Toque para abrir o perfil e atualizar
+            </p>
+          </div>
+        </button>
       )}
       <div className="flex h-full">
         <div className="hidden md:block">
@@ -130,6 +182,8 @@ export function AppShell({
               <ProfileDialog
                 open={settingsOpen}
                 onOpenChange={setSettingsOpen}
+                initialTab={settingsInitialTab}
+                updateBadge={hasUpdate}
               />
             </div>
           </div>
@@ -164,12 +218,7 @@ export function AppShell({
             )}
             {activeNav === "code" && (
               <div className="h-full">
-                <CodeWorkspace />
-              </div>
-            )}
-            {activeNav === "coder" && (
-              <div className="h-full">
-                <ElevenCoder />
+                <ElevenOrca />
               </div>
             )}
             {activeNav === "media" && (

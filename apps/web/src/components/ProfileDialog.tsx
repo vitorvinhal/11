@@ -21,8 +21,18 @@ import {
   Globe,
   Cog,
   Zap,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import {
+  checkForUpdate,
+  acknowledgeVersion,
+  openDownloadForPlatform,
+  getDownloadUrlForPlatform,
+  type UpdateInfo,
+} from "../lib/update-client";
+import { getPlatform } from "../lib/platform";
 import { SkillsPanel } from "./SkillsPanel";
 import { PluginsPanel } from "./PluginsPanel";
 import ConnectorsPanel from "./ConnectorsPanel";
@@ -37,83 +47,43 @@ type SettingsTab =
   | "ai"
   | "sessions"
   | "privacy"
+  | "updates"
   | "customize";
-
-const TABS: Array<{
-  id: SettingsTab;
-  label: string;
-  icon: typeof Cog;
-  group?: string;
-}> = [
-  { id: "general", label: "Perfil", icon: UserRound, group: "Conta" },
-  { id: "account", label: "Seguranca", icon: Shield },
-  { id: "appearance", label: "Visual", icon: Palette },
-  { id: "ai", label: "Modelos", icon: Cpu },
-  { id: "sessions", label: "Sessoes", icon: Smartphone },
-  { id: "privacy", label: "Dados", icon: Lock, group: "Sistema" },
-  { id: "customize", label: "Plugins", icon: Puzzle },
-];
-
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <button
-      onClick={onChange}
-      className={`relative h-[22px] w-[40px] shrink-0 rounded-full transition-colors ${
-        checked ? "bg-[#00e5ff]" : "bg-white/10"
-      }`}
-    >
-      <span
-        className={`absolute top-[3px] h-[16px] w-[16px] rounded-full bg-white transition-transform ${
-          checked ? "translate-x-[21px]" : "translate-x-[3px]"
-        }`}
-      />
-    </button>
-  );
-}
 
 export function ProfileDialog({
   open: externalOpen,
   onOpenChange,
-}: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
+  initialTab,
+  updateBadge = false,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialTab?: SettingsTab;
+  updateBadge?: boolean;
+} = {}) {
   const { user, supabase, signOut, getAccessToken } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
-  const [tab, setTab] = useState<SettingsTab>("general");
-
-  // Profile
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [name, setName] = useState(user?.user_metadata?.name ?? "");
   const [callYou, setCallYou] = useState(user?.user_metadata?.callYou ?? "");
   const [instructions, setInstructions] = useState(
     user?.user_metadata?.instructions ?? "",
   );
   const [saved, setSaved] = useState(false);
-
-  // Keys
   const [geminiKey, setGeminiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [nineRouterKey, setNineRouterKey] = useState("");
   const [keysSaved, setKeysSaved] = useState(false);
-
-  // Version
   const [changelog, setChangelog] = useState<string[] | null>(null);
   const [appVersion, setAppVersion] = useState("");
-
-  // Appearance
   const [appearance, setAppearance] = useState<"dark" | "light" | "system">(
     "dark",
   );
   const [chatFont, setChatFont] = useState("system");
   const [motion, setMotion] = useState<"system" | "reduced">("system");
   const [codeFont, setCodeFont] = useState("JetBrains Mono");
-
-  // Privacy
   const [caps, setCaps] = useState<Record<string, boolean>>({
     webSearch: true,
     memory: true,
@@ -124,18 +94,31 @@ export function ProfileDialog({
   });
   const [incognito, setIncognito] = useState(false);
   const [dataBusy, setDataBusy] = useState(false);
-
-  // Account
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [accountMsg, setAccountMsg] = useState("");
   const [accountBusy, setAccountBusy] = useState(false);
-
-  // Customize
   const [customizeTab, setCustomizeTab] = useState<
     "skills" | "connectors" | "plugins"
   >("skills");
+
+  const [upd, setUpd] = useState<UpdateInfo | null>(null);
+  const [updBusy, setUpdBusy] = useState(false);
+  const [updHasNew, setUpdHasNew] = useState(false);
+
+  const checkUpdates = useCallback(async () => {
+    setUpdBusy(true);
+    const res = await checkForUpdate();
+    setUpd(res.info);
+    setUpdHasNew(res.hasUpdate);
+    setUpdBusy(false);
+  }, []);
+
+  useEffect(() => {
+    if (settingsTab === "updates" && !upd) void checkUpdates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsTab]);
 
   const loadSettings = useCallback(async () => {
     if (!user) return;
@@ -188,21 +171,26 @@ export function ProfileDialog({
     }
   }, [open, loadSettings]);
 
+  // Abre direto numa aba específica (ex.: notificação de atualização).
+  useEffect(() => {
+    if (open && initialTab) setSettingsTab(initialTab);
+  }, [open, initialTab]);
+
   const changePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
-      setAccountMsg("Senha muito curta (min. 6).");
+      setAccountMsg("Senha muito curta (mín. 6).");
       return;
     }
     setAccountBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setAccountMsg(error ? `Erro: ${error.message}` : "Senha atualizada!");
+    setAccountMsg(error ? `Erro: ${error.message}` : "Senha atualizada ✓");
     setNewPassword("");
     setAccountBusy(false);
   };
 
   const changeEmail = async () => {
     if (!newEmail || !newEmail.includes("@")) {
-      setAccountMsg("Email invalido.");
+      setAccountMsg("E-mail inválido.");
       return;
     }
     setAccountBusy(true);
@@ -210,7 +198,7 @@ export function ProfileDialog({
     setAccountMsg(
       error
         ? `Erro: ${error.message}`
-        : "Confirmacao enviada para o novo email",
+        : "Confirmação enviada para o novo e-mail ✓",
     );
     setNewEmail("");
     setAccountBusy(false);
@@ -284,7 +272,7 @@ export function ProfileDialog({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `11-dados-${Date.now()}.json`;
+      a.download = `eleven-dados-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -349,14 +337,43 @@ export function ProfileDialog({
     }
   };
 
+  const settingsNav: Array<{
+    id: SettingsTab;
+    label: string;
+    icon: any;
+    section?: string;
+  }> = [
+    { id: "general", icon: UserRound, label: "Geral", section: "Settings" },
+    { id: "account", icon: Shield, label: "Conta" },
+    { id: "appearance", icon: Palette, label: "Aparência" },
+    { id: "ai", icon: Cpu, label: "IA Provider" },
+    { id: "sessions", icon: Smartphone, label: "Sessões" },
+    { id: "privacy", icon: Lock, label: "Privacidade" },
+    {
+      id: "updates",
+      icon: RefreshCw,
+      label: "Atualizações",
+      section: "System",
+    },
+    {
+      id: "customize",
+      icon: Puzzle,
+      label: "Customização",
+      section: "Customize",
+    },
+  ];
+
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <button
-          className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-text-muted transition hover:text-text-primary"
-          aria-label="Configuracoes"
+          className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-text-muted transition hover:text-text-primary relative"
+          aria-label="Configurações"
         >
           <Cog className="h-4 w-4" />
+          {updateBadge && (
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary ring-2 ring-[#05050A]" />
+          )}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -373,7 +390,7 @@ export function ProfileDialog({
                   Settings
                 </Dialog.Title>
                 <p className="text-[10px] text-text-dim">
-                  v{appVersion || "..."}
+                  v{appVersion || "…"}
                 </p>
               </div>
             </div>
@@ -384,11 +401,11 @@ export function ProfileDialog({
 
           {/* Mobile tabs */}
           <div className="flex overflow-x-auto border-b border-white/[0.06] md:hidden no-scrollbar">
-            {TABS.map((item) => (
+            {settingsNav.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-medium border-b-2 transition ${tab === item.id ? "border-primary text-text-primary" : "border-transparent text-text-dim hover:text-text-muted"}`}
+                onClick={() => setSettingsTab(item.id)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-medium border-b-2 transition ${settingsTab === item.id ? "border-primary text-text-primary" : "border-transparent text-text-dim hover:text-text-muted"}`}
               >
                 <item.icon className="h-3 w-3 opacity-70" /> {item.label}
               </button>
@@ -399,16 +416,16 @@ export function ProfileDialog({
             {/* Desktop sidebar */}
             <div className="hidden w-52 shrink-0 flex-col border-r border-white/[0.06] md:flex">
               <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-                {TABS.map((item) => (
+                {settingsNav.map((item) => (
                   <div key={item.id}>
-                    {item.group && (
+                    {item.section && (
                       <div className="px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-text-dim">
-                        {item.group}
+                        {item.section}
                       </div>
                     )}
                     <button
-                      onClick={() => setTab(item.id)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] transition ${tab === item.id ? "bg-white/6 text-text-primary" : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"}`}
+                      onClick={() => setSettingsTab(item.id)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] transition ${settingsTab === item.id ? "bg-white/6 text-text-primary" : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"}`}
                     >
                       <item.icon className="h-3.5 w-3.5 opacity-70" />{" "}
                       {item.label}
@@ -420,17 +437,19 @@ export function ProfileDialog({
 
             {/* Content */}
             <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-              {/* ═══ GENERAL ═══ */}
-              {tab === "general" && (
+              {/* ── GENERAL ── */}
+              {settingsTab === "general" && (
                 <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
                     Perfil
                   </h2>
 
+                  {/* Avatar */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <AvatarUpload />
                   </div>
 
+                  {/* Form */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <div>
                       <label className="mb-1 block text-[11px] font-medium text-text-muted">
@@ -456,18 +475,19 @@ export function ProfileDialog({
                     </div>
                     <div>
                       <label className="mb-1 block text-[11px] font-medium text-text-muted">
-                        Instrucoes para o Eleven
+                        Instruções para o Eleven
                       </label>
                       <textarea
                         value={instructions}
                         onChange={(e) => setInstructions(e.target.value)}
-                        placeholder="Ex: responda sempre em portugues, seja direto..."
+                        placeholder="Ex: responda sempre em português, seja direto..."
                         rows={3}
                         className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-text-primary placeholder:text-text-dim outline-none resize-none focus:border-primary/30 transition"
                       />
                     </div>
                   </div>
 
+                  {/* Changelog */}
                   {changelog && changelog.length > 0 && (
                     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                       <h3 className="text-xs font-semibold text-text-primary mb-2 flex items-center gap-2">
@@ -488,12 +508,13 @@ export function ProfileDialog({
                     </div>
                   )}
 
+                  {/* Actions */}
                   <div className="flex gap-2">
                     <button
                       onClick={saveProfile}
                       className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
                     >
-                      {saved ? "Salvo!" : "Salvar alteracoes"}
+                      {saved ? "Salvo ✓" : "Salvar alterações"}
                     </button>
                     <button
                       onClick={() => {
@@ -515,7 +536,7 @@ export function ProfileDialog({
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = "11-settings.json";
+                        a.download = "eleven-settings.json";
                         a.click();
                         URL.revokeObjectURL(url);
                       }}
@@ -527,18 +548,19 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* ═══ ACCOUNT ═══ */}
-              {tab === "account" && (
+              {/* ── ACCOUNT ── */}
+              {settingsTab === "account" && (
                 <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Seguranca
+                    Conta
                   </h2>
 
+                  {/* Current email */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Mail className="h-4 w-4 text-primary" />
                       <span className="text-xs font-medium text-text-primary">
-                        Email atual
+                        E-mail atual
                       </span>
                     </div>
                     <div className="rounded-lg bg-white/[0.04] px-3 py-2 text-sm text-text-muted">
@@ -546,11 +568,12 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {/* Change email */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-white/40" />
                       <span className="text-xs font-medium text-text-primary">
-                        Alterar email
+                        Alterar e-mail
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -570,6 +593,7 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {/* Change password */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <Key className="h-4 w-4 text-white/40" />
@@ -583,7 +607,7 @@ export function ProfileDialog({
                           type={showPassword ? "text" : "password"}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Nova senha (min. 6)"
+                          placeholder="Nova senha (mín. 6)"
                           className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2 pr-8 text-sm text-text-primary outline-none focus:border-primary/30 transition"
                         />
                         <button
@@ -619,6 +643,7 @@ export function ProfileDialog({
                     </div>
                   )}
 
+                  {/* Danger zone */}
                   <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.04] p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <AlertTriangle className="h-4 w-4 text-rose-400" />
@@ -628,26 +653,27 @@ export function ProfileDialog({
                     </div>
                     <p className="text-xs text-text-muted mb-3">
                       Apaga permanentemente sua conta e todos os dados. Esta
-                      acao e irreversivel.
+                      ação é irreversível.
                     </p>
                     <button
                       onClick={() => void deleteAccount()}
                       disabled={accountBusy}
                       className="rounded-lg bg-rose-500/20 px-4 py-2 text-xs text-rose-300 hover:bg-rose-500/30 transition disabled:opacity-40"
                     >
-                      {accountBusy ? "Processando..." : "Excluir minha conta"}
+                      {accountBusy ? "Processando…" : "Excluir minha conta"}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ═══ APPEARANCE ═══ */}
-              {tab === "appearance" && (
+              {/* ── APPEARANCE ── */}
+              {settingsTab === "appearance" && (
                 <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Visual
+                    Aparência
                   </h2>
 
+                  {/* Theme */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <span className="text-xs font-medium text-text-primary">
                       Tema
@@ -691,6 +717,7 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {/* Chat font */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-medium text-text-primary">
@@ -721,10 +748,11 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {/* Motion */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-text-primary">
-                        Animacoes
+                        Animações
                       </span>
                       <div className="flex rounded-lg bg-white/[0.04] p-0.5">
                         {(["system", "reduced"] as const).map((m) => (
@@ -740,9 +768,10 @@ export function ProfileDialog({
                     </div>
                   </div>
 
+                  {/* Code font */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <label className="mb-2 block text-xs font-medium text-text-primary">
-                      Fonte do codigo
+                      Fonte do código
                     </label>
                     <input
                       value={codeFont}
@@ -762,18 +791,19 @@ export function ProfileDialog({
                     onClick={saveProfile}
                     className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
                   >
-                    {saved ? "Salvo!" : "Salvar alteracoes"}
+                    {saved ? "Salvo ✓" : "Salvar alterações"}
                   </button>
                 </div>
               )}
 
-              {/* ═══ AI PROVIDER ═══ */}
-              {tab === "ai" && (
+              {/* ── AI PROVIDER ── */}
+              {settingsTab === "ai" && (
                 <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Modelos
+                    IA Provider
                   </h2>
 
+                  {/* API Keys */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Key className="h-4 w-4 text-primary" />
@@ -823,10 +853,11 @@ export function ProfileDialog({
                       onClick={saveKeys}
                       className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
                     >
-                      {keysSaved ? "Salvo!" : "Salvar chaves"}
+                      {keysSaved ? "Salvo ✓" : "Salvar chaves"}
                     </button>
                   </div>
 
+                  {/* Ollama */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Globe className="h-4 w-4 text-white/40" />
@@ -839,28 +870,29 @@ export function ProfileDialog({
                 </div>
               )}
 
-              {/* ═══ SESSIONS ═══ */}
-              {tab === "sessions" && (
+              {/* ── SESSIONS ── */}
+              {settingsTab === "sessions" && (
                 <div className="space-y-5">
                   <div>
                     <h2 className="text-lg font-semibold text-text-primary">
-                      Sessoes
+                      Sessões
                     </h2>
                     <p className="text-[11px] text-text-dim mt-0.5">
-                      Gerencie seus dispositivos e sessoes ativas
+                      Gerencie seus dispositivos e sessões ativas
                     </p>
                   </div>
                   <SessionsPanel />
                 </div>
               )}
 
-              {/* ═══ PRIVACY ═══ */}
-              {tab === "privacy" && (
+              {/* ── PRIVACY ── */}
+              {settingsTab === "privacy" && (
                 <div className="space-y-5 max-w-lg">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Dados
+                    Privacidade
                   </h2>
 
+                  {/* Incognito */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -871,16 +903,21 @@ export function ProfileDialog({
                           </span>
                         </div>
                         <p className="mt-1 text-[11px] text-text-muted">
-                          Conversa sem memoria — para assuntos sensiveis.
+                          Conversa sem memória — para assuntos sensíveis.
                         </p>
                       </div>
-                      <Toggle
-                        checked={incognito}
-                        onChange={() => setIncognito(!incognito)}
-                      />
+                      <div
+                        className={`h-5 w-9 shrink-0 rounded-full transition ${incognito ? "bg-primary" : "bg-white/10"} relative cursor-pointer`}
+                        onClick={() => setIncognito(!incognito)}
+                      >
+                        <div
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${incognito ? "left-[18px]" : "left-0.5"}`}
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  {/* Export */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <Download className="h-4 w-4 text-white/40" />
@@ -889,17 +926,18 @@ export function ProfileDialog({
                       </span>
                     </div>
                     <p className="text-[11px] text-text-muted mb-3">
-                      Baixe tudo (memorias, skills, projetos, midia) em JSON.
+                      Baixe tudo (memórias, skills, projetos, mídia) em JSON.
                     </p>
                     <button
                       onClick={() => void exportData()}
                       disabled={dataBusy}
                       className="rounded-lg bg-white/[0.06] border border-white/[0.06] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] hover:text-text-primary transition disabled:opacity-40"
                     >
-                      {dataBusy ? "Exportando..." : "Exportar meus dados"}
+                      {dataBusy ? "Exportando…" : "Exportar meus dados"}
                     </button>
                   </div>
 
+                  {/* Capabilities */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Zap className="h-4 w-4 text-white/40" />
@@ -924,44 +962,158 @@ export function ProfileDialog({
                         <span className="text-sm text-text-primary">
                           {cap.label}
                         </span>
-                        <Toggle
-                          checked={caps[cap.key]}
-                          onChange={() =>
+                        <div
+                          className={`h-5 w-9 shrink-0 rounded-full transition ${caps[cap.key] ? "bg-primary" : "bg-white/10"} relative cursor-pointer`}
+                          onClick={() =>
                             setCaps((p) => ({ ...p, [cap.key]: !p[cap.key] }))
                           }
-                        />
+                        >
+                          <div
+                            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${caps[cap.key] ? "left-[18px]" : "left-0.5"}`}
+                          />
+                        </div>
                       </div>
                     ))}
                     <button
                       onClick={() => void saveProfile()}
                       className="mt-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
                     >
-                      {saved ? "Salvo!" : "Salvar capabilities"}
+                      {saved ? "Salvo ✓" : "Salvar capabilities"}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ═══ CUSTOMIZE ═══ */}
-              {tab === "customize" && (
+              {/* ── UPDATES ── */}
+              {settingsTab === "updates" && (
+                <div className="space-y-5 max-w-lg">
+                  <div>
+                    <h2 className="text-lg font-semibold text-text-primary">
+                      Atualizações
+                    </h2>
+                    <p className="text-[11px] text-text-dim mt-0.5">
+                      A cada nova versão você é notificado aqui. Fique em dia
+                      com o sistema (mobile e desktop).
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] text-text-dim">
+                          Versão atual
+                        </p>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {appVersion || "—"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] text-text-dim">
+                          {updHasNew ? "Nova versão" : "Sistema atualizado"}
+                        </p>
+                        {upd && (
+                          <p className="text-[11px] font-medium text-primary">
+                            {updHasNew
+                              ? `v${upd.version} disponível`
+                              : `v${upd.version}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => void checkUpdates()}
+                        disabled={updBusy}
+                        className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/[0.06] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] hover:text-text-primary transition disabled:opacity-40"
+                      >
+                        {updBusy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        )}
+                        Buscar atualizações
+                      </button>
+                      {updHasNew && upd && (
+                        <button
+                          onClick={() => {
+                            const ok = openDownloadForPlatform(
+                              upd.downloads,
+                              getPlatform(),
+                            );
+                            if (ok) {
+                              acknowledgeVersion(upd.versionCode);
+                              setUpdHasNew(false);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg bg-primary/20 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/30 transition"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Baixar nova versão
+                        </button>
+                      )}
+                    </div>
+                    {updHasNew && (
+                      <p className="mt-2 text-[10px] text-text-dim/60">
+                        O download abre o instalador/app da nova versão na
+                        plataforma atual.
+                      </p>
+                    )}
+                  </div>
+
+                  {upd && upd.changelog.length > 0 && (
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                      <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-dim">
+                        Novidades
+                      </p>
+                      <ul className="space-y-1.5">
+                        {upd.changelog.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex gap-2 text-[12px] text-text-muted"
+                          >
+                            <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-400" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {upd &&
+                    !getDownloadUrlForPlatform(
+                      upd.downloads,
+                      getPlatform(),
+                    ) && (
+                      <p className="text-[10px] text-text-dim/50">
+                        Sem link de download configurado para esta plataforma
+                        (defina NEXT_PUBLIC_DOWNLOAD_*_URL no deploy).
+                      </p>
+                    )}
+                </div>
+              )}
+
+              {/* ── CUSTOMIZE ── */}
+              {settingsTab === "customize" && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-text-primary">
-                    Plugins
+                    Customização
                   </h2>
                   <div className="flex gap-1 rounded-lg bg-white/[0.04] p-0.5">
-                    {(["skills", "connectors", "plugins"] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setCustomizeTab(t)}
-                        className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${customizeTab === t ? "bg-white/10 text-text-primary" : "text-text-dim hover:text-text-muted"}`}
-                      >
-                        {t === "skills"
-                          ? "Skills"
-                          : t === "connectors"
-                            ? "Connectors"
-                            : "Plugins"}
-                      </button>
-                    ))}
+                    {(["skills", "connectors", "plugins"] as const).map(
+                      (tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setCustomizeTab(tab)}
+                          className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${customizeTab === tab ? "bg-white/10 text-text-primary" : "text-text-dim hover:text-text-muted"}`}
+                        >
+                          {tab === "skills"
+                            ? "Skills"
+                            : tab === "connectors"
+                              ? "Connectors"
+                              : "Plugins"}
+                        </button>
+                      ),
+                    )}
                   </div>
                   {customizeTab === "skills" && <SkillsPanel />}
                   {customizeTab === "connectors" && user && (

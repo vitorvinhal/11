@@ -44,7 +44,6 @@ export type NavTab =
   | "projetos"
   | "skills"
   | "code"
-  | "coder"
   | "neural"
   | "artifacts"
   | "connectors"
@@ -191,12 +190,7 @@ export function Sidebar({
       icon: Code2,
       platforms: ["desktop-app", "desktop-web", "mobile-app"],
     },
-    {
-      id: "coder",
-      label: "Eleven Coder",
-      icon: Terminal,
-      platforms: ["desktop-app", "desktop-web", "mobile-app"],
-    },
+
     {
       id: "neural",
       label: "Rede Neural",
@@ -238,13 +232,13 @@ export function Sidebar({
       id: "agent",
       label: "Agente PC",
       icon: Terminal,
-      platforms: ["desktop-app", "desktop-web"],
+      platforms: ["desktop-app"],
     },
     {
       id: "mobile",
       label: "Agente Mobile",
       icon: Smartphone,
-      platforms: ["mobile-app", "mobile-web"],
+      platforms: ["mobile-app"],
     },
     {
       id: "plugins",

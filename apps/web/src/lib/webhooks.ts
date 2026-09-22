@@ -6,6 +6,7 @@
  */
 
 import { logger } from "./logger";
+import { webcrypto } from "node:crypto";
 
 export interface Webhook {
   id: string;
@@ -75,18 +76,15 @@ async function computeSignature(
   secret: string,
 ): Promise<string> {
   const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
+  const subtle = webcrypto.subtle;
+  const key = await subtle.importKey(
     "raw",
     encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(payload),
-  );
+  const signature = await subtle.sign("HMAC", key, encoder.encode(payload));
   return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
