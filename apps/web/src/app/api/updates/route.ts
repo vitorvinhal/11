@@ -8,6 +8,8 @@ loadRootEnv();
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const GITHUB_REPO = "vitorvinhal/11";
+
 type VersionJson = {
   version: string;
   versionCode: number;
@@ -32,6 +34,10 @@ export async function GET() {
     /* fallback acima */
   }
 
+  const githubReleases = `https://github.com/${GITHUB_REPO}/releases/latest`;
+  const githubDesktop = `https://github.com/${GITHUB_REPO}/releases/latest`;
+  const githubMobile = `https://github.com/${GITHUB_REPO}/releases/latest`;
+
   return NextResponse.json({
     version: data.version,
     versionCode: data.versionCode ?? 0,
@@ -40,16 +46,12 @@ export async function GET() {
     buildTime: data.buildTime ?? null,
     changelog: data.changelog ?? [],
     downloads: {
-      desktop:
-        process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_URL ??
-        "/downloads/11-desktop-setup.exe",
-      mobile:
-        process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_URL ??
-        "/downloads/11-mobile.apk",
+      desktop: process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_URL ?? githubDesktop,
+      mobile: process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_URL ?? githubMobile,
       android:
-        process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_ANDROID_URL ??
-        "/downloads/11-mobile.apk",
+        process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_ANDROID_URL ?? githubMobile,
       ios: process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_IOS_URL ?? null,
+      web: githubReleases,
     },
   });
 }

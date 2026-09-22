@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Update client — checagem de nova versão do sistema (mobile e desktop).
+ * Update client — checagem de nova versão do sistema (web, mobile e desktop).
  *
  * A versão instalada é rastreada no cliente pelo `versionCode` (int, incrementa
  * a cada deploy via scripts/version.js). Quando o servidor publica um versionCode
@@ -28,6 +28,7 @@ export interface UpdateDownloads {
   mobile: string | null;
   android: string | null;
   ios: string | null;
+  web: string | null;
 }
 
 export interface UpdateInfo {
@@ -147,16 +148,22 @@ export async function notifyNewVersion(
   void body;
 }
 
-/** URL de download para a plataforma (sem abrir). */
+/**
+ * URL de download para a plataforma.
+ * Web:GitHub releases | Desktop: installer | Mobile: APK/IPA
+ */
 export function getDownloadUrlForPlatform(
   downloads: UpdateDownloads,
   platform?: string,
 ): string | null {
-  return platform === "mobile-app"
-    ? (downloads.android ?? downloads.mobile)
-    : platform === "desktop-app"
-      ? downloads.desktop
-      : null;
+  if (platform === "mobile-app") {
+    return downloads.android ?? downloads.mobile;
+  }
+  if (platform === "desktop-app") {
+    return downloads.desktop;
+  }
+  // Web browsers (desktop-web, mobile-web): show GitHub releases or web download
+  return downloads.web ?? downloads.desktop ?? downloads.mobile ?? null;
 }
 
 /** Dispara o download da nova versão para a plataforma do usuário. */
@@ -168,4 +175,19 @@ export function openDownloadForPlatform(
   if (!url) return false;
   window.open(url, "_blank", "noopener,noreferrer");
   return true;
+}
+
+/**
+ * Ações de update por plataforma:
+ * - web: refresh da página (web apps auto-atualizam)
+ * - desktop-app / mobile-app: download do instalador
+ */
+export function getUpdateAction(platform?: string): {
+  label: string;
+  action: "refresh" | "download";
+} {
+  if (platform === "desktop-app" || platform === "mobile-app") {
+    return { label: "Baixar nova versão", action: "download" };
+  }
+  return { label: "Atualizar agora", action: "refresh" };
 }
