@@ -1,0 +1,42 @@
+{
+  "name": "fn-dash",
+  "version": "1.0.0",
+  "description": "FN Dash — Multi-module PWA financial dashboard system (loja de roupas, despesas de casa, agência digital, loterias) with Supabase, Purple Noir design, Shopee/TikTok integration, offline-first, Capacitor builds",
+  "triggers": [
+    "fn dash",
+    "criar modulo",
+    "criar tela",
+    "dashboard financeiro",
+    "loja de roupas",
+    "despesas de casa",
+    "agencia digital",
+    "loterias",
+    "exportar pdf",
+    "exportar excel",
+    "exportar csv",
+    "integrar shopee",
+    "integrar tiktok",
+    "modo offline",
+    "capacitor",
+    "purple noir",
+    "design system",
+    "supabase",
+    "fila de mutacao",
+    "comprovante",
+    "notificacao",
+    "alerta"
+  ],
+  "framework": "vanilla-js",
+  "language": "javascript",
+  "dependencies": ["supabase", "chart.js", "xlsx", "jspdf", "qrcodejs"],
+  "author": "FinDash",
+  "references": [
+    "references/design-system.md",
+    "references/data-model.md",
+    "references/modules.md",
+    "references/integrations.md",
+    "references/offline-and-mobile.md",
+    "references/data-io.md",
+    "references/ux-and-notifications.md"
+  ]
+}
