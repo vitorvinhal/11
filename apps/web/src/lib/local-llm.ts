@@ -70,6 +70,28 @@ export function saveZenConfig(cfg: CompatConfig): void {
   );
 }
 
+/** Modelos listados do endpoint Zen (para o seletor do chat). */
+export function getZenModels(): string[] {
+  try {
+    const raw = window.localStorage.getItem("eleven_zen_models");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.map((m: unknown) => String(m)) : [];
+    }
+  } catch {
+    /* default */
+  }
+  return [];
+}
+
+export function saveZenModels(models: string[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    "eleven_zen_models",
+    JSON.stringify(models.filter(Boolean).slice(0, 100)),
+  );
+}
+
 export function hasZenConfig(): boolean {
   const c = getZenConfig();
   return !!c.baseUrl && !!c.model;

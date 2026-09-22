@@ -143,6 +143,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Ícones, manifest e favicon: sempre a versão NOVA (rede primeiro), sem
+  // ficar preso em cache — garante que favicon/ícone do app atualizem.
+  const isBrandAsset =
+    url.pathname.includes("favicon") ||
+    url.pathname.includes("manifest.json") ||
+    url.pathname.startsWith("/icon-") ||
+    url.pathname === "/icon.svg" ||
+    url.pathname.includes("apple-touch-icon");
+
+  if (isBrandAsset) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => putInCache(request, res))
+        .catch(() =>
+          caches
+            .match(request)
+            .then((cached) => cached || Response.error())
+        )
+    );
+    return;
+  }
+
   // Assets estáticos: cache-first + atualiza em background (consistente com o HTML novo).
   event.respondWith(
     caches.match(request).then((cached) => {

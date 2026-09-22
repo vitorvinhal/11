@@ -84,7 +84,7 @@ function simulatePhysics(
   const ns = nodes.map((n) => ({ ...n }));
   const cx = w / 2,
     cy = h / 2;
-  const clusterRadius = Math.min(w, h) * 0.28;
+  const clusterRadius = Math.min(w, h) * (w < 700 ? 0.4 : 0.36);
   const clusterCenters: Record<number, { x: number; y: number }> = {};
   for (let i = 1; i <= 5; i++) {
     const angle = (i - 1) * ((Math.PI * 2) / 5) - Math.PI / 2;
@@ -118,8 +118,8 @@ function simulatePhysics(
       const dx = t.x - s.x,
         dy = t.y - s.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const ideal = 80 + e.strength * 40;
-      const f = (dist - ideal) * 0.008 * alpha * e.strength;
+      const ideal = 120 + e.strength * 55;
+      const f = (dist - ideal) * 0.006 * alpha * e.strength;
       s.vx += (dx / dist) * f;
       s.vy += (dy / dist) * f;
       t.vx -= (dx / dist) * f;
@@ -144,9 +144,9 @@ function simulatePhysics(
         const dx = b.x - a.x,
           dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const minDist = (a.radius + b.radius) * 3;
+        const minDist = (a.radius + b.radius) * 4.2;
         if (dist < minDist) {
-          const f = (minDist - dist) * 0.08 * alpha;
+          const f = (minDist - dist) * 0.06 * alpha;
           a.vx -= (dx / dist) * f;
           a.vy -= (dy / dist) * f;
           b.vx += (dx / dist) * f;
@@ -565,7 +565,7 @@ export function NeuralGraph() {
           ctx.stroke();
         }
 
-        if (r > 5 || isHovered || isSelected || isCore) {
+        if (r > 6 || isHovered || isSelected || isCore) {
           const label =
             n.label.length > 16 ? n.label.slice(0, 14) + "..." : n.label;
           ctx.fillStyle = isCore
@@ -575,7 +575,7 @@ export function NeuralGraph() {
               : WHITE_DIM;
           ctx.font = `${isCore ? "bold 13px" : isHovered ? "11px" : "10px"} ${FONT}`;
           ctx.textAlign = "center";
-          ctx.fillText(label, n.x, n.y + r + 14);
+          ctx.fillText(label, n.x, n.y + r + 16);
         }
       }
 

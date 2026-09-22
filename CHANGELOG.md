@@ -20,6 +20,18 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.14.2-alpha — 2026-09-22
+
+- Rede Neural: melhor distribuição (espaçamento, clusters afastados, labels legíveis)
+- Downloads movidos para a página /about; landing com link 'Sobre o 11'
+- Página Sobre redesenha como doc de produto: visão geral, como funciona, dia a dia, baixar apps, atualizações e evolução
+
+## v2.14.1-alpha — 2026-09-22
+
+- Favicon/ícones: cache-bust + SW network-first para brand assets (favicon, manifest, ícones)
+- Zen: seletor de modelo no chat (lista do endpoint, sem digitar)
+- Sessões: marca 'Dispositivo atual' por plataforma/navegador + confirmação ao encerrar
+
 ## v2.14.0-alpha — 2026-09-22
 
 - Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)

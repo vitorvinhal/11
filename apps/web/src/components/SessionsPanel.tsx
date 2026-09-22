@@ -24,8 +24,10 @@ import {
   Users,
   Timer,
   TrendingUp,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { getPlatform } from "../lib/platform";
 
 interface DeviceSession {
   id: string;
@@ -361,11 +363,21 @@ function SessionCard({
           >
             <Activity className="h-3 w-3" />
           </button>
-          {!isCurrent && (
+          {isCurrent ? (
+            <span
+              className="grid h-7 w-7 place-items-center rounded-lg text-emerald-400/60"
+              title="Dispositivo atual — use este para acessar o sistema"
+            >
+              <Lock className="h-3.5 w-3.5" />
+            </span>
+          ) : (
             <button
-              onClick={() => onRevoke(session.id)}
+              onClick={() => {
+                if (window.confirm("Encerrar esta sessão?"))
+                  onRevoke(session.id);
+              }}
               className="rounded-lg p-1.5 text-white/20 hover:bg-red-500/10 hover:text-red-400 transition"
-              title="Revogar"
+              title="Encerrar sessão"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -577,14 +589,28 @@ export default function SessionsPanel() {
   };
 
   const currentSessionId = useMemo(() => {
-    const current = sessions.find(
+    if (typeof window === "undefined") return null;
+    const platform = getPlatform();
+    const browser = (navigator.userAgent.split(" ").pop() ?? "").toLowerCase();
+    // Sessão do dispositivo atual: mesma plataforma + navegador + ativa há < 5 min.
+    const recent = sessions.find(
       (s) =>
-        s.app_name === "web" &&
-        s.platform === "desktop-web" &&
+        s.platform === platform &&
+        s.browser &&
+        s.browser.toLowerCase() === browser &&
         s.last_active &&
-        Date.now() - new Date(s.last_active).getTime() < 120000,
+        Date.now() - new Date(s.last_active).getTime() < 5 * 60 * 1000,
     );
-    return current?.id ?? null;
+    if (recent) return recent.id;
+    // Fallback: última sessão ativa da plataforma atual.
+    const lastByPlatform = sessions
+      .filter((s) => s.platform === platform)
+      .sort(
+        (a, b) =>
+          new Date(b.last_active).getTime() - new Date(a.last_active).getTime(),
+      )[0];
+    if (lastByPlatform) return lastByPlatform.id;
+    return null;
   }, [sessions]);
 
   return (

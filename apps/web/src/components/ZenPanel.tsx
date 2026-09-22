@@ -13,6 +13,7 @@ import {
 import {
   getZenConfig,
   saveZenConfig,
+  saveZenModels,
   chatOpenAICompat,
   listOpenAIModels,
 } from "../lib/local-llm";
@@ -68,6 +69,7 @@ export default function ZenPanel() {
     });
     if (r.ok) {
       setModels(r.models);
+      saveZenModels(r.models);
       setListMsg(
         r.models.length
           ? `${r.models.length} modelos encontrados`

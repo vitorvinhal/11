@@ -31,6 +31,7 @@ import { onAgentEvent, type AgentJobResumeEvent } from "../lib/agent-bus";
 import {
   getOllamaConfig,
   getZenConfig,
+  getZenModels,
   saveZenConfig,
   chatOpenAICompat,
   type CompatConfig,
@@ -1029,19 +1030,27 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
             </DropdownMenu.Root>
 
             {provider === "zen" && (
-              <input
-                value={zenModel}
-                onChange={(e) => {
-                  setZenModel(e.target.value);
-                  saveZenConfig({
-                    ...getZenConfig(),
-                    model: e.target.value.trim(),
-                  });
-                }}
-                placeholder="modelo (ex: big, mimo)"
-                title="Modelo da API Zen / OpenAI"
-                className="w-32 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-[11px] text-text-primary outline-none placeholder:text-text-dim/40 focus:border-primary/40 transition"
-              />
+              <div className="relative">
+                <input
+                  list="zen-model-list"
+                  value={zenModel}
+                  onChange={(e) => {
+                    setZenModel(e.target.value);
+                    saveZenConfig({
+                      ...getZenConfig(),
+                      model: e.target.value.trim(),
+                    });
+                  }}
+                  placeholder="selecione o modelo"
+                  title="Modelo da API Zen / OpenAI"
+                  className="w-40 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-[11px] text-text-primary outline-none placeholder:text-text-dim/40 focus:border-primary/40 transition"
+                />
+                <datalist id="zen-model-list">
+                  {getZenModels().map((m) => (
+                    <option key={m} value={m} />
+                  ))}
+                </datalist>
+              </div>
             )}
 
             <button
