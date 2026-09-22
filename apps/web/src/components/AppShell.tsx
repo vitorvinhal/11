@@ -243,7 +243,7 @@ export function AppShell({
               </div>
             )}
             {activeNav === "neural" && (
-              <div className="mx-auto max-w-2xl pt-8">
+              <div className="h-full min-h-[420px]">
                 <NeuralGraph />
               </div>
             )}

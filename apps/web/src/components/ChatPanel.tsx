@@ -31,6 +31,7 @@ import { onAgentEvent, type AgentJobResumeEvent } from "../lib/agent-bus";
 import {
   getOllamaConfig,
   getZenConfig,
+  saveZenConfig,
   chatOpenAICompat,
   type CompatConfig,
 } from "../lib/local-llm";
@@ -100,6 +101,13 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
   const [interim, setInterim] = useState("");
   const [offline, setOffline] = useState(false);
   const [provider, setProvider] = useState("9router/Arcenal");
+  const [zenModel, setZenModel] = useState<string>(() => {
+    try {
+      return getZenConfig().model;
+    } catch {
+      return "";
+    }
+  });
   const profile: RoutingProfile = "cost";
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1019,6 +1027,22 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
+
+            {provider === "zen" && (
+              <input
+                value={zenModel}
+                onChange={(e) => {
+                  setZenModel(e.target.value);
+                  saveZenConfig({
+                    ...getZenConfig(),
+                    model: e.target.value.trim(),
+                  });
+                }}
+                placeholder="modelo (ex: big, mimo)"
+                title="Modelo da API Zen / OpenAI"
+                className="w-32 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-[11px] text-text-primary outline-none placeholder:text-text-dim/40 focus:border-primary/40 transition"
+              />
+            )}
 
             <button
               type="button"

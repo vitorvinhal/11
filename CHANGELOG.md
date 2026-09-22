@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.14.0-alpha — 2026-09-22
+
+- Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)
+- Favicon e ícones novos do 11 (web, Windows, Android) gerados a partir do SVG oficial
+- Zen/OpenAI pré-configurado (default Ollama local) + troca rápida de modelo no campo de mensagem
+
 ## v2.13.0-alpha — 2026-09-22
 
 - Baixar o app na tela inicial (Desktop, Android, iOS) + changelog limpo e estruturado (ReleaseNotes/DownloadCards)

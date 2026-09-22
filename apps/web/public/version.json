@@ -1,14 +1,11 @@
 {
-  "version": "2.13.0-alpha",
-  "versionCode": 24,
+  "version": "2.14.0-alpha",
+  "versionCode": 25,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Baixar o app na tela inicial (Desktop, Android, iOS) + changelog limpo e estruturado (ReleaseNotes/DownloadCards)",
-    "Aba Atualizações redesenhada: status em dia, botão 'Baixar para este aparelho', Recarregar o app",
-    "Ollama: download de modelos no painel (pull + modelos populares 1-clique) — funciona client-side",
-    "Zen/OpenAI: botão 'Listar modelos' mostra modelo do seu endpoint (ex.: big, mimo)",
-    "Login persistente: Supabase session com armazenamento explícito + loading nunca travado",
-    "9Router: limite total de 60s + timeout por tentativa; provider '9Router (local)' no chat; mensagem de erro amigável"
+    "Fix aba Rede Neural (canvas sem altura — agora ocupa a tela)",
+    "Favicon e ícones novos do 11 (web, Windows, Android) gerados a partir do SVG oficial",
+    "Zen/OpenAI pré-configurado (default Ollama local) + troca rápida de modelo no campo de mensagem"
   ]
 }

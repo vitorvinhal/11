@@ -8,6 +8,7 @@ import {
   CheckCircle,
   XCircle,
   List,
+  Bot,
 } from "lucide-react";
 import {
   getZenConfig,
@@ -15,6 +16,8 @@ import {
   chatOpenAICompat,
   listOpenAIModels,
 } from "../lib/local-llm";
+
+const DEFAULT_BASE = "http://localhost:11434";
 
 export default function ZenPanel() {
   const [baseUrl, setBaseUrl] = useState("");
@@ -31,22 +34,35 @@ export default function ZenPanel() {
 
   useEffect(() => {
     const cfg = getZenConfig();
-    setBaseUrl(cfg.baseUrl);
+    setBaseUrl(cfg.baseUrl || DEFAULT_BASE);
     setModel(cfg.model);
     setApiKey(cfg.apiKey ?? "");
   }, []);
 
   const handleSave = () => {
-    saveZenConfig({ baseUrl: baseUrl.trim(), model: model.trim(), apiKey });
+    saveZenConfig({
+      baseUrl: baseUrl.trim() || DEFAULT_BASE,
+      model: model.trim(),
+      apiKey,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  };
+
+  const useOllama = () => {
+    setBaseUrl(DEFAULT_BASE);
+    saveZenConfig({ baseUrl: DEFAULT_BASE, model: model.trim(), apiKey });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+    void handleList();
   };
 
   const handleList = async () => {
     setListing(true);
     setListMsg(null);
+    const base = baseUrl.trim() || DEFAULT_BASE;
     const r = await listOpenAIModels({
-      baseUrl: baseUrl.trim(),
+      baseUrl: base,
       model: model.trim() || "x",
       apiKey: apiKey || undefined,
     });
@@ -70,7 +86,7 @@ export default function ZenPanel() {
     try {
       const r = await chatOpenAICompat(
         {
-          baseUrl: baseUrl.trim(),
+          baseUrl: baseUrl.trim() || DEFAULT_BASE,
           model: model.trim(),
           apiKey: apiKey || undefined,
         },
@@ -136,6 +152,13 @@ export default function ZenPanel() {
             <Save className="h-3 w-3" />
           )}
           {saved ? "Salvo ✓" : "Salvar"}
+        </button>
+        <button
+          onClick={useOllama}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.05] px-3 py-1.5 text-[11px] text-white/60 hover:bg-white/[0.1] transition"
+        >
+          <Bot className="h-3 w-3" />
+          Usar Ollama local
         </button>
         <button
           onClick={handleTest}
