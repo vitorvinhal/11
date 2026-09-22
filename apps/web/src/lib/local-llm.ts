@@ -100,6 +100,83 @@ export async function testOllama(endpoint: string): Promise<{
   }
 }
 
+/** Modelos populares de 1-clique no Ollama. */
+export const OLLAMA_POPULAR = [
+  "llama3.2",
+  "qwen2.5:7b",
+  "gemma3:4b",
+  "mistral",
+  "phi4-mini",
+];
+
+/** Baixa um modelo no Ollama (POST /api/pull), acompanhando até concluir. */
+export async function pullOllama(
+  endpoint: string,
+  name: string,
+): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  try {
+    const res = await fetch(`${endpoint}/api/pull`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, stream: true }),
+      signal: AbortSignal.timeout(1_800_000), // downloads grandes podem demorar
+    });
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+    // Stream de progresso — lê até a última linha type:"success".
+    if (!res.body) return { ok: false, error: "resposta sem body" };
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    for (;;) {
+      const { done: finished, value } = await reader.read();
+      if (finished) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split("\n")) {
+        try {
+          const j = JSON.parse(line);
+          if (j.status === "success" || j.error) {
+            done = true;
+            if (j.error) return { ok: false, error: j.error };
+          }
+        } catch {
+          /* linha parcial */
+        }
+      }
+      if (done) break;
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+}
+
+/** Lista modelos de um endpoint OpenAI-compatível (GET /v1/models). */
+export async function listOpenAIModels(cfg: CompatConfig): Promise<{
+  ok: boolean;
+  models: string[];
+  error?: string;
+}> {
+  try {
+    const headers: Record<string, string> = {};
+    if (cfg.apiKey) headers["authorization"] = `Bearer ${cfg.apiKey}`;
+    const res = await fetch(`${baseForChat(cfg.baseUrl)}/models`, {
+      headers,
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return { ok: false, models: [], error: `HTTP ${res.status}` };
+    const data = await res.json();
+    const models = (data?.data ?? [])
+      .map((m: any) => m.id)
+      .filter((x: unknown): x is string => typeof x === "string");
+    return { ok: true, models };
+  } catch (err) {
+    return { ok: false, models: [], error: (err as Error).message };
+  }
+}
+
 // ── Chat OpenAI-compatível (stream) ─────────────────────────────────────────
 
 function baseForChat(baseUrl: string): string {
@@ -119,57 +196,72 @@ export async function chatOpenAICompat(
   };
   if (cfg.apiKey) headers["authorization"] = `Bearer ${cfg.apiKey}`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model: cfg.model,
-      stream: true,
-      messages,
-    }),
-    signal: opts.signal,
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(
-      `HTTP ${res.status}${body ? ` — ${body.slice(0, 200)}` : ""}`,
-    );
+  // Timeout de segurança (120s) combinado com signal externo se houver.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120_000);
+  if (opts.signal) {
+    if (opts.signal.aborted) controller.abort();
+    else
+      opts.signal.addEventListener("abort", () => controller.abort(), {
+        once: true,
+      });
   }
 
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error("resposta sem body");
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: cfg.model,
+        stream: true,
+        messages,
+      }),
+      signal: controller.signal,
+    });
 
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let acc = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let idx: number;
-    while ((idx = buffer.indexOf("\n\n")) !== -1) {
-      const raw = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-      const line = raw.split("\n").find((l) => l.startsWith("data: "));
-      if (!line) continue;
-      const payload = line.slice(6).trim();
-      if (payload === "[DONE]") continue;
-      try {
-        const chunk = JSON.parse(payload);
-        const delta =
-          chunk.choices?.[0]?.delta?.content ??
-          chunk.choices?.[0]?.message?.content ??
-          "";
-        if (typeof delta === "string" && delta) {
-          acc += delta;
-          opts.onDelta?.(delta);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(
+        `HTTP ${res.status}${body ? ` — ${body.slice(0, 200)}` : ""}`,
+      );
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("resposta sem body");
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let acc = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = buffer.indexOf("\n\n")) !== -1) {
+        const raw = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        const line = raw.split("\n").find((l) => l.startsWith("data: "));
+        if (!line) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") continue;
+        try {
+          const chunk = JSON.parse(payload);
+          const delta =
+            chunk.choices?.[0]?.delta?.content ??
+            chunk.choices?.[0]?.message?.content ??
+            "";
+          if (typeof delta === "string" && delta) {
+            acc += delta;
+            opts.onDelta?.(delta);
+          }
+        } catch {
+          /* chunk não-JSON */
         }
-      } catch {
-        /* chunk não-JSON */
       }
     }
-  }
 
-  return { text: acc, model: cfg.model };
+    return { text: acc, model: cfg.model };
+  } finally {
+    clearTimeout(timer);
+  }
 }

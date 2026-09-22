@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, KeyRound, Save, CheckCircle, XCircle } from "lucide-react";
+import {
+  Loader2,
+  KeyRound,
+  Save,
+  CheckCircle,
+  XCircle,
+  List,
+} from "lucide-react";
 import {
   getZenConfig,
   saveZenConfig,
   chatOpenAICompat,
+  listOpenAIModels,
 } from "../lib/local-llm";
 
 export default function ZenPanel() {
@@ -17,6 +25,9 @@ export default function ZenPanel() {
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
+  const [models, setModels] = useState<string[]>([]);
+  const [listing, setListing] = useState(false);
+  const [listMsg, setListMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const cfg = getZenConfig();
@@ -29,6 +40,28 @@ export default function ZenPanel() {
     saveZenConfig({ baseUrl: baseUrl.trim(), model: model.trim(), apiKey });
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  };
+
+  const handleList = async () => {
+    setListing(true);
+    setListMsg(null);
+    const r = await listOpenAIModels({
+      baseUrl: baseUrl.trim(),
+      model: model.trim() || "x",
+      apiKey: apiKey || undefined,
+    });
+    if (r.ok) {
+      setModels(r.models);
+      setListMsg(
+        r.models.length
+          ? `${r.models.length} modelos encontrados`
+          : "Nenhum modelo retornado",
+      );
+      if (r.models.length === 1 && !model) setModel(r.models[0]);
+    } else {
+      setListMsg(`Erro: ${r.error ?? "falha ao listar"}`);
+    }
+    setListing(false);
   };
 
   const handleTest = async () => {
@@ -116,7 +149,54 @@ export default function ZenPanel() {
           )}
           Testar conexão
         </button>
+        <button
+          onClick={handleList}
+          disabled={listing || !baseUrl.trim()}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-[11px] text-text-muted hover:bg-white/[0.1] transition disabled:opacity-40"
+        >
+          {listing ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <List className="h-3 w-3" />
+          )}
+          Listar modelos
+        </button>
       </div>
+
+      {listMsg && (
+        <p
+          className={`text-[10px] ${listMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}
+        >
+          {listMsg}
+        </p>
+      )}
+
+      {models.length > 0 && (
+        <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+          {models.map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                setModel(m);
+                saveZenConfig({
+                  baseUrl: baseUrl.trim(),
+                  model: m.trim(),
+                  apiKey: apiKey || undefined,
+                });
+                setSaved(true);
+                setTimeout(() => setSaved(false), 1500);
+              }}
+              className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition ${
+                model === m
+                  ? "bg-primary/20 text-primary"
+                  : "text-white/60 hover:bg-white/[0.06] hover:text-white/85"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
 
       {testMsg && (
         <p

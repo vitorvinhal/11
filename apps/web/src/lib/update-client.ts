@@ -25,6 +25,7 @@ export function markVersionNotified(code: number): void {
 
 export interface UpdateDownloads {
   desktop: string | null;
+  msi: string | null;
   mobile: string | null;
   android: string | null;
   ios: string | null;

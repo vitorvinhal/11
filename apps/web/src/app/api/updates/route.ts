@@ -43,6 +43,9 @@ export async function GET() {
       desktop:
         process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_URL ??
         "/downloads/11-desktop-setup.exe",
+      msi:
+        process.env.NEXT_PUBLIC_DOWNLOAD_DESKTOP_MSI_URL ??
+        "/downloads/11-desktop_x64_en-US.msi",
       mobile:
         process.env.NEXT_PUBLIC_DOWNLOAD_MOBILE_URL ??
         "/downloads/11-mobile.apk",

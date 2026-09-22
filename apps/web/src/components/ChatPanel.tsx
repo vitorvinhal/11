@@ -226,6 +226,16 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       let cfg: CompatConfig;
       if (provider === "ollama") {
         cfg = getOllamaConfig();
+      } else if (provider === "9router-local") {
+        const endpoint =
+          (typeof localStorage !== "undefined"
+            ? localStorage.getItem("eleven_9r_endpoint")
+            : null) ?? "http://localhost:20128";
+        const model =
+          (typeof localStorage !== "undefined"
+            ? localStorage.getItem("eleven_9r_model")
+            : null) ?? "Arcenal";
+        cfg = { baseUrl: endpoint, apiKey: undefined, model };
       } else {
         cfg = getZenConfig();
         if (!cfg.baseUrl || !cfg.model) {
@@ -488,6 +498,9 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
       messages,
       sessionId,
       user?.id,
+      getAccessToken,
+      provider,
+      sendLocalCompat,
       setMessages,
       attached,
       webSearch,
@@ -984,6 +997,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
                     { id: "gemini", label: "Google Gemini" },
                     { id: "anthropic", label: "Anthropic Claude" },
                     { id: "ollama", label: "Ollama (local)" },
+                    { id: "9router-local", label: "9Router (local)" },
                     { id: "zen", label: "Zen / API OpenAI" },
                   ].map((p) => (
                     <DropdownMenu.Item

@@ -6,7 +6,6 @@ import {
   UserRound,
   Shield,
   Cpu,
-  Check,
   X,
   Palette,
   Lock,
@@ -29,10 +28,11 @@ import {
   checkForUpdate,
   acknowledgeVersion,
   openDownloadForPlatform,
-  getDownloadUrlForPlatform,
   type UpdateInfo,
 } from "../lib/update-client";
 import { getPlatform } from "../lib/platform";
+import { ReleaseNotes } from "./ReleaseNotes";
+import { DownloadCards } from "./DownloadCards";
 import { SkillsPanel } from "./SkillsPanel";
 import { PluginsPanel } from "./PluginsPanel";
 import ConnectorsPanel from "./ConnectorsPanel";
@@ -495,17 +495,10 @@ export function ProfileDialog({
                         <Zap className="h-3.5 w-3.5 text-primary" />
                         Changelog
                       </h3>
-                      <ul className="space-y-1.5">
-                        {changelog.map((item) => (
-                          <li
-                            key={item}
-                            className="flex items-start gap-2 text-[11px] text-text-dim"
-                          >
-                            <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <ReleaseNotes
+                        version={appVersion}
+                        changelog={changelog}
+                      />
                     </div>
                   )}
 
@@ -998,35 +991,42 @@ export function ProfileDialog({
 
               {/* ── UPDATES ── */}
               {settingsTab === "updates" && (
-                <div className="space-y-5 max-w-lg">
+                <div className="space-y-5">
                   <div>
                     <h2 className="text-lg font-semibold text-text-primary">
                       Atualizações
                     </h2>
                     <p className="text-[11px] text-text-dim mt-0.5">
-                      A cada nova versão você é notificado aqui. Fique em dia
-                      com o sistema (mobile e desktop).
+                      A cada nova versão você é notificado aqui. Baixe o app da
+                      sua plataforma e veja o que mudou.
                     </p>
                   </div>
 
+                  {/* Status da versão */}
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[11px] text-text-dim">
-                          Versão atual
+                          Versão instalada
                         </p>
                         <p className="text-sm font-semibold text-text-primary">
-                          {appVersion || "—"}
+                          {appVersion || "—"}{" "}
+                          {upd && !updHasNew && (
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-normal text-emerald-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                              em dia
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-[11px] text-text-dim">
-                          {updHasNew ? "Nova versão" : "Sistema atualizado"}
+                          {updHasNew ? "Atualização disponível" : "Conectado"}
                         </p>
                         {upd && (
                           <p className="text-[11px] font-medium text-primary">
                             {updHasNew
-                              ? `v${upd.version} disponível`
+                              ? `v${upd.version} pronto para baixar`
                               : `v${upd.version}`}
                           </p>
                         )}
@@ -1045,7 +1045,7 @@ export function ProfileDialog({
                         )}
                         Buscar atualizações
                       </button>
-                      {updHasNew && upd && (
+                      {updHasNew && upd && upd.downloads && (
                         <button
                           onClick={() => {
                             const ok = openDownloadForPlatform(
@@ -1060,59 +1060,50 @@ export function ProfileDialog({
                           className="flex items-center gap-1.5 rounded-lg bg-primary/20 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/30 transition"
                         >
                           <Download className="h-3.5 w-3.5" />
-                          Baixar nova versão
+                          Baixar para este aparelho
                         </button>
                       )}
-                      {updHasNew && upd && (
-                        <button
-                          onClick={() => {
-                            acknowledgeVersion(upd.versionCode);
-                            window.location.reload();
-                          }}
-                          className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] transition"
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" />
-                          Recarregar o app
-                        </button>
-                      )}
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] px-3 py-2 text-xs text-text-muted hover:bg-white/[0.1] transition"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Recarregar o app
+                      </button>
                     </div>
-                    {updHasNew && (
-                      <p className="mt-2 text-[10px] text-text-dim/60">
-                        O download abre o instalador/app da nova versão na
-                        plataforma atual.
-                      </p>
-                    )}
                   </div>
 
-                  {upd && upd.changelog.length > 0 && (
+                  {/* Downloads por plataforma */}
+                  {upd ? (
                     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                      <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-dim">
-                        Novidades
+                      <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-text-dim">
+                        Baixar o app
                       </p>
-                      <ul className="space-y-1.5">
-                        {upd.changelog.map((item, i) => (
-                          <li
-                            key={i}
-                            className="flex gap-2 text-[12px] text-text-muted"
-                          >
-                            <Check className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-400" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <DownloadCards downloads={upd.downloads} />
+                      <p className="mt-3 text-[10px] leading-snug text-white/35">
+                        iOS: gerado no GitHub Actions (IPA sem assinatura) —
+                        instale no seu iPhone com Sideloadly/AltStore usando sua
+                        Apple ID (revalidar a cada 7 dias).
+                      </p>
                     </div>
+                  ) : (
+                    <p className="text-[10px] text-white/35">
+                      Clique em “Buscar atualizações” para carregar.
+                    </p>
                   )}
 
-                  {upd &&
-                    !getDownloadUrlForPlatform(
-                      upd.downloads,
-                      getPlatform(),
-                    ) && (
-                      <p className="text-[10px] text-text-dim/50">
-                        Sem link de download configurado para esta plataforma
-                        (defina NEXT_PUBLIC_DOWNLOAD_*_URL no deploy).
+                  {/* Novidades */}
+                  {upd && (
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                      <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-text-dim">
+                        Novidades
                       </p>
-                    )}
+                      <ReleaseNotes
+                        version={upd.version}
+                        changelog={upd.changelog}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

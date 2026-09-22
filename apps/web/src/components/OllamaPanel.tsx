@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Wifi, WifiOff, RefreshCw } from "lucide-react";
-import { testOllama } from "../lib/local-llm";
+import { Loader2, Wifi, WifiOff, RefreshCw, Download } from "lucide-react";
+import { testOllama, pullOllama, OLLAMA_POPULAR } from "../lib/local-llm";
 
 interface OllamaModel {
   name: string;
@@ -16,6 +16,9 @@ export default function OllamaPanel() {
   const [selectedModel, setSelectedModel] = useState("");
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pullName, setPullName] = useState("");
+  const [pulling, setPulling] = useState(false);
+  const [pullMsg, setPullMsg] = useState<string | null>(null);
 
   const testConnection = async () => {
     setTesting(true);
@@ -35,6 +38,22 @@ export default function OllamaPanel() {
     const data = await testOllama(endpoint);
     if (data.models) setModels(data.models);
     setLoading(false);
+  };
+
+  const doPull = async (name: string) => {
+    setPullName(name);
+    setPulling(true);
+    setPullMsg(null);
+    const r = await pullOllama(endpoint, name);
+    if (r.ok) {
+      setSelectedModel(name);
+      setPullMsg(`Modelo "${name}" baixado ✓`);
+      await refreshModels();
+    } else {
+      setPullMsg(`Erro: ${r.error ?? "falha ao baixar"}`);
+    }
+    setPulling(false);
+    setPullName("");
   };
 
   useEffect(() => {
@@ -95,6 +114,53 @@ export default function OllamaPanel() {
           </span>
         </div>
         <div className="flex-1" />
+        {connected && (
+          <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+            <p className="mb-2 text-[11px] text-white/40">
+              Baixar modelo (pull)
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={pullName}
+                onChange={(e) => setPullName(e.target.value)}
+                placeholder="ex: llama3.2"
+                className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs text-white/80 outline-none focus:border-primary/40"
+              />
+              <button
+                onClick={() => pullName.trim() && void doPull(pullName.trim())}
+                disabled={pulling || !pullName.trim()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary/20 px-3 py-1.5 text-[11px] text-primary hover:bg-primary/30 transition disabled:opacity-50"
+              >
+                {pulling ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Download className="h-3 w-3" />
+                )}
+                {pulling ? "Baixando…" : "Baixar"}
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {OLLAMA_POPULAR.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => void doPull(m)}
+                  disabled={pulling}
+                  className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-white/50 hover:bg-white/[0.12] hover:text-white/80 transition disabled:opacity-40"
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            {pullMsg && (
+              <p
+                className={`mt-2 text-[10px] ${pullMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}
+              >
+                {pullMsg}
+              </p>
+            )}
+          </div>
+        )}
+
         {models.length > 0 && (
           <button
             onClick={refreshModels}

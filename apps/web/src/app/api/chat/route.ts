@@ -107,7 +107,10 @@ export async function POST(req: Request) {
     }
     if (!reply || reply.trim().length < 2)
       return NextResponse.json(
-        { error: "Nenhum provedor respondeu" },
+        {
+          error:
+            "Nenhum provedor respondeu. Dica: use um provider local (Ollama ou Zen) no seletor, ou configure um endpoint 9Router (túnel) no deploy.",
+        },
         { status: 502 },
       );
 
@@ -428,8 +431,9 @@ async function routeByProvider(
         const out = await attempt();
         if (out) return out;
       }
-      // Último recurso: Ollama local (offline fallback).
-      return routeOllama(messages);
+      // Ollama/Zen agora são client-side (a nuvem não alcança localhost) —
+      // sem fallback server-side aqui.
+      return null;
     }
   }
 }
@@ -470,8 +474,11 @@ async function route9Router(
   ].filter((ep): ep is string => !!ep && ep.startsWith("http"));
 
   let lastErr = "";
+  const deadline = Date.now() + 60_000; // limite total da rota 9router
   for (const modelId of models) {
     for (const endpoint of candidates) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
       try {
         const base = endpoint.endsWith("/v1") ? endpoint : `${endpoint}/v1`;
         const res = await fetch(`${base}/chat/completions`, {
@@ -481,10 +488,11 @@ async function route9Router(
             ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
           },
           body: JSON.stringify({ model: modelId, stream: false, messages }),
-          signal: AbortSignal.timeout(90_000),
+          signal: AbortSignal.timeout(Math.min(20_000, remaining)),
         });
         if (!res.ok) {
           lastErr = `[${modelId} @ ${endpoint}] HTTP ${res.status}`;
+          console.warn("[9router]", lastErr);
           // Qualquer erro HTTP → tenta próximo combo (endpoint/modelo).
           continue;
         }
@@ -493,8 +501,10 @@ async function route9Router(
         if (content) return content;
       } catch (err) {
         lastErr = `[${modelId} @ ${endpoint}] ${(err as Error).message}`;
+        console.warn("[9router]", lastErr);
       }
     }
+    if (deadline - Date.now() <= 0) break;
   }
   console.error("[9router] falha em todos os combos/endpoints:", lastErr);
   return null;
@@ -577,31 +587,6 @@ async function routeAnthropic(
         ?.map((b: any) => (b.type === "text" ? b.text : ""))
         .join("") || null
     );
-  } catch {
-    return null;
-  }
-}
-
-async function routeOllama(
-  messages: ChatMsg[],
-  model?: string,
-): Promise<string | null> {
-  const endpoint = process.env["OLLAMA_ENDPOINT"] ?? "http://localhost:11434";
-  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2";
-  try {
-    const res = await fetch(`${endpoint}/api/chat`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        model: modelId,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(120_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as any;
-    return data?.message?.content ?? null;
   } catch {
     return null;
   }

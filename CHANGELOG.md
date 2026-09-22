@@ -20,6 +20,15 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutilizável + owne
 
 ---
 
+## v2.13.0-alpha — 2026-09-22
+
+- Baixar o app na tela inicial (Desktop, Android, iOS) + changelog limpo e estruturado (ReleaseNotes/DownloadCards)
+- Aba Atualizações redesenhada: status em dia, botão 'Baixar para este aparelho', Recarregar o app
+- Ollama: download de modelos no painel (pull + modelos populares 1-clique) — funciona client-side
+- Zen/OpenAI: botão 'Listar modelos' mostra modelo do seu endpoint (ex.: big, mimo)
+- Login persistente: Supabase session com armazenamento explícito + loading nunca travado
+- 9Router: limite total de 60s + timeout por tentativa; provider '9Router (local)' no chat; mensagem de erro amigável
+
 ## v2.12.5-alpha — 2026-09-22
 
 - SW: navegações network-first + cache v2 (corrige tela branca / update travado nos apps); registro propaga SW novo com reload único

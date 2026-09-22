@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthGate } from "../components/AuthGate";
 import { AppShell } from "../components/AppShell";
 import { VersionBadge } from "../components/VersionBadge";
+import { DownloadCards } from "../components/DownloadCards";
+import { ReleaseNotes } from "../components/ReleaseNotes";
+import type { UpdateInfo } from "../lib/update-client";
 import { useAuth } from "../lib/auth";
 import {
   Sparkles,
@@ -42,6 +45,14 @@ const FEATURES = [
 export default function Home() {
   const { user } = useAuth();
   const [started, setStarted] = useState(false);
+  const [upd, setUpd] = useState<UpdateInfo | null>(null);
+
+  useEffect(() => {
+    fetch("/api/updates", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setUpd(d))
+      .catch(() => {});
+  }, []);
 
   if (user) {
     return <AppShell initialNav="conversas" />;
@@ -114,6 +125,35 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Baixe o app */}
+        {upd && (
+          <section className="mx-auto mb-12 w-full max-w-3xl px-6">
+            <div className="rounded-2xl border border-white/[0.07] bg-black/40 p-5 backdrop-blur-md md:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-white">
+                  Baixe o app 11
+                </h2>
+                <span className="rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-mono text-primary">
+                  v{upd.version}
+                </span>
+              </div>
+              <DownloadCards downloads={upd.downloads} big />
+              {upd.changelog.length > 0 && (
+                <div className="mt-5 border-t border-white/[0.06] pt-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    Novidades desta versão
+                  </p>
+                  <ReleaseNotes
+                    version={upd.version}
+                    changelog={upd.changelog}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <footer className="flex flex-col items-center gap-2 px-6 pb-6 text-center text-[11px] text-white/60">
           <span>Isolamento por usuário · RLS · Supabase Auth</span>
           <VersionBadge />

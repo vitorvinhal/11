@@ -20,6 +20,17 @@ function getSupabase(): SupabaseClient {
   cachedClient = createClient(
     url || "https://placeholder.supabase.co",
     key || "placeholder",
+    {
+      auth: {
+        // Persistência explícita: mantém login entre sessões do app/WebView.
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storage:
+          typeof window !== "undefined" ? window.localStorage : undefined,
+        storageKey: "eleven-sb-auth",
+      },
+    },
   );
   return cachedClient;
 }
@@ -99,9 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
       const u = data.session?.user ?? null;
       setUser(u);
+      setLoading(false); // nunca deixar UI presa em "Autenticando…"
+      if (error) console.warn("[auth] getSession:", error?.message);
       if (data.session?.access_token) {
         void registerDeviceSession(data.session.access_token);
       }
