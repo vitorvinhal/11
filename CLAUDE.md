@@ -1,5 +1,18 @@
 # Master Engineering Directive — 11
 
+## Documentation Map (read first)
+
+Business and process docs live under `docs/` — see `docs/README.md` for the full map:
+
+- `docs/prd/PRD.md` — business vision (no tech).
+- `docs/adr/` — architecture decisions (create only on real impact).
+- `docs/specs/` — line-by-line spec **before** developing a feature.
+- `docs/plan/PLAN.md` — living checklist of the current patch.
+- `docs/agents/` — roles + developer→tester→reviewer loop.
+- `AGENTS.md` — operational context (Codex/CLI) + Brain deploy monopoly.
+
+Never develop a feature without a spec. Gate = `pnpm -r lint && pnpm -r build && pnpm -r test` (`pnpm -r typecheck` is broken at root — do not use).
+
 ## Identity & Context
 
 This is the **11** monorepo — an autonomous AI assistant platform. Architecture: Next.js 13 web app, Tauri desktop, Capacitor mobile, shared `@11/ia` package.
@@ -54,7 +67,6 @@ All nav items in `Sidebar.tsx` must specify `platforms` array. Default: all plat
 | artifacts  | Artifacts       | desktop-app, desktop-web             |
 | canvas     | Canvas          | desktop-app, desktop-web             |
 | code       | Code & Terminal | desktop-app, desktop-web, mobile-app |
-| coder      | Eleven Coder    | desktop-app, desktop-web, mobile-app |
 | neural     | Rede Neural     | desktop-app, desktop-web             |
 | memoria    | Memória         | desktop-app, desktop-web, mobile-web |
 | finops     | FinOps          | desktop-app, desktop-web             |

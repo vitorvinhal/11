@@ -15,7 +15,7 @@ async function seedPersonas() {
     // Multi-tenant: sem perfis fixos. O sistema cria conta sob demanda
     // via AuthGate + RPC `select_one`. Este seed é intencionalmente NO-OP
     // para garantir que nenhum Vitor/Giovana/Renata pré-criado existe.
-    console.log("Seed de personas desativado — sistema 100% multi-tenant.");
+    console.warn("Seed de personas desativado — sistema 100% multi-tenant.");
 }
 if (require.main === module) {
     seedPersonas();

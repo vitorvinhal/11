@@ -565,25 +565,46 @@ async function routeOllama(
   messages: ChatMsg[],
   model?: string,
 ): Promise<string | null> {
-  const endpoint = process.env.OLLAMA_ENDPOINT ?? "http://localhost:11434";
-  const modelId = model ?? process.env["OLLAMA_MODEL"] ?? "qwen3:4b";
+  const endpoint = (
+    process.env.OLLAMA_ENDPOINT ?? "http://localhost:11434"
+  ).replace(/\/+$/, "");
+  // Paridade com client (local-llm.getOllamaConfig): default llama3.2:3b.
+  const requested = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2:3b";
+  const candidates = [requested];
+  // Modelo default ausente → tenta o primeiro instalado (evita 404).
   try {
-    const res = await fetch(`${endpoint}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: modelId,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(120_000),
+    const tags = await fetch(`${endpoint}/api/tags`, {
+      signal: AbortSignal.timeout(5_000),
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as any;
-    return data?.message?.content ?? null;
+    if (tags.ok) {
+      const data = (await tags.json()) as { models?: Array<{ name?: string }> };
+      const first = data?.models?.[0]?.name;
+      if (first && first !== requested) candidates.push(first);
+    }
   } catch {
-    return null;
+    /* segue só com o modelo pedido */
   }
+  for (const modelId of candidates) {
+    try {
+      const res = await fetch(`${endpoint}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: modelId,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (!res.ok) continue;
+      const data = (await res.json()) as any;
+      const content = data?.message?.content;
+      if (content) return content;
+    } catch {
+      /* tenta próximo candidato */
+    }
+  }
+  return null;
 }
 
 async function routeAnthropic(

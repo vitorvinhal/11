@@ -6,14 +6,12 @@
  * sem imports de bundler — o bridge roda diretamente no WebView.
  */
 
-export const DEVICE_BRIDGE_SOURCE = `(function () {
+export const DEVICE_BRIDGE_SOURCE = `(function () {\n  function waitCapacitor(cb){if(window.Capacitor && window.Capacitor.Plugins){cb();}else{setTimeout(()=>waitCapacitor(cb),50);}}\n  waitCapacitor(()=>{
   if (window.__DEVICE_BRIDGE_LOADED__) return;
   window.__DEVICE_BRIDGE_LOADED__ = true;
 
-  function cap(name) {
-    return window.Capacitor && window.Capacitor.Plugins
-      ? window.Capacitor.Plugins[name]
-      : null;
+    // Wait for Capacitor runtime loaded before using plugins\n  function waitCapacitor(cb){if(window.Capacitor && window.Capacitor.Plugins){cb();}else{setTimeout(()=>waitCapacitor(cb),50);}}\n  waitCapacitor(() => {
+    function cap(name) {
   }
 
   function fail(msg) {

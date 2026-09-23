@@ -130,6 +130,15 @@ export async function GET(req: Request) {
     return platformError(guard.platform, ["mobile-app", "mobile-web"]);
   }
 
+  try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   return NextResponse.json({
     platform: "mobile",
     wsUrl: PC_AGENT_WS,

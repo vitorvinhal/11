@@ -4,7 +4,6 @@ const config = {
   webDir: "www",
   server: {
     androidScheme: "https",
-    url: process.env.VITE_WEB_URL || "https://candlefish.vercel.app",
   },
   ios: {
     // Permissões usadas pelo DeviceBridge (câmera e fotos).

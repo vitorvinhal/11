@@ -1,11 +1,13 @@
-import { CodeSession, CreateCodeSessionDTO, ApproveSessionDTO } from '../types';
-import { executeCommand, ExecuteOptions } from './command-executor';
-import { generateSessionId } from './security';
+import { CodeSession, CreateCodeSessionDTO, ApproveSessionDTO } from "../types";
+import { generateSessionId } from "./security";
 
 // In-memory session store (use Redis/DB in production)
 const sessionStore = new Map<string, CodeSession>();
 
-export function createSession(data: CreateCodeSessionDTO, userId: string): CodeSession {
+export function createSession(
+  data: CreateCodeSessionDTO,
+  userId: string,
+): CodeSession {
   const session: CodeSession = {
     id: generateSessionId(),
     userId,
@@ -13,7 +15,7 @@ export function createSession(data: CreateCodeSessionDTO, userId: string): CodeS
     args: data.args || [],
     workingDir: data.workingDir,
     env: data.env,
-    status: 'pending',
+    status: "pending",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -27,10 +29,13 @@ export function getSession(id: string): CodeSession | undefined {
 }
 
 export function getUserSessions(userId: string): CodeSession[] {
-  return Array.from(sessionStore.values()).filter(s => s.userId === userId);
+  return Array.from(sessionStore.values()).filter((s) => s.userId === userId);
 }
 
-export function updateSession(id: string, updates: Partial<CodeSession>): CodeSession | undefined {
+export function updateSession(
+  id: string,
+  updates: Partial<CodeSession>,
+): CodeSession | undefined {
   const session = sessionStore.get(id);
   if (!session) return undefined;
 
@@ -51,12 +56,12 @@ export function deleteSession(id: string): boolean {
 export async function approveAndExecuteSession(
   id: string,
   approval: ApproveSessionDTO,
-  approverId: string
+  approverId: string,
 ): Promise<CodeSession | undefined> {
   const session = sessionStore.get(id);
   if (!session) return undefined;
 
-  if (session.status !== 'pending') {
+  if (session.status !== "pending") {
     throw new Error(`Session is not in pending state: ${session.status}`);
   }
 
@@ -65,7 +70,7 @@ export async function approveAndExecuteSession(
     approved: approval.approved,
     approvedBy: approverId,
     approvedAt: new Date().toISOString(),
-    status: approval.approved ? 'running' : 'rejected',
+    status: approval.approved ? "running" : "rejected",
   });
 
   if (!updated) return undefined;
@@ -74,8 +79,8 @@ export async function approveAndExecuteSession(
   if (approval.approved) {
     executeSessionAsync(id);
   } else {
-    updated.error = approval.reason || 'Rejected by user';
-    updated.status = 'rejected';
+    updated.error = approval.reason || "Rejected by user";
+    updated.status = "rejected";
     updated.completedAt = new Date().toISOString();
     sessionStore.set(id, updated);
   }
@@ -87,29 +92,30 @@ async function executeSessionAsync(id: string): Promise<void> {
   const session = sessionStore.get(id);
   if (!session) return;
 
+  const ORCA_URL = process.env.ORCA_URL || "http://localhost:4001";
   try {
-    const options: ExecuteOptions = {
-      command: session.command,
-      args: session.args,
-      workingDir: session.workingDir,
-      env: session.env,
-      timeout: 30000,
-      maxOutputSize: 1024 * 1024,
-    };
-
-    const result = await executeCommand(options);
-
+    const resp = await fetch(`${ORCA_URL}/orca/exec`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        command: session.command,
+        args: session.args,
+        cwd: session.workingDir,
+        env: session.env,
+      }),
+    });
+    const result = await resp.json();
     updateSession(id, {
       output: result.output,
       error: result.error,
       exitCode: result.exitCode,
-      status: result.success ? 'completed' : 'failed',
+      status: result.success ? "completed" : "failed",
       completedAt: new Date().toISOString(),
     });
   } catch (error) {
     updateSession(id, {
       error: (error as Error).message,
-      status: 'failed',
+      status: "failed",
       completedAt: new Date().toISOString(),
     });
   }
@@ -119,9 +125,9 @@ export function cancelSession(id: string): boolean {
   const session = sessionStore.get(id);
   if (!session) return false;
 
-  if (session.status === 'running' || session.status === 'pending') {
+  if (session.status === "running" || session.status === "pending") {
     updateSession(id, {
-      status: 'cancelled',
+      status: "cancelled",
       completedAt: new Date().toISOString(),
     });
     return true;
@@ -133,6 +139,8 @@ export function getAllSessions(): CodeSession[] {
   return Array.from(sessionStore.values());
 }
 
-export function getSessionsByStatus(status: CodeSession['status']): CodeSession[] {
-  return Array.from(sessionStore.values()).filter(s => s.status === status);
+export function getSessionsByStatus(
+  status: CodeSession["status"],
+): CodeSession[] {
+  return Array.from(sessionStore.values()).filter((s) => s.status === status);
 }

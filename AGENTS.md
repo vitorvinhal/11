@@ -2,6 +2,38 @@
 
 Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
 
+---
+
+## 🧠 AGENTE BRAIN — MONOPÓLIO DE DEPLOY E ORQUESTRAÇÃO
+
+- **Brain = planejamento, análise, orquestração e release.** O Brain NÃO edita código de `apps/` nem `packages/`; estes correções são dos Agentes Executores (1 a 4).
+- **Deploy exclusivo do Brain:** Agentes Executores estão PROIBIDOS de `git push origin main`, disparar builds de produção (Vercel/Railway) e criar tags de release. Apenas o Brain executa a FASE D (Release & Deploy), após validar `pnpm -r lint`, `pnpm -r build` e `pnpm -r test` 100% verdes.
+- **Relatórios padronizados:** todo relatório dos Agentes em `relatorios_agente/` termina com o bloco `<!-- BRAIN_SYNC_START -->` — ver `docs/AGENTE.md` seção 6 e `skills/preflight_and_reporting.md`.
+- **Zero Degradation de UI:** reduções de partículas do AstroSphere 3D, resolução de shaders ou `backdrop-filter` só via fallback dinâmico em runtime (hardware detection), nunca estático no CSS — ver `docs/AGENTE.md` seção 7.
+- **Gate de tipo:** `pnpm -r typecheck` é QUEBRADO na raiz. Usar `pnpm -r lint && pnpm -r build && pnpm -r test` (ou `tsc -p <pkg>/tsconfig.json` para pacote isolado).
+- **Política de Release por Patches (2026-09-23):** releases são CONSOLIDADOS — o usuário envia uma lista de problemas, o Brain junta tudo em um patch (ex.: `2.17.1`), orquestra os 4 agentes, só parte para o próximo patch quando TODAS as alterações estiverem feitas, gate verde e deploy da versão no ar. Micro-correções isoladas (`2.17.0 → 2.17.1` avulsas) SÓ em casos excepcionalmente pequenos. Objetivo atual: tirar o projeto do alpha para BETA rápido, ativando tudo que já existe no projeto; micro-updates ficam para fases mais avançadas de desenvolvimento.
+
+---
+
+## 🗂️ ESTRUTURA DE DOCUMENTAÇÃO (PADRÃO PRD/ADR/SPEC/PLAN)
+
+Mapa completo em `docs/README.md`. Resumo do fluxo obrigatório:
+
+```
+docs/prd/PRD.md          → porquê do produto (negócio, sem técnico)
+docs/adr/                → decisão arquitetural (só quando houver impacto real)
+docs/specs/              → especificação linha-a-linha ANTES de desenvolver feature
+docs/plan/PLAN.md        → checklist vivo do patch (feito/andamento/pendência)
+docs/agents/             → papéis + loop developer→tester→reviewer
+relatorios_agente/       → relatório pré/pós de cada tarefa (BRAIN_SYNC)
+```
+
+- **Loop:** DEVELOPER (Agente 1-4) → TESTER (gate+smoke) → REVIEWER (Brain) → [não aprovou = devolve pro DEVELOPER] → usuário/PO + FASE D.
+- **Sem spec não desenvolve.** Chame o agente sempre pelo nome no prompt (evita alucinação de papéis).
+- Multi-ferramenta: `AGENTS.md` (Codex/CLI), `CLAUDE.md` (Claude Code), `.github/` (Copilot) — mesmo conteúdo, locais diferentes, sem conflito.
+
+---
+
 ## REGRA DE RESILIÊNCIA E RECUPERAÇÃO AUTOMÁTICA DE SESSÃO
 
 ### Criação de rastro em tempo real (`.task_state.md`)
@@ -79,9 +111,10 @@ Toda alteração de código que modifique funcionalidade, corrija bug ou adicion
 
 ```
 [pós-alteração]
-  → rodar pnpm version:patch (ou minor/major conforme impacto)
-  → adicionar entrada no CHANGELOG.md
-  → commit incluindo: version bump + changelog + código alterado
+→ rodar pnpm version:patch (ou minor/major conforme impacto)
+→ adicionar entrada no CHANGELOG.md
+→ commit incluindo: version bump + changelog + código alterado
+
 ```
 
 **NUNCA** fazer commit de alterações funcionais sem bump de versão e atualização do CHANGELOG.
@@ -114,7 +147,17 @@ Toda alteração de código que modifique funcionalidade, corrija bug ou adicion
 - Testes = jest multi-projeto (`jest.config.js`): `apps/web`, `packages/ia`, `packages/shared`. `pnpm --filter @11/web test` roda só o web. api/cli/desktop/mobile não têm testes.
 - Dev servers: `pnpm dev:web` (porta 3000), `pnpm dev:api` (NestJS legacy, `dist/main.js` precisa build antes), `pnpm dev:mobile` (Expo), `pnpm dev:desktop` (Tauri/Vite).
 - **Router unificado do desktop**: `apps/desktop/src/server.ts` sobe os dois serviços — Router9 (`ROUTER9_PORT`, default 3002) e PC Agent (`PC_AGENT_PORT`, default 3001). Para rodar só como servidor: `pnpm --filter @11/desktop router`.
-- Smoke test: `node scripts/smoke-test.mjs [baseURL]` (default `http://localhost:3099`). Testa endpoints críticos incl. `/api/health/router`, terminal auth, PWA manifest.
+- Smoke test: `node scripts/smoke-test.mjs [baseURL]` (default `http://localhost:3099`). Testa endpoints críticos incl. `/api/health/router`, terminal auth, PWA manifest. Rotas com `requireUser()` sem sessão retornam **401** (pós unify-auth), não 400.
+
+## Modo local vs nuvem (IA)
+
+- **Como ligar o modo local:** no seletor de provider do chat escolha **Ollama** (ou **Zen**). O app então usa `sendLocalCompat` → `apps/web/src/lib/local-llm.ts` e chama `http://localhost:11434` **direto do device** (client-side). A nuvem (Vercel) não alcança `localhost`.
+- **Como voltar para a nuvem:** provider **9router** / **Gemini** / **Anthropic** / default — o fluxo vai para `POST /api/chat` no servidor (server-side).
+- **Config do Ollama:** `OllamaPanel` grava `localStorage.ollama_config` (`endpoint` + `selectedModel`). Default de modelo: **`llama3.2:3b`** (client e server `routeOllama` — paridade). Override server: env `OLLAMA_MODEL` / `OLLAMA_ENDPOINT`.
+- **Fallback de modelo inexistente:** se o modelo não existir (404), client consulta `GET /api/tags` e repete com o primeiro instalado; server monta lista de candidatos igual. Lista 1-clique: `OLLAMA_POPULAR` em `local-llm.ts`.
+- **Ollama desligado:** não crasha a UI — `sendLocalCompat` captura o erro e mostra no assistant: `(Provedor local indisponível: … Ollama rodando? Para site https, use OLLAMA_ORIGINS="*" no seu PC.)`. Painel mostra "Desconectado" + link `ollama.com`.
+- **Sem 9Router (`ROUTER9_ENDPOINT`):** `/api/health/router` continua existindo — sem auth → **401**; autenticado → `{ ok: false|true, service: "router" }` (reporta estado; **não remover o healthcheck**). `/api/chat` com provider 9router falha com 502/mensagem de dica — comportamento esperado offline.
+- **Sessões em memória:** chaves por `userId` (ex.: terminal `sessionKey(userId, sessionId)` em `terminal/exec`) — nunca só id do cliente.
 
 ## Env e runtime gotchas
 
@@ -241,3 +284,195 @@ permanente, como as da seção acima).
   se sim, linkar o teste de regressão correspondente.
 - Nunca abrir PR com `pnpm typecheck` como evidência de tipo (está
   quebrado, ver seção Testing) — usar `build` do pacote afetado.
+
+# Master Engineering Directive — 11
+
+## Identity & Context
+
+This is the **11** monorepo — an autonomous AI assistant platform. Architecture: Next.js 13 web app, Tauri desktop, Capacitor mobile, shared `@11/ia` package.
+
+**Stack:** TypeScript, Supabase (auth + DB + storage), 9Router AI gateway, Vercel deployment.
+
+## Core Principles
+
+1. **Resilience over perfection** — Every feature must degrade gracefully. Never show blank screens. Always show meaningful error states.
+2. **Platform parity** — Features must work on desktop-web, desktop-app, mobile-web, mobile-app unless explicitly excluded.
+3. **Auth first** — Every API route must check authentication. No exceptions.
+4. **Best-effort persistence** — Chat, memories, usage tracking are best-effort. Never block user interaction for background writes.
+5. **No silent failures** — Every catch block must log. Every error boundary must show fallback UI.
+
+## Code Conventions
+
+- **Components:** `'use client'` at top. Functional components only. Lazy-load heavy deps (xterm, force-graph).
+- **API routes:** `export const runtime = "nodejs"; export const dynamic = "force-dynamic";`
+- **Styling:** Tailwind + inline styles for OLED theme (`#05050A` background, glassmorphism, `#00e5ff` accent).
+- **State:** `useState` + `useRef` for mutable state. `useCallback` for stable references.
+- **Error handling:** `try/catch` with `console.error`. Never swallow silently.
+- **No comments** in code unless explaining non-obvious logic.
+
+## Architecture
+
+```
+
+apps/web/ → Next.js 13 (App Router)
+apps/desktop/ → Tauri (Rust + WebView)
+apps/mobile/ → Capacitor (iOS/Android)
+packages/ia/ → Shared AI logic (router, skills, plugins, metrics)
+packages/api/ → Shared API types
+packages/shared/ → Shared utilities
+infra/ → Supabase migrations, deploy scripts
+
+```
+
+## Platform Detection
+
+```typescript
+// apps/web/src/lib/platform.ts
+type Platform = "desktop-app" | "mobile-app" | "desktop-web" | "mobile-web";
+// Detection: __TAURI__ → desktop-app, Capacitor → mobile-app, UA regex → mobile-web, else → desktop-web
+```
+
+## Navigation Items
+
+All nav items in `Sidebar.tsx` must specify `platforms` array. Default: all platforms.
+
+| ID         | Label           | Platforms                            |
+| ---------- | --------------- | ------------------------------------ |
+| conversas  | Conversas       | desktop-app, desktop-web, mobile-web |
+| projetos   | Projects        | desktop-app, desktop-web             |
+| artifacts  | Artifacts       | desktop-app, desktop-web             |
+| canvas     | Canvas          | desktop-app, desktop-web             |
+| code       | Code & Terminal | desktop-app, desktop-web, mobile-app |
+| coder      | Eleven Coder    | desktop-app, desktop-web, mobile-app |
+| neural     | Rede Neural     | desktop-app, desktop-web             |
+| memoria    | Memória         | desktop-app, desktop-web, mobile-web |
+| finops     | FinOps          | desktop-app, desktop-web             |
+| skills     | Skills          | desktop-app, desktop-web             |
+| connectors | Connectors      | desktop-app, desktop-web             |
+| media      | Mídia           | desktop-app, desktop-web, mobile-web |
+| agent      | Agente PC       | desktop-app                          |
+| mobile     | Agente Mobile   | mobile-app, mobile-web               |
+| plugins    | Plugins         | desktop-app, desktop-web             |
+
+## API Routes Pattern
+
+Every route must:
+
+1. Import `loadRootEnv()` and call it at top
+2. Export `runtime = "nodejs"` and `dynamic = "force-dynamic"`
+3. Use `requireUser(req)` for auth (returns `{ userId }` or null)
+4. Return proper HTTP status codes (401, 400, 404, 500, 502)
+5. Use `createClient(SUPABASE_URL, SERVICE_ROLE_KEY)` for admin operations
+
+## Terminal Architecture
+
+- **REST+SSE** pattern (NOT socket.io)
+- `POST /api/terminal/exec` → spawns process, returns SSE stream
+- `GET /api/terminal/exec?sessionId=X` → returns current cwd
+- xterm.js with FitAddon, WebLinksAddon
+- Command whitelist in `terminal-validate.ts`
+
+## Chat Provider Cascade
+
+```
+9Router (tunnel → endpoint → Arcenal → fallbacks) → Gemini → Anthropic → Ollama (local)
+```
+
+Each provider is a function: `route9Router()`, `routeGemini()`, `routeAnthropic()`, `routeOllama()`.
+
+## Settings Structure (7 tabs)
+
+1. **Geral** — Avatar, name, instructions, changelog, backup
+2. **Conta** — Email, password, delete account
+3. **Aparência** — Theme, fonts, motion
+4. **IA Provider** — 9Router keys + Ollama config
+5. **Sessões** — Active devices, revoke
+6. **Privacidade** — Incognito, export, capabilities
+7. **Customização** — Skills | Connectors | Plugins
+
+## Forbidden Patterns
+
+- ❌ `console.log` in production code (use `console.error` or `console.warn`)
+- ❌ `any` type without justification
+- ❌ Hardcoded secrets or API keys
+- ❌ Silent `catch {}` without logging
+- ❌ `Promise.all` where `Promise.allSettled` is more appropriate
+- ❌ Socket.io (use REST+SSE)
+- ❌ CSS-in-JS libraries (use Tailwind + inline)
+
+## Deploy Pipeline
+
+1. `git push` → triggers Vercel preview deploy
+2. Preview URL tested manually
+3. Merge to main → production deploy
+4. Post-deploy: smoke test chat, terminal, settings
+
+## Emergency Procedures
+
+- **Chat down:** Check ngrok tunnel, 9Router gateway, API keys
+- **Terminal down:** Check `/api/terminal/exec` endpoint, spawn permissions
+- **Auth down:** Check Supabase URL, anon key, service role key
+- **Vercel down:** Check build logs, environment variables, function limits
+
+# PROTOCOLO DE GOVERNANÇA, CONCORRÊNCIA E ARQUITETURA MULTI-AGENTE
+
+Este documento estabelece as regras rígidas que todos os agentes (terminais e instâncias) devem seguir obrigatoriamente para evitar conflitos de versão, sobreposição de código, estouro de contexto e perda de alterações.
+
+---
+
+## 1. Regra de Ouro (Isolamento de Escopo e Concorrência)
+
+- **Escopo Estrito:** Nunca altere arquivos fora do escopo ou da função atribuída à sua instância específica.
+- **Checagem de Dependência:** Verifique se a etapa ou versão anterior da qual sua tarefa depende foi devidamente finalizada e validada antes de iniciar.
+
+---
+
+## 2. Gestão de Contexto e Economia de Memória
+
+- **Leitura Enxuta:** Não carregue históricos de chat longos ou arquivos desnecessários. Leia apenas as regras deste arquivo, o escopo do seu módulo e o relatório imediato da versão anterior (ex: `agent-v[N-1]-report.md`).
+- **Respeito ao Arquivo de Resumo:** Se houver um arquivo `docs/reports/archive-summary.md`, consulte-o apenas se precisar de contexto histórico profundo.
+
+---
+
+## 3. Rotina Obrigatória de Relatório (`.md`)
+
+Antes e depois de qualquer alteração no código, você deve criar ou atualizar o seu arquivo de rastreabilidade na pasta de relatórios (`docs/reports/agent-[ID]-report.md`). O arquivo deve seguir **exatamente** esta estrutura:
+
+```markdown
+# RELATÓRIO DE EXECUÇÃO DE TAREFA - [ID_DO_AGENTE / VERSÃO]
+
+## 1. Metadados da Tarefa
+
+- **ID do Agente / Terminal:** [Ex: Agent-1, Agent-Llama, Agent-QuickFix]
+- **Data e Hora de Início:** [YYYY-MM-DD HH:MM]
+- **Status Atual:** [EM ANDAMENTO / CONCLUÍDO / FALHA / BLOQUEADO]
+- **Escopo Atribuído:** [Ex: src/components/eleven-coder/]
+
+## 2. Diagnóstico Prévio (Pré-Execução)
+
+_(Preencha obrigatoriamente antes de modificar qualquer linha de código)_
+
+- **Arquivos Alvo:**
+  - `caminho/para/arquivo1.py`
+- **Estado de Dependência:** [Explique se depende de outra versão ou se há risco de conflito]
+- **Plano Detalhado de Implementação:**
+  1. [Passo técnico 1]
+  2. [Passo técnico 2]
+
+## 3. Log de Execução e Modificações
+
+_(Preencha durante ou logo após as alterações)_
+
+- **Modificações Realizadas:**
+  - `[ARQUIVO]`: [Descrição da alteração feita]
+- **Problemas Encontrados / Alertas de Conflito:**
+  - [Nenhum / Descrever divergências encontradas]
+
+## 4. Validação e Pós-Execução
+
+_(Preencha após salvar os códigos)_
+
+- **Status do Build / Testes:** [Passou / Falhou]
+- **Arquivos Liberados:** [Indique quais arquivos agora estão prontos para o próximo agente]
+- **Observações Finais para o Próximo Agente:** [Avisos importantes]
+```

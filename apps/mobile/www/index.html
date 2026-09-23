@@ -2,8 +2,176 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="refresh" content="0; url=https://11-five-umber.vercel.app" />
-  <title>11</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#030309" />
+  <title>11 — Mobile</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #030309;
+      color: #e2e8f0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    header {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid #1e293b;
+      background: rgba(3, 3, 9, .92);
+      position: sticky; top: 0; z-index: 5;
+    }
+    header h1 { font-size: 17px; letter-spacing: 2px; color: #7dd3fc; text-transform: uppercase; }
+    header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    main { flex: 1; overflow-y: auto; padding: 16px; }
+    .card {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+      padding: 16px; margin-bottom: 12px;
+    }
+    .card h2 { font-size: 14px; color: #7dd3fc; margin-bottom: 8px; letter-spacing: .5px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
+    .row span:first-child { color: #94a3b8; }
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .ok { background: #052e16; color: #4ade80; }
+    .err { background: #450a0a; color: #f87171; }
+    .warn { background: #451a03; color: #fbbf24; }
+    ul { list-style: none; margin-top: 4px; }
+    ul li { padding: 6px 0; border-bottom: 1px dashed #1e293b; font-size: 12.5px; color: #cbd5e1; }
+    ul li:last-child { border-bottom: none; }
+    .tool { display: flex; justify-content: space-between; gap: 8px; }
+    .tool code { color: #7dd3fc; font-size: 11.5px; }
+    .muted { color: #475569; font-size: 11.5px; margin-top: 10px; text-align: center; }
+    .btn {
+      width: 100%; padding: 13px; margin-top: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1); color: white;
+      border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    footer { padding: 12px 16px; border-top: 1px solid #1e293b; font-size: 11px; color: #475569; text-align: center; }
+  </style>
 </head>
-<body><p>Carregando…</p></body>
+<body>
+  <header>
+    <h1>11 — Mobile</h1>
+    <p id="subtitle">Inicializando shell local…</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Status do shell</h2>
+      <div class="row"><span>Capacitor runtime</span><span id="cap" class="badge warn">verificando…</span></div>
+      <div class="row"><span>Service Worker</span><span id="sw" class="badge warn">verificando…</span></div>
+      <div class="row"><span>Conexão (backend)</span><span id="net" class="badge warn">verificando…</span></div>
+      <div class="row"><span>Device Bridge</span><span id="bridge" class="badge warn">verificando…</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Ferramentas nativas disponíveis</h2>
+      <ul id="tools"><li class="muted">Carregando…</li></ul>
+    </div>
+
+    <div class="card" id="offlineCard" hidden>
+      <h2>Modo offline</h2>
+      <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5">
+        A interface local está empacotada no app e funciona sem internet.
+        Dados dinâmicos (agente, jobs, APIs) exigem conexão — quando a rede voltar,
+        toque no botão abaixo para reconectar.
+      </p>
+      <button class="btn" id="reconnect">Tentar reconectar</button>
+    </div>
+  </main>
+  <footer>v2.16.3-alpha · shell offline-first</footer>
+
+  <script>
+  (function () {
+    "use strict";
+    var API_BASE = window.ELEVEN_API_BASE || null; /* definido em tempo de runtime se necessário */
+    var state = { online: navigator.onLine, cap: false, sw: false, tools: [] };
+
+    function $(id) { return document.getElementById(id); }
+
+    function setId(id, text, cls) {
+      var el = $(id);
+      el.textContent = text;
+      el.className = "badge " + cls;
+    }
+
+    function setBtnDisabled(disabled) {
+      $("reconnect").disabled = disabled;
+    }
+
+    function updateUI() {
+      setBtnDisabled(state.online);
+      if (state.online) $("offlineCard").hidden = true;
+      else $("offlineCard").hidden = false;
+    }
+
+    function checkBackend() {
+      var url = API_BASE;
+      if (!url) {
+        /* offline-first sem backend configurado: usa rota relativa para testar online */
+        url = location.href.startsWith("http") ? location.origin : null;
+      }
+      if (!url) { setId("net", "local", "ok"); handleBackend(true); return; }
+      fetch("/api/health/all", { method: "GET", headers: { Accept: "application/json" } })
+        .then(function (r) { handleBackend(r.ok); })
+        .catch(function () { handleBackend(false); });
+    }
+
+    function handleBackend(ok) {
+      if (ok) setId("net", "online", "ok");
+      else { setId("net", "offline", "err"); state.online = false; }
+      updateUI();
+    }
+
+    function checkCapacitor() {
+      var has = !!(window.Capacitor && window.Capacitor.Plugins);
+      state.cap = has;
+      setId("cap", has ? "OK" : "indisponível", has ? "ok" : "err");
+      if (has) loadTools();
+    }
+
+    function loadTools() {
+      var db = window.DeviceBridge;
+      if (!db || typeof db.listTools !== "function") {
+        setId("bridge", "não exposto", "warn");
+        $("tools").innerHTML = '<li class="muted">device-bridge não injetado; listagem indisponível.</li>';
+        return;
+      }
+      setId("bridge", "OK", "ok");
+      var tools = db.listTools ? db.listTools() : [];
+      state.tools = tools;
+      var html = "";
+      tools.forEach(function (t) {
+        html += '<li class="tool"><code>' + t + "</code></li>";
+      });
+      $("tools").innerHTML = html || '<li class="muted">Nenhuma tool local.</li>';
+    }
+
+    function registerSW() {
+      if (!("serviceWorker" in navigator)) { setId("sw", "não suportado", "err"); return; }
+      navigator.serviceWorker
+        .register("sw.js")
+        .then(function () { state.sw = true; setId("sw", "OK", "ok"); })
+        .catch(function () { setId("sw", "falha", "err"); });
+    }
+
+    window.addEventListener("online", function () { state.online = true; updateUI(); checkBackend(); });
+    window.addEventListener("offline", function () { state.online = false; updateUI(); });
+    $("reconnect").addEventListener("click", function () { checkBackend(); });
+
+    /* Boot */
+    $("net").textContent = state.online ? "online" : "offline";
+    $("net").className = "badge " + (state.online ? "ok" : "err");
+    registerSW();
+    checkCapacitor();
+
+    /* Tenta backend; se falhar, mantém shell offline com erro tratado */
+    checkBackend();
+    setTimeout(function () {
+      $("subtitle").textContent = state.online ? "Online — shell local ativo" : "Offline — shell local ativo";
+    }, 400);
+  })();
+  </script>
+</body>
 </html>

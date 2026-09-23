@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { requireUser } from "../../../../lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,11 @@ async function checkService(
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const routerUrl = process.env.ROUTER9_ENDPOINT ?? "http://localhost:20128";
 
