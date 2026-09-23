@@ -20,6 +20,33 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.17.0-alpha — 2026-09-23
+
+Patch consolidado (alpha → BETA track) — branches AG1-4 + Brain integradas em `integration/agents-20260923`:
+
+### Security
+
+- Auth unificada `requireUser()` em todas as rotas `apps/web` (incl. GETs: `code/read`, `health/all`, `plugins|skills/discover`, `pc-agent`, `mobile-agent`); `verifyToken` legado removido (0 ocorrências)
+- Sandbox Orca: bind `127.0.0.1`, bloqueio de metacaracteres (`;`, `&&`, `|`, backtick…), `resolveCwd` com `path.relative` (`isUnderRoot`, nunca `startsWith`)
+- Workspace `pnpm-workspace.yaml` corrigido para `apps/*` + `packages/*`
+
+### Fix
+
+- Eleven Code: shims `process`/`Buffer`, CSS orca, bundle (`fix/orca-browser`)
+- IA local Ollama: default `llama3.2:3b` paridade client/server, fallback de modelo inexistente via `/api/tags`, smoke-test `/api/chat` espera 401
+- Sidebar tab `code` liberada para `mobile-app`
+
+### Docs / Tooling
+
+- Estrutura documental padrão PRD/ADR/SPEC/PLAN + `docs/agents/` (Brain + AG1-4) + loop dev→test→review
+- Curadoria MCPs: `.mcp.json` core + `docs/mcp/` (13 servers, guia por IDE, prompt Figma) — zero token commitado
+- Relatórios de tarefa com bloco `BRAIN_SYNC` (`relatorios_agente/`)
+
+### QA
+
+- Gate Brain: `pnpm -r lint` 0 erros · `pnpm -r test` 415/31 suites · `pnpm -r build` OK
+- Smoke: Orca 4001 exec+injection-block · PC Agent 3001 (21 tools) · Router9 3002 ok
+
 ## v2.16.4-alpha — 2026-09-23
 
 - Paridade default Ollama llama3.2:3b client/server; smoke-test auth 401; docs modo local vs nuvem

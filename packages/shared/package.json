@@ -1,6 +1,6 @@
 {
   "name": "@11/shared",
-  "version": "2.16.4-alpha",
+  "version": "2.17.0-alpha",
   "private": true,
   "main": "dist/index.js",
   "scripts": {
