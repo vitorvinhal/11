@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken, checkRateLimit } from "../../services/security";
+import { requireUser, checkRateLimit } from "../../services/security";
 import { getSession } from "../session-manager";
 import { loadRootEnv } from "../../../../lib/server-env";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await verifyToken(req);
+    const user = await requireUser(req);
     if (!user)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

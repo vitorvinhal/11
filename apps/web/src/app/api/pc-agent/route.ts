@@ -221,6 +221,11 @@ export async function GET(req: Request) {
   }
 
   try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
     const [router9Health, pcAgentHealth] = await Promise.allSettled([
       callRouter9("health", {}),
       callPCAgent("/health", "GET", {}),

@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { requireUser } from "../../../../lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,6 +137,11 @@ async function searchGitHub(query: string): Promise<DiscoverSkill[]> {
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireUser(req);
+    if (!auth) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q") ?? "";
     const source = searchParams.get("source") ?? "github";

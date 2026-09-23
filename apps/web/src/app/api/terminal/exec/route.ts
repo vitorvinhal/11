@@ -91,6 +91,7 @@ function resolveCwd(sessionId: string, requested?: string): string {
     requested.startsWith("/") || /^[A-Za-z]:/.test(requested)
       ? requested
       : `${base}\\${requested}`.replace(/[\\/]+/g, "\\");
+  if (!isUnderRoot(p, ALLOWED_ROOTS)) return base;
   return p;
 }
 
