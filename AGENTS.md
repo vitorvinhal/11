@@ -15,6 +15,25 @@ Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
 
 ---
 
+## 🗂️ ESTRUTURA DE DOCUMENTAÇÃO (PADRÃO PRD/ADR/SPEC/PLAN)
+
+Mapa completo em `docs/README.md`. Resumo do fluxo obrigatório:
+
+```
+docs/prd/PRD.md          → porquê do produto (negócio, sem técnico)
+docs/adr/                → decisão arquitetural (só quando houver impacto real)
+docs/specs/              → especificação linha-a-linha ANTES de desenvolver feature
+docs/plan/PLAN.md        → checklist vivo do patch (feito/andamento/pendência)
+docs/agents/             → papéis + loop developer→tester→reviewer
+relatorios_agente/       → relatório pré/pós de cada tarefa (BRAIN_SYNC)
+```
+
+- **Loop:** DEVELOPER (Agente 1-4) → TESTER (gate+smoke) → REVIEWER (Brain) → [não aprovou = devolve pro DEVELOPER] → usuário/PO + FASE D.
+- **Sem spec não desenvolve.** Chame o agente sempre pelo nome no prompt (evita alucinação de papéis).
+- Multi-ferramenta: `AGENTS.md` (Codex/CLI), `CLAUDE.md` (Claude Code), `.github/` (Copilot) — mesmo conteúdo, locais diferentes, sem conflito.
+
+---
+
 ## REGRA DE RESILIÊNCIA E RECUPERAÇÃO AUTOMÁTICA DE SESSÃO
 
 ### Criação de rastro em tempo real (`.task_state.md`)
