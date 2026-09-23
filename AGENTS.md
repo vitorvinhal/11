@@ -2,6 +2,18 @@
 
 Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
 
+---
+
+## 🧠 AGENTE BRAIN — MONOPÓLIO DE DEPLOY E ORQUESTRAÇÃO
+
+- **Brain = planejamento, análise, orquestração e release.** O Brain NÃO edita código de `apps/` nem `packages/`; estes correções são dos Agentes Executores (1 a 4).
+- **Deploy exclusivo do Brain:** Agentes Executores estão PROIBIDOS de `git push origin main`, disparar builds de produção (Vercel/Railway) e criar tags de release. Apenas o Brain executa a FASE D (Release & Deploy), após validar `pnpm -r lint`, `pnpm -r build` e `pnpm -r test` 100% verdes.
+- **Relatórios padronizados:** todo relatório dos Agentes em `relatorios_agente/` termina com o bloco `<!-- BRAIN_SYNC_START -->` — ver `docs/AGENTE.md` seção 6 e `skills/preflight_and_reporting.md`.
+- **Zero Degradation de UI:** reduções de partículas do AstroSphere 3D, resolução de shaders ou `backdrop-filter` só via fallback dinâmico em runtime (hardware detection), nunca estático no CSS — ver `docs/AGENTE.md` seção 7.
+- **Gate de tipo:** `pnpm -r typecheck` é QUEBRADO na raiz. Usar `pnpm -r lint && pnpm -r build && pnpm -r test` (ou `tsc -p <pkg>/tsconfig.json` para pacote isolado).
+
+---
+
 ## REGRA DE RESILIÊNCIA E RECUPERAÇÃO AUTOMÁTICA DE SESSÃO
 
 ### Criação de rastro em tempo real (`.task_state.md`)
