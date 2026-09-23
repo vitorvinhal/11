@@ -39,11 +39,11 @@ jobs:
           VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
 
       - name: CocoaPods
-        working-directory: apps/mobile/ios
+        working-directory: apps/mobile/ios/App
         run: pod install --repo-update
 
       - name: Build app (sem código)
-        working-directory: apps/mobile/ios
+        working-directory: apps/mobile/ios/App
         run: |
           xcodebuild \
             -workspace App.xcworkspace \
@@ -55,7 +55,7 @@ jobs:
             build
 
       - name: Empacotar IPA
-        working-directory: apps/mobile/ios
+        working-directory: apps/mobile/ios/App
         run: |
           APP_DIR=$(find build/Build/Products -name '*.app' -maxdepth 2 | head -1)
           mkdir -p Payload
@@ -67,5 +67,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 11-ios-unsigned-ipa
-          path: apps/mobile/ios/11-ios-unsigned.ipa
+          path: apps/mobile/ios/App/11-ios-unsigned.ipa
           retention-days: 14
