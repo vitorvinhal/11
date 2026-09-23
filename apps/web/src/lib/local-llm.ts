@@ -32,13 +32,13 @@ export function getOllamaConfig(): CompatConfig {
       return {
         baseUrl: cfg.endpoint || "http://localhost:11434",
         apiKey: undefined,
-        model: cfg.selectedModel || "llama3.2",
+        model: cfg.selectedModel || "llama3.2:3b",
       };
     }
   } catch {
     /* default */
   }
-  return { baseUrl: "http://localhost:11434", model: "llama3.2" };
+  return { baseUrl: "http://localhost:11434", model: "llama3.2:3b" };
 }
 
 export function getZenConfig(): CompatConfig {
@@ -124,7 +124,10 @@ export async function testOllama(endpoint: string): Promise<{
 
 /** Modelos populares de 1-clique no Ollama. */
 export const OLLAMA_POPULAR = [
-  "llama3.2",
+  "llama3.2:3b",
+  "llama3.1",
+  "llama3",
+  "llama2",
   "qwen2.5:7b",
   "gemma3:4b",
   "mistral",
@@ -208,6 +211,46 @@ function baseForChat(baseUrl: string): string {
 
 /** Envia conversa para qualquer endpoint OpenAI-compatível (Ollama, Zen, etc). */
 export async function chatOpenAICompat(
+  cfg: CompatConfig,
+  messages: Array<{ role: string; content: string }>,
+  opts: { onDelta?: (text: string) => void; signal?: AbortSignal } = {},
+): Promise<CompatResult> {
+  try {
+    return await streamChat(cfg, messages, opts);
+  } catch (err) {
+    // Modelo configurado não existe no endpoint → descobre o primeiro
+    // disponível (tags do Ollama) e repete uma vez. Evita 404 "model not
+    // found" quando o usuário ainda não baixou o modelo default.
+    if (isModelNotFound(err)) {
+      const fallback = await discoverFirstModel(cfg.baseUrl);
+      if (fallback && fallback !== cfg.model) {
+        return streamChat({ ...cfg, model: fallback }, messages, opts);
+      }
+    }
+    throw err;
+  }
+}
+
+function isModelNotFound(err: unknown): boolean {
+  const msg = (err as Error).message ?? "";
+  return /404|not.?found/i.test(msg) && /model/i.test(msg);
+}
+
+/** Retorna o primeiro modelo instalado no endpoint (Ollama /api/tags). */
+async function discoverFirstModel(baseUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/api/tags`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { models?: Array<{ name?: string }> };
+    return data?.models?.[0]?.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function streamChat(
   cfg: CompatConfig,
   messages: Array<{ role: string; content: string }>,
   opts: { onDelta?: (text: string) => void; signal?: AbortSignal } = {},

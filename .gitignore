@@ -52,6 +52,11 @@ vendor/.orca-src/
 
 # Workers/wasm do Monaco gerados no build
 apps/web/public/vs/
+apps/web/public/css.worker.js
+apps/web/public/editor.worker.js
+apps/web/public/html.worker.js
+apps/web/public/json.worker.js
+apps/web/public/ts.worker.js
 
 
 supabase/.temp/

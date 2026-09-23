@@ -1,0 +1,10 @@
+{
+  "name": "password-strength-meter",
+  "version": "1.0.0",
+  "description": "React component for password strength visualization",
+  "triggers": ["password strength", "senha validação", "medidor senha"],
+  "framework": "react",
+  "language": "typescript",
+  "dependencies": ["motion", "@carbon/icons-react"],
+  "author": "FinDash"
+}

@@ -1,9 +1,11 @@
 {
-  "version": "2.16.2-alpha",
-  "versionCode": 31,
+  "version": "2.16.3-alpha",
+  "versionCode": 32,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Unificação de auth: requireUser centralizado em auth-unify; remoção de authenticate/verifyToken; console.log→warn; remove item coder do CLAUDE.md"
+    "Modelo Ollama default corrigido para llama3.2:3b (antes llama3.2 sem tag causava 404 model not found)",
+    "Fallback automático de modelo inexistente: detecta 404, consulta /api/tags e repete com o primeiro modelo instalado (client-side em chatOpenAICompat e server-side em routeOllama)",
+    "Suporte Llama no Ollama: OLLAMA_POPULAR ampliado com llama3.2:3b, llama3.1, llama3 e llama2"
   ]
 }

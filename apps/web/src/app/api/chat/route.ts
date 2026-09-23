@@ -42,6 +42,7 @@ interface ChatBody {
   webSearch?: boolean;
   memory?: boolean;
   stream?: boolean;
+  ollamaModel?: string;
 }
 
 export async function POST(req: Request) {
@@ -86,26 +87,37 @@ export async function POST(req: Request) {
     const selected = provider ?? "astra";
     let reply = await routeByProvider(selected, withMemory, body);
     // Validação: resposta muito curta ou só caracteres especiais → tenta fallback
-    if (
-      !reply ||
-      reply.trim().length < 2 ||
-      /^[\s#*_`-]+$/.test(reply.trim())
-    ) {
+    const isLowQuality = (() => {
+      const trimmed = reply?.trim() ?? "";
+      if (trimmed.length < 10) return true;
+      if (/^[\s#*_`-]+$/.test(trimmed)) return true;
+      if (
+        /^(não|nao|ok|sim|obrigado|obrigada|entendi|claro|certeza|vou|faz|faco|faco)$/i.test(
+          trimmed,
+        )
+      )
+        return true;
+      return false;
+    })();
+    if (!reply || isLowQuality) {
       const fallbackProviders = ["9router", "gemini", "anthropic"];
       for (const fp of fallbackProviders) {
         if (fp === selected.toLowerCase()) continue;
         const fallback = await routeByProvider(fp, withMemory, body);
         if (
           fallback &&
-          fallback.trim().length >= 2 &&
-          !/^[\s#*_`-]+$/.test(fallback.trim())
+          fallback.trim().length >= 10 &&
+          !/^[\s#*_`-]+$/.test(fallback.trim()) &&
+          !/^(não|nao|ok|sim|obrigado|obrigada|entendi|claro|certeza|vou|faz|faco|faco)$/i.test(
+            fallback.trim(),
+          )
         ) {
           reply = fallback;
           break;
         }
       }
     }
-    if (!reply || reply.trim().length < 2)
+    if (!reply || reply.trim().length < 10)
       return NextResponse.json(
         {
           error:
@@ -397,6 +409,8 @@ async function routeByProvider(
   }
   const lower = provider.toLowerCase();
   switch (lower) {
+    case "ollama":
+      return routeOllama(messages, body.ollamaModel);
     case "9router":
       return route9Router(messages, undefined, body.nineRouterKey);
     case "gemini":
@@ -545,6 +559,51 @@ async function routeGemini(
   } catch {
     return null;
   }
+}
+
+async function routeOllama(
+  messages: ChatMsg[],
+  model?: string,
+): Promise<string | null> {
+  const endpoint = (
+    process.env.OLLAMA_ENDPOINT ?? "http://localhost:11434"
+  ).replace(/\/+$/, "");
+  const requested = model ?? process.env["OLLAMA_MODEL"] ?? "qwen3:4b";
+  const candidates = [requested];
+  // Modelo default ausente → tenta o primeiro instalado (evita 404).
+  try {
+    const tags = await fetch(`${endpoint}/api/tags`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (tags.ok) {
+      const data = (await tags.json()) as { models?: Array<{ name?: string }> };
+      const first = data?.models?.[0]?.name;
+      if (first && first !== requested) candidates.push(first);
+    }
+  } catch {
+    /* segue só com o modelo pedido */
+  }
+  for (const modelId of candidates) {
+    try {
+      const res = await fetch(`${endpoint}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: modelId,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (!res.ok) continue;
+      const data = (await res.json()) as any;
+      const content = data?.message?.content;
+      if (content) return content;
+    } catch {
+      /* tenta próximo candidato */
+    }
+  }
+  return null;
 }
 
 async function routeAnthropic(

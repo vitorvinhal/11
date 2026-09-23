@@ -1,0 +1,10 @@
+{
+  "name": "responsive-sidebar",
+  "version": "1.0.0",
+  "description": "Responsive sidebar navigation with bottom nav for mobile",
+  "triggers": ["sidebar", "menu lateral", "bottom nav", "navegação responsiva"],
+  "framework": "react",
+  "language": "typescript",
+  "dependencies": ["motion", "@carbon/icons-react"],
+  "author": "FinDash"
+}
