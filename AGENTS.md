@@ -1,4 +1,115 @@
-kl```
+# Responda sempre em português do Brasil.
+
+Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
+
+---
+
+## 🧠 AGENTE BRAIN — MONOPÓLIO DE DEPLOY E ORQUESTRAÇÃO
+
+- **Brain = planejamento, análise, orquestração e release.** O Brain NÃO edita código de `apps/` nem `packages/`; estes correções são dos Agentes Executores (1 a 4).
+- **Deploy exclusivo do Brain:** Agentes Executores estão PROIBIDOS de `git push origin main`, disparar builds de produção (Vercel/Railway) e criar tags de release. Apenas o Brain executa a FASE D (Release & Deploy), após validar `pnpm -r lint`, `pnpm -r build` e `pnpm -r test` 100% verdes.
+- **Relatórios padronizados:** todo relatório dos Agentes em `relatorios_agente/` termina com o bloco `<!-- BRAIN_SYNC_START -->` — ver `docs/AGENTE.md` seção 6 e `skills/preflight_and_reporting.md`.
+- **Zero Degradation de UI:** reduções de partículas do AstroSphere 3D, resolução de shaders ou `backdrop-filter` só via fallback dinâmico em runtime (hardware detection), nunca estático no CSS — ver `docs/AGENTE.md` seção 7.
+- **Gate de tipo:** `pnpm -r typecheck` é QUEBRADO na raiz. Usar `pnpm -r lint && pnpm -r build && pnpm -r test` (ou `tsc -p <pkg>/tsconfig.json` para pacote isolado).
+- **Política de Release por Patches (2026-09-23):** releases são CONSOLIDADOS — o usuário envia uma lista de problemas, o Brain junta tudo em um patch (ex.: `2.17.1`), orquestra os 4 agentes, só parte para o próximo patch quando TODAS as alterações estiverem feitas, gate verde e deploy da versão no ar. Micro-correções isoladas (`2.17.0 → 2.17.1` avulsas) SÓ em casos excepcionalmente pequenos. Objetivo atual: tirar o projeto do alpha para BETA rápido, ativando tudo que já existe no projeto; micro-updates ficam para fases mais avançadas de desenvolvimento.
+
+---
+
+## 🗂️ ESTRUTURA DE DOCUMENTAÇÃO (PADRÃO PRD/ADR/SPEC/PLAN)
+
+Mapa completo em `docs/README.md`. Resumo do fluxo obrigatório:
+
+```
+docs/prd/PRD.md          → porquê do produto (negócio, sem técnico)
+docs/adr/                → decisão arquitetural (só quando houver impacto real)
+docs/specs/              → especificação linha-a-linha ANTES de desenvolver feature
+docs/plan/PLAN.md        → checklist vivo do patch (feito/andamento/pendência)
+docs/agents/             → papéis + loop developer→tester→reviewer
+relatorios_agente/       → relatório pré/pós de cada tarefa (BRAIN_SYNC)
+```
+
+- **Loop:** DEVELOPER (Agente 1-4) → TESTER (gate+smoke) → REVIEWER (Brain) → [não aprovou = devolve pro DEVELOPER] → usuário/PO + FASE D.
+- **Sem spec não desenvolve.** Chame o agente sempre pelo nome no prompt (evita alucinação de papéis).
+- Multi-ferramenta: `AGENTS.md` (Codex/CLI), `CLAUDE.md` (Claude Code), `.github/` (Copilot) — mesmo conteúdo, locais diferentes, sem conflito.
+
+---
+
+## REGRA DE RESILIÊNCIA E RECUPERAÇÃO AUTOMÁTICA DE SESSÃO
+
+### Criação de rastro em tempo real (`.task_state.md`)
+
+- Objetivo Global: <descrição sucinta da tarefa ativa>
+- Concluído: <lista de passos já executados>
+- Em Andamento: <arquivo/função/módulo atual>
+- Próximo Passo: <ação exata a ser executada>
+
+### Micro‑checkpoints de Git
+
+- Commit local a cada sub‑etapa concluída que não quebre o build.
+
+### Protocolo de inicialização / recovery (toda nova sessão)
+
+1. Ler `.task_state.md` (se existir).
+2. Executar `git status` e `git diff`.
+3. Executar `git log -n 3 --oneline`.
+4. Apresentar resumo de 3 linhas ao usuário e pedir confirmação para prosseguir.
+
+### Regra de recuperação de crash
+
+- Antes de qualquer comando ou edição, manter `.task_state.md` atualizado com:
+  - Objetivo Atual: <resumo>
+  - Concluído: <lista>
+  - Em Andamento: <arquivo/função>
+  - Próximo Passo: <ação pendente>
+
+---
+
+# PROTOCOLO DE PLANEJAMENTO, AUDITORIA E SYSTEM PROMPT DO AGENTE
+
+Protocolo oficial de referência: `docs/AGENTE.md`. System Prompt carregado: `agent/system_prompt.md`. Regras: `agent/rules.md`.
+
+## Regra absoluta do fluxo de trabalho
+
+Nenhuma linha de código ou arquivo de projeto pode ser alterada sem o ciclo abaixo (obrigatório para tarefas com ID, ex.: `TASK-123`):
+
+```
+[1. RECEBER ID DA TAREFA]
+         ↓
+[2. GERAR PLANO PRÉ-ALTERAÇÃO (.md)]  <-- Salvo em relatorios_agente/
+         ↓
+[3. EXECUTAR ALTERAÇÕES & REGISTRAR ERROS EM TEMPO REAL]
+         ↓
+[4. ATUALIZAR RELATÓRIO PÓS-ALTERAÇÃO (.md)]
+```
+
+## Ciclo de execução obrigatório
+
+1. **PRÉ-ALTERAÇÃO (antes de codar):** criar `relatorios_agente/ID_[TASK_ID]_[TIMESTAMP]_plano.md` com Objetivo Geral, Metas Esperadas, Roteiro passo a passo e arquivos afetados. Só então editar código.
+2. **EXECUÇÃO E LOG (em tempo real):** erros, exceptions e avisos devem ser registrados imediatamente no `.md` da tarefa.
+3. **PÓS-ALTERAÇÃO (ao concluir):** atualizar rodapé do `.md` com Status Final (`🟢 CONCLUÍDO COM SUCESSO` / `🔴 FINALIZADO COM ERROS`) + resumo das alterações.
+
+## Estrutura do relatório .md (`relatorios_agente/`)
+
+- Estágio 1 — pré: `# 📋 PLANO DE EXECUÇÃO - TAREFA [ID]`, status inicial `🟡 PLANO CRIADO (PRÉ-ALTERAÇÃO)`, Objetivo, Metas `- [ ]`, Roteiro com O que fazer / Como fazer / Arquivos afetados.
+- Estágio 2 — durante: `## 🔄 Diário de Execução em Tempo Real`, blocos `> 🚨 **PROBLEMA/ERRO DETECTADO [HH:MM:SS]**`.
+- Estágio 3 — pós: `## 🏁 Relatório Pós-Alteração (Status Final)`, resumo das alterações `- [x] ...` e ocorrências resolvidas.
+
+## Arquivos do protocolo
+
+- `agent/system_prompt.md` — System Prompt oficial do agente (usar como instruções do sistema).
+- `agent/rules.md` — regras de conduta e estrutura dos relatórios.
+
+## Regra obrigatória de Versionamento e Changelog
+
+Toda alteração de código que modifique funcionalidade, corrija bug ou adicione feature **deve** atualizar:
+
+1. **Versão** — Bump no `package.json` raiz e em todos os workspaces (`apps/*`, `packages/*`) usando `pnpm version:patch`, `pnpm version:minor` ou `pnpm version:major`. A versão segue o padrão `v0.{MAJOR}.{MINOR}-{canal}` (alpha → rc → estável).
+2. **CHANGELOG.md** — Adicionar entrada na raiz do projeto (`CHANGELOG.md`) com a versão, data e descrição das mudanças.
+3. **`apps/web/public/version.json`** — Atualizar `version` e `buildTime` (feito automaticamente pelo script `scripts/version.js`).
+
+**Fluxo obrigatório ao concluir tarefa:**
+
+```
 [pós-alteração]
 → rodar pnpm version:patch (ou minor/major conforme impacto)
 → adicionar entrada no CHANGELOG.md
@@ -164,7 +275,6 @@ permanente, como as da seção acima).
 - Nunca abrir PR com `pnpm typecheck` como evidência de tipo (está
   quebrado, ver seção Testing) — usar `build` do pacote afetado.
 
-
 # Master Engineering Directive — 11
 
 ## Identity & Context
@@ -202,7 +312,7 @@ packages/api/ → Shared API types
 packages/shared/ → Shared utilities
 infra/ → Supabase migrations, deploy scripts
 
-````
+```
 
 ## Platform Detection
 
@@ -210,7 +320,7 @@ infra/ → Supabase migrations, deploy scripts
 // apps/web/src/lib/platform.ts
 type Platform = "desktop-app" | "mobile-app" | "desktop-web" | "mobile-web";
 // Detection: __TAURI__ → desktop-app, Capacitor → mobile-app, UA regex → mobile-web, else → desktop-web
-````
+```
 
 ## Navigation Items
 

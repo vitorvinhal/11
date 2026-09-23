@@ -1,4 +1,5 @@
 # Relatório — 11 (Inteligência Autônoma)
+
 Versão: **0.3.0-alpha** · Data: 2026-09-17
 
 ---
@@ -15,9 +16,10 @@ estilo VSCode e testes/debug. **Build de produção OK, typecheck limpo, lint se
 ## 2. 9Router — problema e correção
 
 ### Diagnóstico (teste real dos endpoints)
-| Endpoint | Resultado |
-|---|---|
-| `http://localhost:20128` (local) | ✅ responde |
+
+| Endpoint                                | Resultado   |
+| --------------------------------------- | ----------- |
+| `http://localhost:20128` (local)        | ✅ responde |
 | `https://rdri7er.abc-tunnel.us` (túnel) | ✅ responde |
 
 **Causa raiz:** o modelo padrão no `.env` (`gemini/gemini-3.8-flash`) estava com
@@ -26,15 +28,17 @@ estilo VSCode e testes/debug. **Build de produção OK, typecheck limpo, lint se
 (modelos da nuvem 9Router, não do gateway `npx 9router`).
 
 ### Combos verificados
-| Combo | Status |
-|---|---|
-| `kr/glm-5` | ✅ funcional |
-| `kr/claude-sonnet-4.5` | ✅ funcional |
-| `gemini/gemini-3.6-flash` | ✅ funcional |
-| `gemini/gemini-3.8-flash` | ⚠️ 429 quota |
+
+| Combo                                                    | Status                          |
+| -------------------------------------------------------- | ------------------------------- |
+| `kr/glm-5`                                               | ✅ funcional                    |
+| `kr/claude-sonnet-4.5`                                   | ✅ funcional                    |
+| `gemini/gemini-3.6-flash`                                | ✅ funcional                    |
+| `gemini/gemini-3.8-flash`                                | ⚠️ 429 quota                    |
 | `groq/llama-3`, `vtx/...`, `nvidia/...`, `opencode/free` | ❌ não existem no gateway local |
 
 ### Correções aplicadas
+
 - `9ROUTER_MODEL=kr/glm-5` + `9ROUTER_FALLBACK_MODELS` (cadeia de fallback).
 - `route9Router` (`apps/web/src/app/api/chat/route.ts`): tenta combo escolhido → fallbacks
   → lista segura; pula em 503/404; loga erro claro.
@@ -54,14 +58,14 @@ estilo VSCode e testes/debug. **Build de produção OK, typecheck limpo, lint se
 
 ## 3. Bugs críticos corrigidos
 
-| # | Bug | Correção |
-|---|---|---|
-| 1 | `capacitor.config.json` com JSON inválido e path de ícone cross-app | reescrito válido |
-| 2 | `apps/web/.env` definia `SUPABASE_SERVICE_ROLE_KEY` com valor de publishable key | removido (herda da raiz/Vercel) |
-| 3 | `loadRootEnv` parava no primeiro `.env` | passa a mesclar toda a cadeia |
-| 4 | `saveProfile` não salvava API keys / 9Router | unificado com `saveKeys` |
-| 5 | `.gitignore` não cobria `.env` das subpastas | adicionado `**/.env` |
-| 6 | Redux `Store does not have a valid reducer` | slice placeholder válido |
+| #   | Bug                                                                              | Correção                        |
+| --- | -------------------------------------------------------------------------------- | ------------------------------- |
+| 1   | `capacitor.config.json` com JSON inválido e path de ícone cross-app              | reescrito válido                |
+| 2   | `apps/web/.env` definia `SUPABASE_SERVICE_ROLE_KEY` com valor de publishable key | removido (herda da raiz/Vercel) |
+| 3   | `loadRootEnv` parava no primeiro `.env`                                          | passa a mesclar toda a cadeia   |
+| 4   | `saveProfile` não salvava API keys / 9Router                                     | unificado com `saveKeys`        |
+| 5   | `.gitignore` não cobria `.env` das subpastas                                     | adicionado `**/.env`            |
+| 6   | Redux `Store does not have a valid reducer`                                      | slice placeholder válido        |
 
 ---
 
@@ -89,18 +93,18 @@ estilo VSCode e testes/debug. **Build de produção OK, typecheck limpo, lint se
 
 ## 6. Perfil funcional (todas as abas)
 
-| Aba | Antes | Agora |
-|---|---|---|
-| General | OK | OK (+keys unificadas) |
-| **Account** | só sign out | email, senha, **excluir conta** (`DELETE /api/account`) |
-| **Privacy** | texto | **incognito** funcional, **exportar dados** (JSON) |
-| **Billing** | texto | free (mantido) |
-| **Capabilities** | toggles falsos | **persistidos** em `user_settings` |
-| **Memory** | OK | OK |
-| **Reflect** | texto | **stats reais** (memórias/skills/projetos/mídia) |
-| **Time** | texto | **Pomodoro real** + quiet hours persistidos |
-| Code | parcial | mantido |
-| **Skills/Connectors/Plugins** | links mortos | **painéis reais embutidos** |
+| Aba                           | Antes          | Agora                                                   |
+| ----------------------------- | -------------- | ------------------------------------------------------- |
+| General                       | OK             | OK (+keys unificadas)                                   |
+| **Account**                   | só sign out    | email, senha, **excluir conta** (`DELETE /api/account`) |
+| **Privacy**                   | texto          | **incognito** funcional, **exportar dados** (JSON)      |
+| **Billing**                   | texto          | free (mantido)                                          |
+| **Capabilities**              | toggles falsos | **persistidos** em `user_settings`                      |
+| **Memory**                    | OK             | OK                                                      |
+| **Reflect**                   | texto          | **stats reais** (memórias/skills/projetos/mídia)        |
+| **Time**                      | texto          | **Pomodoro real** + quiet hours persistidos             |
+| Code                          | parcial        | mantido                                                 |
+| **Skills/Connectors/Plugins** | links mortos   | **painéis reais embutidos**                             |
 
 Extra: tema **light** funcional + `ThemeSync` aplica a preferência ao carregar.
 
@@ -119,15 +123,16 @@ Extra: tema **light** funcional + `ThemeSync` aplica a preferência ao carregar.
 - Workspace **Code & Terminal** com abas Editor/Terminal.
 
 ### Testes reais executados no terminal
-| Comando | Resultado |
-|---|---|
-| `echo ola-mundo` | ✅ `ola-mundo` |
-| `cd Documents` | ✅ `/Documents` |
-| `pwd` | ✅ path |
-| `ls \| Select-Object -First 2` | ✅ lista |
-| `Get-Date -Format 'yyyy-MM-dd'` | ✅ data |
-| `rm -rf /` | ✅ **bloqueado** |
-| POST sem token | ✅ 401 |
+
+| Comando                         | Resultado        |
+| ------------------------------- | ---------------- |
+| `echo ola-mundo`                | ✅ `ola-mundo`   |
+| `cd Documents`                  | ✅ `/Documents`  |
+| `pwd`                           | ✅ path          |
+| `ls \| Select-Object -First 2`  | ✅ lista         |
+| `Get-Date -Format 'yyyy-MM-dd'` | ✅ data          |
+| `rm -rf /`                      | ✅ **bloqueado** |
+| POST sem token                  | ✅ 401           |
 
 ---
 
@@ -143,25 +148,26 @@ Extra: tema **light** funcional + `ThemeSync` aplica a preferência ao carregar.
 
 ## 9. Sugestões de novas features
 
-| Prioridade | Feature |
-|---|---|
-| Alta | **Streaming no chat** (SSE, efeito "digitando") |
-| Alta | **PTY real** no terminal (`node-pty`) para shell interativo contínuo |
-| Alta | Túnel **nomeado** (Cloudflare) com domínio fixo |
-| Média | **Command Palette** (Cmd+K) |
-| Média | **Split view** Chat + Code |
-| Média | Persistir **Plugins** e **Artifacts** no servidor |
-| Média | **TTS** (a 11 ler as respostas) |
-| Média | **i18n** (pt-BR/en/es) |
-| Baixa | Geração de **imagens** no chat |
-| Baixa | **Analytics pessoal** de uso |
-| Baixa | Exportar conversas em PDF/Markdown |
+| Prioridade | Feature                                                              |
+| ---------- | -------------------------------------------------------------------- |
+| Alta       | **Streaming no chat** (SSE, efeito "digitando")                      |
+| Alta       | **PTY real** no terminal (`node-pty`) para shell interativo contínuo |
+| Alta       | Túnel **nomeado** (Cloudflare) com domínio fixo                      |
+| Média      | **Command Palette** (Cmd+K)                                          |
+| Média      | **Split view** Chat + Code                                           |
+| Média      | Persistir **Plugins** e **Artifacts** no servidor                    |
+| Média      | **TTS** (a 11 ler as respostas)                                      |
+| Média      | **i18n** (pt-BR/en/es)                                               |
+| Baixa      | Geração de **imagens** no chat                                       |
+| Baixa      | **Analytics pessoal** de uso                                         |
+| Baixa      | Exportar conversas em PDF/Markdown                                   |
 
 ---
 
 ## 10. Arquivos principais alterados/criados
 
 **Criados**
+
 - `apps/web/src/app/api/health/router/route.ts`
 - `apps/web/src/app/api/account/route.ts`
 - `apps/web/src/app/api/terminal/exec/route.ts`
@@ -172,6 +178,7 @@ Extra: tema **light** funcional + `ThemeSync` aplica a preferência ao carregar.
 - `scripts/smoke-test.mjs`
 
 **Alterados**
+
 - `apps/web/src/app/api/chat/route.ts`
 - `apps/web/src/lib/server-env.ts`
 - `apps/web/src/components/{ChatPanel,Sidebar,ProfileDialog}.tsx`
