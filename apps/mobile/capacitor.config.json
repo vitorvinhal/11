@@ -3,7 +3,6 @@
   "appName": "11",
   "webDir": "www",
   "server": {
-    "androidScheme": "https",
-    "url": "https://11-five-umber.vercel.app"
+    "androidScheme": "https"
   }
 }

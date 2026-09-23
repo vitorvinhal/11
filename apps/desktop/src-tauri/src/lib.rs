@@ -21,8 +21,23 @@ fn spawn_local_services() {
 }
 
 pub fn run() {
+  let notify = tauri_plugin_notification::init();
+  let _ = &notify; // plugin opcional, mantido para notificação nativa
+
   tauri::Builder::default()
+    .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+    .plugin(tauri_plugin_autostart::init(
+      tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+      Some(vec!["--minimized"]),
+    ))
+    .plugin(notify)
+    .plugin(tauri_plugin_updater::Builder::new().build())
     .setup(|_app| {
+      #[cfg(not(debug_assertions))]
+      {
+        use tauri_plugin_autostart::ManagerExt;
+        let _ = _app.autolaunch().enable();
+      }
       spawn_local_services();
       Ok(())
     })
