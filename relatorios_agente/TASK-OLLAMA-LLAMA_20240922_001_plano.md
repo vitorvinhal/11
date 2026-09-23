@@ -14,7 +14,7 @@ Adicionar suporte explícito a modelos Llama no fluxo Ollama, ampliando a lista 
 
 ## Roteiro Passo a Passo
 
-1. Editar `apps/web/src/lib/local-llm.ts` – ampliar `OLLAMA_POPULAR` com `"llama2"`, `"llama3"`, `"llama3.1"` além dos já existentes.
+1. Editar `apps/web/src/lib/local-llama.ts` – ampliar `OLLAMA_POPULAR` com `"llama2"`, `"llama3"`, `"llama3.1"` além dos já existentes.
 2. Verificar importação em `OllamaPanel.tsx` – nenhum ajuste necessário pois a lista é consumida diretamente.
 3. Executar smoke‑test (`pnpm dev:web` e chamar chat com provider "ollama" usando novo modelo) para validar fluxo.
 4. Atualizar `CHANGELOG.md` e version bump após conclusão (não incluído aqui).
@@ -46,6 +46,7 @@ Aplicar a edição no arquivo acima.
 - [x] `apps/web/src/app/api/chat/route.ts`: `routeOllama()` consulta `/api/tags` e usa primeiro modelo instalado como candidato de fallback.
 - [x] `CHANGELOG.md` + `apps/web/public/version.json`: bump 2.16.3-alpha (code 32) com notas do release.
 - [x] `.task_state.md` atualizado.
+- [x] Commit `5624321` realizado; pendências residuais (formatação do relatório + checkpoint) commitadas em follow-up.
 
 ### Verificações
 
