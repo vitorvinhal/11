@@ -38,16 +38,18 @@ jobs:
         env:
           VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
 
-      - name: CocoaPods
-        working-directory: apps/mobile/ios/App
-        run: pod install --repo-update
-
       - name: Build app (sem código)
         working-directory: apps/mobile/ios/App
         run: |
           xcodebuild \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
+            SCHEME_AUTO_CREATION=YES \
+            -resolvePackageDependencies
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            SCHEME_AUTO_CREATION=YES \
             -sdk iphoneos \
             -configuration Release \
             -derivedDataPath build \

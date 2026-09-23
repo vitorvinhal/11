@@ -4,7 +4,6 @@ const config = {
   webDir: "www",
   server: {
     androidScheme: "https",
-    url: "https://candlefish.vercel.app",
   },
   ios: {
     // Permissões usadas pelo DeviceBridge (câmera e fotos).

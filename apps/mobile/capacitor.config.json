@@ -3,7 +3,6 @@
   "appName": "11",
   "webDir": "www",
   "server": {
-    "androidScheme": "https",
-    "url": "https://candlefish.vercel.app"
+    "androidScheme": "https"
   }
 }
