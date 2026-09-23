@@ -1,11 +1,9 @@
 {
-  "version": "2.16.3-alpha",
-  "versionCode": 32,
+  "version": "2.16.4-alpha",
+  "versionCode": 33,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Modelo Ollama default corrigido para llama3.2:3b (antes llama3.2 sem tag causava 404 model not found)",
-    "Fallback automático de modelo inexistente: detecta 404, consulta /api/tags e repete com o primeiro modelo instalado (client-side em chatOpenAICompat e server-side em routeOllama)",
-    "Suporte Llama no Ollama: OLLAMA_POPULAR ampliado com llama3.2:3b, llama3.1, llama3 e llama2"
+    "Paridade default Ollama llama3.2:3b client/server; smoke-test auth 401; docs modo local vs nuvem"
   ]
 }

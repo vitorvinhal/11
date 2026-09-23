@@ -20,6 +20,10 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.16.4-alpha — 2026-09-23
+
+- Paridade default Ollama llama3.2:3b client/server; smoke-test auth 401; docs modo local vs nuvem
+
 ## v2.16.3-alpha — 2026-09-22
 
 ### Fix
