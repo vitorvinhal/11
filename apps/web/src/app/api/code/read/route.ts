@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser, checkRateLimit } from "../../services/security";
-import { getSession } from "../session-manager";
+import { requireUser, checkRateLimit } from "../services/security";
+import { getSession } from "../services/session-manager";
 import { loadRootEnv } from "../../../../lib/server-env";
 
 loadRootEnv();

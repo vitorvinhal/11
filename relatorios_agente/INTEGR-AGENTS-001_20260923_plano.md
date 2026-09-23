@@ -27,19 +27,19 @@ allowlist, path com path.relative), rodando os gates de validação
 
 ## ✅ Metas Esperadas
 
-- [ ] Branch `integration/agents-20260923` criada a partir de `vitorvinhal/candlefish`
-- [ ] Merge de `vitorvinhal/whiting` (Ollama — chat/route.ts candidates loop mantido)
-- [ ] Merge de `fix/orca-browser` (mobile/desktop)
-- [ ] Merge de `main` (Orca — por último; converter verifyToken → requireUser em code/read)
-- [ ] requireUser() em toda rota nova/GET introduzida pelos merges
-- [ ] verifyToken residual = 0 em apps/web/src
-- [ ] SSRF: allowlist de host antes de fetch de URL vinda do cliente
-- [ ] path sandbox com path.relative (nunca startsWith)
-- [ ] `pnpm -r lint` → 0 erros
-- [ ] `pnpm -r build` → OK
-- [ ] `pnpm -r test` → todos passam
-- [ ] Relatório pós com bloco `<!-- BRAIN_SYNC_START -->` + `BRANCH: integration/agents-20260923`
-- [ ] Commit SEM alterar CHANGELOG.md/version.json (Brain cuida disso)
+- [x] Branch `integration/agents-20260923` criada a partir de `vitorvinhal/candlefish`
+- [x] Merge de `vitorvinhal/whiting` (Ollama — chat/route.ts candidates loop mantido) → `f647acf`
+- [x] Merge de `fix/orca-browser` (mobile/desktop) → `9ffa295`
+- [x] Merge de `main` (Orca — por último; converter verifyToken → requireUser em code/read) → `c65737f` (+ `b3cc100` fix/orca-agent1)
+- [x] requireUser() em toda rota nova/GET introduzida pelos merges
+- [x] verifyToken residual = 0 em apps/web/src
+- [x] SSRF: allowlist de host antes de fetch de URL vinda do cliente (bases em env / hosts fixos)
+- [x] path sandbox com path.relative (nunca startsWith) — `resolveCwd` → `isUnderRoot`
+- [x] `pnpm -r lint` → 0 erros
+- [x] `pnpm -r build` → OK
+- [x] `pnpm -r test` → todos passam (157 / web 16 suites)
+- [x] Relatório pós com bloco `<!-- BRAIN_SYNC_START -->` + `BRANCH: integration/agents-20260923`
+- [x] Commit SEM alterar CHANGELOG.md/version.json (Brain cuida disso) — merge combinou entradas existentes
 
 ## 🗺️ Roteiro
 
@@ -111,10 +111,15 @@ allowlist, path com path.relative), rodando os gates de validação
 
 ## 🔄 Diário de Execução em Tempo Real
 
-(preenchido durante execução)
+- Merges sequenciais: whiting `f647acf` → fix/orca-browser `9ffa295` → main `c65737f` → fix/orca-agent1 `b3cc100`
+- Corrida de `index.lock`/`MERGE_HEAD` contornada com git estritamente sequencial
+- Security post-merge `7529e70` + fix de import path em `code/read` (quebrava `next build`)
+- Gates reais: lint 0 errors · build OK · test EXIT=0 (157 passed)
 
 ---
 
 ## 🏁 Relatório Pós-Alteração (Status Final)
 
-(preenchido ao concluir)
+**Status:** ✅ CONCLUÍDO (gates OK) · pendente: push da branch + smoke 4001/3001
+**Relatório completo:** `relatorios_agente/INTEGR-AGENTS-001_20260923_relatorio.md`
+**BRAIN_SYNC:** BRANCH `integration/agents-20260923` · REQUIRES_SMOKE_TEST: YES
