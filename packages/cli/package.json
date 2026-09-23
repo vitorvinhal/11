@@ -1,6 +1,6 @@
 {
   "name": "@11/cli",
-  "version": "2.16.3-alpha",
+  "version": "2.16.4-alpha",
   "private": true,
   "bin": {
     "11-cli": "dist/index.js"

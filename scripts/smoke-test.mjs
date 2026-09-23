@@ -85,14 +85,14 @@ await check('POST /api/terminal/exec exige auth', async () => {
   return r.status === 401;
 });
 
-await check('POST /api/chat exige sessionId', async () => {
+await check('POST /api/chat exige auth (401 pós unify-auth)', async () => {
   const r = await fetch(`${BASE}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'oi' }] }),
     signal: timeout(20000),
   });
-  return r.status === 400;
+  return r.status === 401;
 });
 
 console.log(`\nResultado: ${pass} passou, ${fail} falhou\n`);

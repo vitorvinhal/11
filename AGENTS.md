@@ -147,7 +147,17 @@ Toda alteração de código que modifique funcionalidade, corrija bug ou adicion
 - Testes = jest multi-projeto (`jest.config.js`): `apps/web`, `packages/ia`, `packages/shared`. `pnpm --filter @11/web test` roda só o web. api/cli/desktop/mobile não têm testes.
 - Dev servers: `pnpm dev:web` (porta 3000), `pnpm dev:api` (NestJS legacy, `dist/main.js` precisa build antes), `pnpm dev:mobile` (Expo), `pnpm dev:desktop` (Tauri/Vite).
 - **Router unificado do desktop**: `apps/desktop/src/server.ts` sobe os dois serviços — Router9 (`ROUTER9_PORT`, default 3002) e PC Agent (`PC_AGENT_PORT`, default 3001). Para rodar só como servidor: `pnpm --filter @11/desktop router`.
-- Smoke test: `node scripts/smoke-test.mjs [baseURL]` (default `http://localhost:3099`). Testa endpoints críticos incl. `/api/health/router`, terminal auth, PWA manifest.
+- Smoke test: `node scripts/smoke-test.mjs [baseURL]` (default `http://localhost:3099`). Testa endpoints críticos incl. `/api/health/router`, terminal auth, PWA manifest. Rotas com `requireUser()` sem sessão retornam **401** (pós unify-auth), não 400.
+
+## Modo local vs nuvem (IA)
+
+- **Como ligar o modo local:** no seletor de provider do chat escolha **Ollama** (ou **Zen**). O app então usa `sendLocalCompat` → `apps/web/src/lib/local-llm.ts` e chama `http://localhost:11434` **direto do device** (client-side). A nuvem (Vercel) não alcança `localhost`.
+- **Como voltar para a nuvem:** provider **9router** / **Gemini** / **Anthropic** / default — o fluxo vai para `POST /api/chat` no servidor (server-side).
+- **Config do Ollama:** `OllamaPanel` grava `localStorage.ollama_config` (`endpoint` + `selectedModel`). Default de modelo: **`llama3.2:3b`** (client e server `routeOllama` — paridade). Override server: env `OLLAMA_MODEL` / `OLLAMA_ENDPOINT`.
+- **Fallback de modelo inexistente:** se o modelo não existir (404), client consulta `GET /api/tags` e repete com o primeiro instalado; server monta lista de candidatos igual. Lista 1-clique: `OLLAMA_POPULAR` em `local-llm.ts`.
+- **Ollama desligado:** não crasha a UI — `sendLocalCompat` captura o erro e mostra no assistant: `(Provedor local indisponível: … Ollama rodando? Para site https, use OLLAMA_ORIGINS="*" no seu PC.)`. Painel mostra "Desconectado" + link `ollama.com`.
+- **Sem 9Router (`ROUTER9_ENDPOINT`):** `/api/health/router` continua existindo — sem auth → **401**; autenticado → `{ ok: false|true, service: "router" }` (reporta estado; **não remover o healthcheck**). `/api/chat` com provider 9router falha com 502/mensagem de dica — comportamento esperado offline.
+- **Sessões em memória:** chaves por `userId` (ex.: terminal `sessionKey(userId, sessionId)` em `terminal/exec`) — nunca só id do cliente.
 
 ## Env e runtime gotchas
 

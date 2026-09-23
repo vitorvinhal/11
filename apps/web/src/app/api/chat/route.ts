@@ -568,7 +568,8 @@ async function routeOllama(
   const endpoint = (
     process.env.OLLAMA_ENDPOINT ?? "http://localhost:11434"
   ).replace(/\/+$/, "");
-  const requested = model ?? process.env["OLLAMA_MODEL"] ?? "qwen3:4b";
+  // Paridade com client (local-llm.getOllamaConfig): default llama3.2:3b.
+  const requested = model ?? process.env["OLLAMA_MODEL"] ?? "llama3.2:3b";
   const candidates = [requested];
   // Modelo default ausente → tenta o primeiro instalado (evita 404).
   try {
