@@ -7,6 +7,7 @@
 | [specs/](specs/README.md)          | Especificação técnica linha-a-linha          | ANTES de desenvolver qualquer feature    |
 | [plan/PLAN.md](plan/PLAN.md)       | Checklist vivo (feitos/andamento/pendências) | Sempre — estado real do patch            |
 | [agents/](agents/README.md)        | Papéis + loop developer→tester→reviewer      | Ao orquestrar ou assumir um papel        |
+| [mcp/](mcp/README.md)              | Curadoria de MCPs + config por IDE           | Ao configurar MCPs (Claude Code/IDEs)    |
 | [AGENTE.md](AGENTE.md)             | Protocolo de relatórios + Brain + guardrails | Antes de qualquer alteração de código    |
 | [architecture.md](architecture.md) | Arquitetura técnica detalhada                | Dúvidas estruturais                      |
 | [api.md](api.md)                   | Contrato das rotas API                       | Ao criar/editar rotas                    |

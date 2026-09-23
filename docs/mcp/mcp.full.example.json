@@ -1,0 +1,113 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/caminho/absoluto/projeto"
+      ],
+      "description": "Leitura/edição de arquivos locais — refatoração em massa. Sem chave. Use caminho ABSOLUTO."
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_SEU_TOKEN"
+      },
+      "description": "PRs, commits e diffs assistidos. Token: GitHub → Settings → Developer settings → Personal access tokens."
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Raciocínio em etapas — planejamento de arquitetura antes de codar. Sem chave."
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"],
+      "description": "Navegador real pro agente: prints, console, rede, testes de UI. Sem chave. Substitui o puppeteer (ative UM dos dois, não os dois)."
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Navegação headless (alternativa ao chrome-devtools). Sem chave. Ative apenas se chrome-devtools indisponível."
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "description": "Documentações de frameworks em Markdown sempre atualizadas — evita API desatualizada do cutoff do modelo. Sem chave (tier gratuito)."
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-supabase"],
+      "env": {
+        "SUPABASE_URL": "https://SEU_PROJETO.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "sb_service_role_SEU_TOKEN"
+      },
+      "description": "Tabelas, migrations, Edge Functions e logs do Supabase. ATENÇÃO: service role key IGNORA RLS — nunca exponha; prefira chave restrita em produção."
+    },
+    "sentry": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-sentry"],
+      "env": {
+        "SENTRY_AUTH_TOKEN": "sntry_u_SEU_TOKEN",
+        "SENTRY_ORG": "sua-organizacao"
+      },
+      "description": "Erros de produção → localização da linha + sugestão de fix. Token: Sentry → User settings → Custom integrations → Internal integrations."
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {
+        "SLACK_BOT_TOKEN": "xoxb-SEU_TOKEN_BOT",
+        "SLACK_TEAM_ID": "T000000"
+      },
+      "description": "Ler/reponder canais, sincronizar requisitos. Token: api.slack.com/apps → app → Bot Token scopes → install."
+    },
+    "firebase": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-firebase"],
+      "env": {
+        "FIREBASE_PROJECT_ID": "seu-projeto-id",
+        "GOOGLE_APPLICATION_CREDENTIALS": "/caminho/absoluto/fora-do-repo/service-account.json"
+      },
+      "description": "Firestore rules, Cloud Functions, auth. JSON de credenciais FORA do repositório (dá acesso total ao projeto)."
+    },
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-stripe"],
+      "env": {
+        "STRIPE_API_KEY": "sk_test_SEU_TOKEN",
+        "STRIPE_DEVICE_NAME": "dev-machine"
+      },
+      "description": "Testar cobranças, refunds e falhas de cartão. Token: Stripe → Developers → API keys (use sk_test em dev)."
+    },
+    "sonarqube": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-sonarqube"],
+      "env": {
+        "SONAR_HOST_URL": "http://localhost:9000",
+        "SONAR_TOKEN": "sqa_SEU_TOKEN"
+      },
+      "description": "Issues/coverage locais antes do pipeline. Token: SonarQube → My account → Security → Generate tokens."
+    },
+    "firecrawl": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-SEU_TOKEN"
+      },
+      "description": "Web scraping em escala (análise de concorrência, conteúdo dinâmico → markdown/json). Tier gratuito disponível."
+    },
+    "figma": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--stdio",
+        "--figma-api-key=SEU_TOKEN"
+      ],
+      "description": "Design System bidirecional: lê cores/componentes e ESCREVE componentes de volta no Figma (beta grátis). Token: Figma → Settings → Personal access tokens. Prompt pronto: docs/mcp/figma-design-system-prompt.md"
+    }
+  }
+}
