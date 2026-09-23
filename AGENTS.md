@@ -11,6 +11,7 @@ Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
 - **Relatórios padronizados:** todo relatório dos Agentes em `relatorios_agente/` termina com o bloco `<!-- BRAIN_SYNC_START -->` — ver `docs/AGENTE.md` seção 6 e `skills/preflight_and_reporting.md`.
 - **Zero Degradation de UI:** reduções de partículas do AstroSphere 3D, resolução de shaders ou `backdrop-filter` só via fallback dinâmico em runtime (hardware detection), nunca estático no CSS — ver `docs/AGENTE.md` seção 7.
 - **Gate de tipo:** `pnpm -r typecheck` é QUEBRADO na raiz. Usar `pnpm -r lint && pnpm -r build && pnpm -r test` (ou `tsc -p <pkg>/tsconfig.json` para pacote isolado).
+- **Política de Release por Patches (2026-09-23):** releases são CONSOLIDADOS — o usuário envia uma lista de problemas, o Brain junta tudo em um patch (ex.: `2.17.1`), orquestra os 4 agentes, só parte para o próximo patch quando TODAS as alterações estiverem feitas, gate verde e deploy da versão no ar. Micro-correções isoladas (`2.17.0 → 2.17.1` avulsas) SÓ em casos excepcionalmente pequenos. Objetivo atual: tirar o projeto do alpha para BETA rápido, ativando tudo que já existe no projeto; micro-updates ficam para fases mais avançadas de desenvolvimento.
 
 ---
 
