@@ -23,6 +23,12 @@ jobs:
           # Capacitor CLI exige Node >= 22
           node-version: '24'
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Install pnpm
         run: npm i -g pnpm@8.15.9
 
