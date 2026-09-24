@@ -20,4 +20,4 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
       - name: Security regression tests
-        run: pnpm --filter @11/web run test -- --testPathPattern="(security|auth-gaps|injection|traversal|ssrf|terminal-validate)"
+        run: pnpm --filter @11/web exec jest --testPathPattern="(security|auth-gaps|auth-core|injection|traversal|ssrf|terminal-validate)"

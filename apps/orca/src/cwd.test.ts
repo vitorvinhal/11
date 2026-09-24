@@ -41,8 +41,10 @@ describe("orca cwd sandbox", () => {
   it("isUnderRoot rejects absolute path outside the root (no startsWith prefix bug)", () => {
     const outside = path.resolve(path.join(defaultRoot, "..", "sibling-evil"));
     expect(isUnderRoot(outside, [defaultRoot])).toBe(false);
-    expect(isUnderRoot("C:\\Windows\\System32", [defaultRoot])).toBe(false);
     expect(isUnderRoot("/etc", [defaultRoot])).toBe(false);
+    if (process.platform === "win32") {
+      expect(isUnderRoot("C:\\Windows\\System32", [defaultRoot])).toBe(false);
+    }
   });
 
   it("isUnderRoot rejects sibling dir sharing a path prefix", () => {
@@ -62,8 +64,10 @@ describe("orca cwd sandbox", () => {
       path.join(defaultRoot, "..", "outside-root-dir"),
     );
     expect(sanitizeCwd(outside, defaultRoot, [defaultRoot])).toBeNull();
-    expect(sanitizeCwd("C:\\Windows", defaultRoot, [defaultRoot])).toBeNull();
     expect(sanitizeCwd("/etc", defaultRoot, [defaultRoot])).toBeNull();
+    if (process.platform === "win32") {
+      expect(sanitizeCwd("C:\\Windows", defaultRoot, [defaultRoot])).toBeNull();
+    }
   });
 
   it("sanitizeCwd returns null for shell metacharacters in cwd", () => {
@@ -98,8 +102,10 @@ describe("orca cwd sandbox", () => {
   });
 
   it("sanitizeCwd rejects fallback outside the root when no cwd given", () => {
-    expect(sanitizeCwd(null, "C:\\Windows", [defaultRoot])).toBeNull();
     expect(sanitizeCwd(undefined, "/etc", [defaultRoot])).toBeNull();
+    if (process.platform === "win32") {
+      expect(sanitizeCwd(null, "C:\\Windows", [defaultRoot])).toBeNull();
+    }
   });
 
   it("sanitizeCwd rejects non-string cwd", () => {
