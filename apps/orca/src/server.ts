@@ -2,8 +2,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import cors from "cors";
 import pty from "node-pty";
-import fs from "node:fs";
-import path from "node:path";
+import { sanitizeCwd } from "./cwd";
 
 const MAX_OUTPUT = 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -38,31 +37,6 @@ function sanitizeCommand(
   }
   const tokens = input.trim().split(/\s+/);
   return { command: tokens[0], args: tokens.slice(1) };
-}
-
-function sanitizeCwd(input: unknown, fallback: string): string | null {
-  if (input == null || input === "") {
-    return fallback;
-  }
-  if (typeof input !== "string") {
-    return null;
-  }
-  const resolved = path.resolve(input);
-  if (path.relative(resolved, resolved).length === 0 && resolved === "..") {
-    return null;
-  }
-  const parts = resolved.split(path.sep);
-  if (parts.includes("..")) {
-    return null;
-  }
-  try {
-    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-  return resolved;
 }
 
 app.post("/orca/exec", async (req: Request, res: Response) => {
