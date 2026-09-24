@@ -9,7 +9,8 @@ interface LazyLoadOptions {
 }
 
 export function lazyLoad(
-  factory: () => Promise<{ default: ComponentType }>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  factory: () => Promise<{ default: ComponentType<any> }>,
   options: LazyLoadOptions = {},
 ) {
   const LazyComponent = lazy(factory);
@@ -24,6 +25,9 @@ export function lazyLoad(
   return WrappedComponent;
 }
 
-export function preload(factory: () => Promise<{ default: ComponentType }>) {
+export function preload(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  factory: () => Promise<{ default: ComponentType<any> }>,
+) {
   factory();
 }

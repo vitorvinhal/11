@@ -30,14 +30,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased bg-astro-dark text-gray-900 dark:text-gray-100 transition-colors">
         <ThemeProvider>
-          <div className="aurora-bg" aria-hidden />
-          <div className="vignette" aria-hidden />
-          <AstroSphere />
+          {/* 4 camadas de fundo consolidadas numa única stack (z-0):
+              aurora → vignette → AstroSphere → noise. Conteúdo em z-10. */}
+          <div className="bg-stack" aria-hidden>
+            <div className="aurora-bg" />
+            <div className="vignette" />
+            <AstroSphere />
+            <div className="noise-overlay" />
+          </div>
           <ServiceWorkerRegister />
           <Providers>{children}</Providers>
           <Analytics />
           <SpeedInsights />
-          <div className="noise-overlay" aria-hidden />
         </ThemeProvider>
       </body>
     </html>

@@ -20,7 +20,6 @@ import {
   Globe,
   X,
   Check,
-  Code2,
   WifiOff,
 } from "lucide-react";
 import Image from "next/image";
@@ -41,6 +40,7 @@ import {
   enqueueChatOffline,
   registerChatSync,
 } from "../lib/offline-queue";
+import { MarkdownLite } from "./MarkdownLite";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -94,6 +94,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [attached, setAttached] = useState<Attach[]>([]);
   const [webSearch, setWebSearch] = useState(false);
   const [memory, setMemory] = useState(false);
@@ -347,6 +348,30 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     },
     [user, getAccessToken],
   );
+
+  // Envia o código do bloco para o Eleven Code (evento + persistência).
+  const openInCode = useCallback(
+    (code: string, language: string, extension: string) => {
+      window.dispatchEvent(
+        new CustomEvent("codeGenerated", {
+          detail: { code, language, extension },
+        }),
+      );
+      void saveArtifact(`chat-generated.${extension}`, "code", code);
+      alert("Código enviado para o Eleven Code!");
+    },
+    [saveArtifact],
+  );
+
+  const copyMessage = useCallback(async (idx: number, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 1600);
+    } catch {
+      /* clipboard indisponível */
+    }
+  }, []);
 
   const send = useCallback(
     async (prompt?: string) => {
@@ -761,69 +786,35 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
                   <div className="mb-1.5 flex items-center gap-2 text-[11px] text-text-dim">
                     {m.role === "user" ? "Você" : "Eleven"}
                   </div>
-                  <div className="text-[15px] leading-relaxed text-text-primary whitespace-pre-wrap">
-                    {m.content.split(/(```[\s\S]*?```)/g).map((part, pi) => {
-                      const codeMatch = part.match(/^```(\w*)\n([\s\S]*?)```$/);
-                      if (codeMatch) {
-                        const lang = codeMatch[1] || "code";
-                        const code = codeMatch[2];
-                        const ext =
-                          lang === "javascript" || lang === "js"
-                            ? "js"
-                            : lang === "typescript" || lang === "ts"
-                              ? "ts"
-                              : lang === "html"
-                                ? "html"
-                                : lang === "css"
-                                  ? "css"
-                                  : "txt";
-                        return (
-                          <div
-                            key={pi}
-                            className="my-3 rounded-xl border border-white/[0.06] overflow-hidden"
-                          >
-                            <div className="flex items-center justify-between bg-white/[0.04] px-3 py-1.5">
-                              <span className="text-[10px] text-text-dim uppercase">
-                                {lang}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  window.dispatchEvent(
-                                    new CustomEvent("codeGenerated", {
-                                      detail: {
-                                        code,
-                                        language: lang,
-                                        extension: ext,
-                                      },
-                                    }),
-                                  );
-                                  void saveArtifact(
-                                    `chat-generated.${ext}`,
-                                    "code",
-                                    code,
-                                  );
-                                  alert("Código enviado para o Eleven Code!");
-                                }}
-                                className="flex items-center gap-1.5 rounded-md bg-primary/20 px-2 py-1 text-[10px] text-primary hover:bg-primary/30 transition"
-                              >
-                                <Code2 className="h-3 w-3" /> Abrir no Code
-                              </button>
-                            </div>
-                            <pre className="overflow-x-auto bg-black/40 p-3 text-[13px] leading-relaxed text-white/90">
-                              <code>{code}</code>
-                            </pre>
-                          </div>
-                        );
-                      }
-                      return <span key={pi}>{part}</span>;
-                    })}
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "inline-block max-w-full rounded-2xl bg-white/[0.05] px-4 py-2.5 text-[15px] leading-relaxed text-text-primary whitespace-pre-wrap"
+                        : "text-[15px] leading-relaxed text-text-primary whitespace-pre-wrap"
+                    }
+                  >
+                    <MarkdownLite
+                      content={m.content}
+                      onOpenInCode={openInCode}
+                    />
                   </div>
                   {m.role === "assistant" && (
                     <div className="mt-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                      {[Copy, ThumbsUp, ThumbsDown].map((Ic, j) => (
+                      <button
+                        onClick={() => void copyMessage(i, m.content)}
+                        className="grid h-7 w-7 place-items-center rounded-lg text-text-dim transition hover:bg-white/[0.05] hover:text-text-primary"
+                        title={copiedIdx === i ? "Copiado" : "Copiar"}
+                      >
+                        {copiedIdx === i ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      {[ThumbsUp, ThumbsDown].map((Ic, j) => (
                         <button
                           key={j}
-                          className="grid h-7 w-7 place-items-center rounded-lg text-text-dim hover:bg-white/[0.05] hover:text-text-primary transition"
+                          className="grid h-7 w-7 place-items-center rounded-lg text-text-dim transition hover:bg-white/[0.05] hover:text-text-primary"
                         >
                           <Ic className="h-3.5 w-3.5" />
                         </button>

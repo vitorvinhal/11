@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { getDeviceContext, registerAppDevice } from "./device-client";
 import { emitAgentEvent } from "./agent-bus";
+import { useOptionalDeviceJobs } from "./device-poll-context";
 
 export type DeviceAgentStatus = "idle" | "polling" | "running" | "error";
 
@@ -40,6 +41,8 @@ function localToolUrl(): string {
 
 export function useDeviceAgent() {
   const { getAccessToken } = useAuth();
+  // Feed único de jobs (5s compartilhado com MobileDevicePanel/MobileAgent).
+  const sharedJobs = useOptionalDeviceJobs();
   const [runPolling, setRunPolling] = useState(false);
   const [status, setStatus] = useState<DeviceAgentStatus>("idle");
   const [currentJob, setCurrentJob] = useState<DeviceJobView | null>(null);
@@ -51,8 +54,26 @@ export function useDeviceAgent() {
 
   const busyRef = useRef(false);
   const pairedRef = useRef(false);
+  // Ref estável: o objeto de contexto muda a cada snapshot (5s) — dependências
+  // de efeito/timer não podem usá-lo direto, senão o poll de 2.5s reiniciaria.
+  const sharedRef = useRef(sharedJobs);
+  sharedRef.current = sharedJobs;
+
+  // Com o provider ativo, aprovações derivam do snapshot compartilhado
+  // (zero fetch duplicado); sem provider, mantém o fetch legado.
+  useEffect(() => {
+    if (!sharedJobs) return;
+    setPendingApprovals(
+      sharedJobs.jobs.filter((j) => j.status === "awaiting_approval"),
+    );
+  }, [sharedJobs]);
 
   const refreshPending = useCallback(async () => {
+    const shared = sharedRef.current;
+    if (shared) {
+      await shared.refreshNow();
+      return;
+    }
     const token = await getAccessToken();
     if (!token) return;
     try {
@@ -151,7 +172,8 @@ export function useDeviceAgent() {
 
         if (!job) {
           setStatus("polling");
-          await refreshPending();
+          // Com o feed único (5s) ativo, não duplicar fetch aqui a cada 2.5s.
+          if (!sharedRef.current) await refreshPending();
           return;
         }
 
@@ -206,7 +228,8 @@ export function useDeviceAgent() {
     };
   }, [runPolling, getAccessToken, executeOnDevice, refreshPending]);
 
-  // Refresca aprovações sempre que algo muda.
+  // Refresca aprovações sempre que algo muda (no modo legado; com o
+  // provider, refreshPending já dispara o feed único).
   useEffect(() => {
     if (refreshTick > 0) void refreshPending();
   }, [refreshTick, refreshPending]);
