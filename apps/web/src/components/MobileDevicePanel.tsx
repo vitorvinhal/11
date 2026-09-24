@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import {
   Smartphone,
   Play,
@@ -13,9 +12,9 @@ import {
   RefreshCw,
   Zap,
 } from "lucide-react";
-import { useDeviceAgent, DeviceJobView } from "../lib/useDeviceAgent";
+import { useDeviceAgent } from "../lib/useDeviceAgent";
+import { useDeviceJobsShared } from "../lib/device-poll-context";
 import { getDeviceContext } from "../lib/device-client";
-import { useAuth } from "../lib/auth";
 
 function statusColor(status: string) {
   if (status === "completed") return "text-emerald-400";
@@ -37,34 +36,9 @@ function timeAgo(dateStr?: string): string {
 
 export function MobileDevicePanel() {
   const agent = useDeviceAgent();
-  const { getAccessToken } = useAuth();
-  const [history, setHistory] = useState<DeviceJobView[]>([]);
+  // Histórico via feed único de 5s (provider no AppShell) — sem timer local.
+  const { jobs: history, refreshNow } = useDeviceJobsShared();
   const ctx = getDeviceContext();
-
-  const fetchHistory = useCallback(async () => {
-    const token = await getAccessToken();
-    if (!token) return;
-    try {
-      const res = await fetch(
-        `/api/devices/jobs?deviceId=${ctx.deviceId ?? ""}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (res.ok) {
-        const data = (await res.json()) as { jobs: DeviceJobView[] };
-        setHistory(data.jobs);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [getAccessToken, ctx.deviceId]);
-
-  useEffect(() => {
-    fetchHistory();
-    const t = setInterval(fetchHistory, 5000);
-    return () => clearInterval(t);
-  }, [fetchHistory]);
 
   const running = agent.status === "polling" || agent.status === "running";
 
@@ -94,10 +68,10 @@ export function MobileDevicePanel() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
-                void agent.refreshPending();
-                fetchHistory();
+                void refreshNow();
               }}
               className="rounded-lg bg-white/5 p-1.5 text-text-dim hover:bg-white/10 hover:text-text-primary transition"
+              title="Atualizar"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>

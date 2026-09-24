@@ -20,6 +20,45 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.18.0-alpha — 2026-09-24
+
+Ciclo 2 consolidado — branches AG1-4 + Brain em `integration/agents-20260924`:
+
+### Security
+
+- **AUTH-GAPS-002 (AG4):** `requireUser()` em 10 rotas que estavam abertas — `stt`, `tts`, `media` (GET/POST/DELETE/PATCH), `system`, `updates`, `account` (DELETE), `connectors/{github,google,notion,slack}`; callbacks OAuth públicas por design (comentado); testes de regressão (401 sem sessão)
+- **ORCA-PAIR-002 (AG1):** sandbox de `cwd` em `apps/orca` — `ORCA_ALLOWED_ROOTS` (default = raiz do monorepo), validação via `path.relative` (nunca `startsWith`), metacaracteres + bind `127.0.0.1` preservados; 19 testes unitários (escape `../..`, absoluto fora, sibling, válido)
+- **CI-MIN-001 (AG3):** suíte de regressão de segurança — `traversal` (13), `injection` (18), `auth-gaps` (7), `ssrf` (5) = **+43 testes**; workflow `security-regression.yml` dedicado (push/PR → main, só testes de segurança)
+
+### ✨ UI/UX
+
+- **Sidebar estilo ChatGPT/Claude:** rail retrátil com acesso a todas as abas; indicador ativo com barra de destaque
+- **ChatPanel:** markdown nativo (`MarkdownLite`) — headings, listas, blockquote, negrito, itálico, inline code, links http/https (sem `dangerouslySetInnerHTML`); balão estilo ChatGPT/Claude
+- **Blocos de código:** botão **Copiar** funcional com feedback "Copiado"
+- **Code-split dos 13 painéis** via `lazyLoad` — bundle inicial só shell + chat
+
+### ⚡ Performance
+
+- **AstroSphere 3D pausa o render** com menu/modal aberto ou aba em background e **retoma sem resetar o clock** (`elapsedTime` preservado)
+- **Blur/glass com tokens** + `contain: layout paint` + `will-change: backdrop-filter` — menos repaint, mesmo blur visual
+- **Camadas de fundo consolidadas** em `.bg-stack` (aurora → vignette → AstroSphere → noise)
+- **Polling unificado:** um único timer de 5s via `DeviceJobsProvider` (antes: até 3 paralelos)
+- **FPS medido:** 23.2 → 25.9 (+11,6%) — Playwright headless, rAF 3s × 2, mediana
+
+### 🔧 Fix
+
+- `AstroSphere.isViewportCovered`: `NodeList` compatível com ES5 do Next
+- **Android SDK packages** (workflow): separador espaço em vez de vírgula em `sdkmanager`
+- **`scripts/version.js`:** agora sincroniza também `Cargo.toml` + `tauri.conf.json` (dry-run `--dry-run`)
+- **Orca pairing:** wrapper CLI `orca serve --pairing-address --json` (`src/serve.ts`) + README com fluxo manual
+
+### QA
+
+- Gate integração: `pnpm -r lint` 0 erros · `pnpm -r test` **492/38 suites** (baseline 415 → +77) · `pnpm -r build` OK
+- FPS baseline → após: 23.2 → 25.9
+
+---
+
 ## v2.17.0-alpha — 2026-09-23
 
 Patch consolidado (alpha → BETA track) — branches AG1-4 + Brain integradas em `integration/agents-20260923`:

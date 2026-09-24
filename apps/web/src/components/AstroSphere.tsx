@@ -1,11 +1,23 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Canvas, useFrame, type RootState } from "@react-three/fiber";
 import {
-  WebGLRenderer, Points, BufferGeometry, Float32BufferAttribute, Color, AdditiveBlending,
-  ShaderMaterial, Group, CanvasTexture,
-} from 'three';
+  Points,
+  BufferGeometry,
+  Float32BufferAttribute,
+  Color,
+  AdditiveBlending,
+  ShaderMaterial,
+  Group,
+  CanvasTexture,
+} from "three";
 
 /* ══════════════════════════════════════════════════════
    Spiral Galaxy — inspiração GPT‑Astra
@@ -25,7 +37,40 @@ const ARM_SPREAD = 0.28;
 const ARM_WIND = 2.1;
 const INCLINATION = 0.42;
 const ROT_SPEED = 0.01;
-const DPR: [number, number] = typeof navigator !== 'undefined' && 'standalone' in navigator ? [1, 1.5] : [1, 2];
+const DPR: [number, number] =
+  typeof navigator !== "undefined" && "standalone" in navigator
+    ? [1, 1.5]
+    : [1, 2];
+
+/* ── Detecção de overlay full-viewport (pausa o render) ──────────────────── */
+const COVER_SELECTOR =
+  'dialog[open], [role="dialog"], [role="menu"], [aria-modal="true"], [data-fullscreen-cover], .fixed.inset-0';
+
+/**
+ * true quando um overlay (menu/modal/drawer) cobre ~100% da viewport.
+ * Exclui a própria AstroSphere (mesmo seletor `.fixed.inset-0`).
+ */
+function isViewportCovered(self: HTMLElement | null): boolean {
+  if (typeof document === "undefined" || typeof window === "undefined")
+    return false;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const nodes = document.querySelectorAll(COVER_SELECTOR);
+  let covered = false;
+  nodes.forEach((el) => {
+    if (covered) return;
+    if (!(el instanceof HTMLElement)) return;
+    if (self && self.contains(el)) return;
+    const cs = window.getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") return;
+    if (parseFloat(cs.opacity || "1") < 0.05) return;
+    const r = el.getBoundingClientRect();
+    if (r.width >= vw - 2 && r.height >= vh - 2 && r.top <= 2 && r.left <= 2) {
+      covered = true;
+    }
+  });
+  return covered;
+}
 
 /* ── Shaders com twinkle individual ─────────────────── */
 const StarVert = `
@@ -67,12 +112,18 @@ function makeMat(): ShaderMaterial {
     uniforms: { uTime: { value: 0 } },
     vertexShader: StarVert,
     fragmentShader: StarFrag,
-    transparent: true, depthWrite: false, blending: AdditiveBlending,
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
   });
 }
 
 /* ── Utilitários ─────────────────────────────────────── */
-function spiral(angle: number, r: number, arm: number): [number, number, number] {
+function spiral(
+  angle: number,
+  r: number,
+  arm: number,
+): [number, number, number] {
   const theta = angle + ARM_WIND * r + arm * Math.PI;
   const spread = (Math.random() - 0.5) * ARM_SPREAD * Math.exp(-r * 0.8);
   return [
@@ -84,20 +135,29 @@ function spiral(angle: number, r: number, arm: number): [number, number, number]
 
 function buf3(n: number, fn: (i: number) => [number, number, number]) {
   const a = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { const v = fn(i); a[i*3]=v[0]; a[i*3+1]=v[1]; a[i*3+2]=v[2]; }
+  for (let i = 0; i < n; i++) {
+    const v = fn(i);
+    a[i * 3] = v[0];
+    a[i * 3 + 1] = v[1];
+    a[i * 3 + 2] = v[2];
+  }
   return a;
 }
 
 function starColor(): Color {
   const r = Math.random();
-  return r < 0.6 ? new Color(0xeaf2ff).lerp(new Color(0xffffff), Math.random())
-    : r < 0.85 ? new Color(0x7fb8ff)
-    : new Color(0xffb877).lerp(new Color(0xffd699), Math.random());
+  return r < 0.6
+    ? new Color(0xeaf2ff).lerp(new Color(0xffffff), Math.random())
+    : r < 0.85
+      ? new Color(0x7fb8ff)
+      : new Color(0xffb877).lerp(new Color(0xffd699), Math.random());
 }
 
 function makeGeo(
-  len: number, pf: (i: number) => [number, number, number],
-  cf: (i: number) => Color, szBase: number
+  len: number,
+  pf: (i: number) => [number, number, number],
+  cf: (i: number) => Color,
+  szBase: number,
 ): BufferGeometry {
   const pos = buf3(len, pf);
   const col = new Float32Array(len * 3);
@@ -106,18 +166,26 @@ function makeGeo(
   const sp = new Float32Array(len);
   for (let i = 0; i < len; i++) {
     const c = cf(i);
-    col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+    col[i * 3] = c.r;
+    col[i * 3 + 1] = c.g;
+    col[i * 3 + 2] = c.b;
     const r = Math.random();
-    sz[i] = szBase * (r < 0.06 ? 4 + Math.random() * 5 : r < 0.22 ? 2 + Math.random() * 2 : 0.7 + Math.random() * 1.2);
+    sz[i] =
+      szBase *
+      (r < 0.06
+        ? 4 + Math.random() * 5
+        : r < 0.22
+          ? 2 + Math.random() * 2
+          : 0.7 + Math.random() * 1.2);
     ph[i] = Math.random();
     sp[i] = 0.5 + Math.random() * 2;
   }
   const g = new BufferGeometry();
-  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-  g.setAttribute('color', new Float32BufferAttribute(col, 3));
-  g.setAttribute('size', new Float32BufferAttribute(sz, 1));
-  g.setAttribute('aPhase', new Float32BufferAttribute(ph, 1));
-  g.setAttribute('aSpeed', new Float32BufferAttribute(sp, 1));
+  g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new Float32BufferAttribute(col, 3));
+  g.setAttribute("size", new Float32BufferAttribute(sz, 1));
+  g.setAttribute("aPhase", new Float32BufferAttribute(ph, 1));
+  g.setAttribute("aSpeed", new Float32BufferAttribute(sp, 1));
   return g;
 }
 
@@ -125,15 +193,25 @@ function makeGeo(
 function Bulge() {
   const ref = useRef<Points>(null);
   const mat = useMemo(makeMat, []);
-  const geo = useMemo(() => makeGeo(BULGE_COUNT,
-    () => {
-      const r = Math.pow(Math.random(), 2.8) * BULGE_R;
-      const th = Math.random() * Math.PI * 2;
-      const ph = Math.acos(2 * Math.random() - 1);
-      return [r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th)*0.45, r*Math.cos(ph)];
-    },
-    () => new Color(0.93, 0.96, 1.0), 0.045
-  ), []);
+  const geo = useMemo(
+    () =>
+      makeGeo(
+        BULGE_COUNT,
+        () => {
+          const r = Math.pow(Math.random(), 2.8) * BULGE_R;
+          const th = Math.random() * Math.PI * 2;
+          const ph = Math.acos(2 * Math.random() - 1);
+          return [
+            r * Math.sin(ph) * Math.cos(th),
+            r * Math.sin(ph) * Math.sin(th) * 0.45,
+            r * Math.cos(ph),
+          ];
+        },
+        () => new Color(0.93, 0.96, 1.0),
+        0.045,
+      ),
+    [],
+  );
   useFrame(({ clock }) => {
     (mat.uniforms.uTime as any).value = clock.elapsedTime;
     if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.025;
@@ -144,10 +222,21 @@ function Bulge() {
 function Arms() {
   const ref = useRef<Points>(null);
   const mat = useMemo(makeMat, []);
-  const geo = useMemo(() => makeGeo(ARM_COUNT,
-    (i) => spiral(Math.random() * Math.PI * 0.5, Math.pow(Math.random(), 0.42) * GALAXY_R, i % ARMS),
-    () => starColor(), 0.05
-  ), []);
+  const geo = useMemo(
+    () =>
+      makeGeo(
+        ARM_COUNT,
+        (i) =>
+          spiral(
+            Math.random() * Math.PI * 0.5,
+            Math.pow(Math.random(), 0.42) * GALAXY_R,
+            i % ARMS,
+          ),
+        () => starColor(),
+        0.05,
+      ),
+    [],
+  );
   useFrame(({ clock }) => {
     (mat.uniforms.uTime as any).value = clock.elapsedTime;
     if (ref.current) ref.current.rotation.z = clock.elapsedTime * ROT_SPEED;
@@ -158,15 +247,25 @@ function Arms() {
 function Clusters() {
   const ref = useRef<Points>(null);
   const mat = useMemo(makeMat, []);
-  const geo = useMemo(() => makeGeo(CLUSTER_COUNT,
-    (i) => {
-      const arm = i % ARMS;
-      const r = 0.5 + Math.pow(Math.random(), 0.5) * (GALAXY_R - 0.5);
-      const [x, y, z] = spiral(Math.random() * Math.PI * 0.4, r, arm);
-      return [x + (Math.random() - 0.5) * 0.12, y + (Math.random() - 0.5) * 0.03, z + (Math.random() - 0.5) * 0.12];
-    },
-    () => new Color(0xf0f8ff), 0.09
-  ), []);
+  const geo = useMemo(
+    () =>
+      makeGeo(
+        CLUSTER_COUNT,
+        (i) => {
+          const arm = i % ARMS;
+          const r = 0.5 + Math.pow(Math.random(), 0.5) * (GALAXY_R - 0.5);
+          const [x, y, z] = spiral(Math.random() * Math.PI * 0.4, r, arm);
+          return [
+            x + (Math.random() - 0.5) * 0.12,
+            y + (Math.random() - 0.5) * 0.03,
+            z + (Math.random() - 0.5) * 0.12,
+          ];
+        },
+        () => new Color(0xf0f8ff),
+        0.09,
+      ),
+    [],
+  );
   useFrame(({ clock }) => {
     (mat.uniforms.uTime as any).value = clock.elapsedTime;
     if (ref.current) ref.current.rotation.z = clock.elapsedTime * ROT_SPEED;
@@ -187,17 +286,28 @@ function Dust() {
     for (let i = 0; i < DUST_COUNT; i++) {
       const v = 0.012 + Math.random() * 0.05;
       const c = new Color().setHSL(0.06, 0.15, v);
-      col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
     }
     const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-    g.setAttribute('color', new Float32BufferAttribute(col, 3));
+    g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+    g.setAttribute("color", new Float32BufferAttribute(col, 3));
     return g;
   }, []);
-  useFrame(({ clock }) => { if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.005; });
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.z = clock.elapsedTime * 0.005;
+  });
   return (
     <points ref={ref} geometry={geo}>
-      <pointsMaterial vertexColors sizeAttenuation size={0.05} transparent opacity={0.16} depthWrite={false} />
+      <pointsMaterial
+        vertexColors
+        sizeAttenuation
+        size={0.05}
+        transparent
+        opacity={0.16}
+        depthWrite={false}
+      />
     </points>
   );
 }
@@ -209,16 +319,29 @@ function StaticStars() {
       const th = Math.random() * Math.PI * 2;
       const ph = Math.acos(2 * Math.random() - 1);
       const r = 16 + Math.random() * 28;
-      return [r * Math.sin(ph) * Math.cos(th), r * Math.sin(ph) * Math.sin(th), r * Math.cos(ph)];
+      return [
+        r * Math.sin(ph) * Math.cos(th),
+        r * Math.sin(ph) * Math.sin(th),
+        r * Math.cos(ph),
+      ];
     });
     const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+    g.setAttribute("position", new Float32BufferAttribute(pos, 3));
     return g;
   }, []);
-  useFrame(({ clock }) => { if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.003; });
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.003;
+  });
   return (
     <points ref={ref} geometry={geo}>
-      <pointsMaterial color={0xaab6d0} size={0.012} sizeAttenuation transparent opacity={0.5} depthWrite={false} />
+      <pointsMaterial
+        color={0xaab6d0}
+        size={0.012}
+        sizeAttenuation
+        transparent
+        opacity={0.5}
+        depthWrite={false}
+      />
     </points>
   );
 }
@@ -226,21 +349,26 @@ function StaticStars() {
 /* ── Núcleo galáctico (sprite glow) ────────────────── */
 function CoreGlow() {
   const tex = useMemo(() => {
-    const c = document.createElement('canvas');
+    const c = document.createElement("canvas");
     c.width = c.height = 256;
-    const ctx = c.getContext('2d')!;
+    const ctx = c.getContext("2d")!;
     const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-    g.addColorStop(0, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.2, 'rgba(255,255,255,0.55)');
-    g.addColorStop(0.5, 'rgba(255,255,255,0.15)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
+    g.addColorStop(0, "rgba(255,255,255,0.95)");
+    g.addColorStop(0.2, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.5, "rgba(255,255,255,0.15)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 256, 256);
     return new CanvasTexture(c);
   }, []);
   return (
     <sprite scale={[1.0, 1.0, 1]}>
-      <spriteMaterial map={tex} blending={AdditiveBlending} depthWrite={false} transparent />
+      <spriteMaterial
+        map={tex}
+        blending={AdditiveBlending}
+        depthWrite={false}
+        transparent
+      />
     </sprite>
   );
 }
@@ -279,40 +407,141 @@ function Lights() {
 
 /* ══════════════════════════════════════════════════════
    Componente exportado — Galaxy animada sem interação
+   Pausa em background/overlay-full com retomada exata
+   (frameloop never↔always + restauração do clock — o
+   setFrameloop do R3F zera elapsedTime, por isso o
+   restore manual em frozenRef; ZERO reset/pop visual).
    ══════════════════════════════════════════════════════ */
 export function AstroSphere() {
-  const glRef = useRef<WebGLRenderer | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef<RootState | null>(null);
+  const frozenRef = useRef(0);
+  const pausedRef = useRef(false);
+  const restorePendingRef = useRef(false);
+  const hiddenRef = useRef(false);
+  const coveredRef = useRef(false);
+  const [paused, setPaused] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
-  const onCreated = useCallback(({ gl }: { gl: WebGLRenderer }) => { glRef.current = gl; }, []);
-
-  useEffect(() => {
-    const canvas = glRef.current?.domElement;
-    if (!canvas) return;
-    const lost = (e: Event) => { e.preventDefault(); setReconnecting(true); };
-    const restored = () => {
-      // Re-cria geometrias/shaders/texturas → remontando o Canvas (key++)
-      setReconnecting(false);
-      setResetKey((k) => k + 1);
-    };
-    canvas.addEventListener('webglcontextlost', lost, false);
-    canvas.addEventListener('webglcontextrestored', restored, false);
-    return () => {
-      canvas.removeEventListener('webglcontextlost', lost);
-      canvas.removeEventListener('webglcontextrestored', restored);
-    };
+  const onCreated = useCallback((state: RootState) => {
+    stateRef.current = state;
   }, []);
 
+  const applyPaused = useCallback((next: boolean) => {
+    if (pausedRef.current === next) return;
+    if (next) {
+      // Captura ANTES do setFrameloop('never') zerar o clock do R3F.
+      // Se um restore anterior ainda não aplicou, mantém o frozen anterior.
+      if (!restorePendingRef.current) {
+        frozenRef.current = stateRef.current?.clock.elapsedTime ?? 0;
+      }
+    } else {
+      restorePendingRef.current = true;
+    }
+    pausedRef.current = next;
+    setPaused(next);
+  }, []);
+
+  const recompute = useCallback(() => {
+    applyPaused(hiddenRef.current || coveredRef.current);
+  }, [applyPaused]);
+
+  // Restaura o relógio DEPOIS do Canvas aplicar frameloop (effect do filho
+  // roda antes do effect do pai): setFrameloop('always') deixa elapsed=0 e
+  // oldTime=now → devolver elapsedTime congelado = retomada exata, sem pop.
+  useEffect(() => {
+    if (paused) return;
+    if (!restorePendingRef.current) return;
+    const s = stateRef.current;
+    if (!s) return;
+    s.clock.elapsedTime = frozenRef.current;
+    restorePendingRef.current = false;
+  }, [paused]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+
+    const checkCover = () => {
+      coveredRef.current = isViewportCovered(root);
+      recompute();
+    };
+
+    const onVisibility = () => {
+      hiddenRef.current = document.visibilityState === "hidden";
+      recompute();
+    };
+
+    hiddenRef.current =
+      typeof document !== "undefined" && document.visibilityState === "hidden";
+
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Mutations (abrir/fechar menu/modal) com debounce…
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const scheduleCheck = () => {
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(checkCover, 120);
+    };
+    const mo = new MutationObserver(scheduleCheck);
+    mo.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "open", "aria-hidden"],
+    });
+    // …+ rede de segurança a cada 500ms p/ transições CSS sem mutation final
+    // (ex.: drawer deslizando 300ms — rect parcial na mutation inicial).
+    const iv = setInterval(checkCover, 500);
+
+    checkCover();
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      mo.disconnect();
+      clearInterval(iv);
+      if (debounce) clearTimeout(debounce);
+    };
+  }, [recompute]);
+
+  const onContextLost = useCallback((e: Event) => {
+    e.preventDefault();
+    setReconnecting(true);
+  }, []);
+
+  const onContextRestored = useCallback(() => {
+    // Re-cria geometrias/shaders/texturas → remontando o Canvas (key++)
+    setReconnecting(false);
+    setResetKey((k) => k + 1);
+  }, []);
+
+  // Listeners de context-loss: anexados após onCreated (layout effect do
+  // Canvas roda antes do effect do pai) e reanexados a cada remount (resetKey).
+  useEffect(() => {
+    const el = stateRef.current?.gl?.domElement;
+    if (!el) return;
+    el.addEventListener("webglcontextlost", onContextLost, false);
+    el.addEventListener("webglcontextrestored", onContextRestored, false);
+    return () => {
+      el.removeEventListener("webglcontextlost", onContextLost);
+      el.removeEventListener("webglcontextrestored", onContextRestored);
+    };
+  }, [onContextLost, onContextRestored, resetKey]);
+
   return (
-    <div className="fixed inset-0 z-0" aria-hidden="true">
+    <div ref={rootRef} className="fixed inset-0 z-0" aria-hidden="true">
       <Canvas
         key={resetKey}
+        frameloop={paused ? "never" : "always"}
         camera={{ position: [0, 3.5, 6.2], fov: 48, near: 0.1, far: 200 }}
         dpr={DPR}
-        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+        }}
         onCreated={onCreated}
-        style={{ background: '#000000' }}
+        style={{ background: "#000000" }}
       >
         <Lights />
         <Galaxy />

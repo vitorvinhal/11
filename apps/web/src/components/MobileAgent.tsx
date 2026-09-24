@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Terminal,
   Play,
@@ -18,7 +18,8 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { useDeviceAgent, DeviceJobView } from "../lib/useDeviceAgent";
+import { useDeviceAgent } from "../lib/useDeviceAgent";
+import { useDeviceJobsShared } from "../lib/device-poll-context";
 import { useAuth } from "../lib/auth";
 import { getDeviceContext } from "../lib/device-client";
 
@@ -123,37 +124,13 @@ function timeUntilExpiry(expiresAt?: string | null): string | null {
 export function MobileAgent() {
   const agent = useDeviceAgent();
   const { getAccessToken } = useAuth();
-  const [history, setHistory] = useState<DeviceJobView[]>([]);
+  // Histórico via feed único de 5s (provider no AppShell) — sem timer local.
+  const { jobs: history, refreshNow } = useDeviceJobsShared();
   const [command, setCommand] = useState("");
   const [selectedApprovals, setSelectedApprovals] = useState<Set<string>>(
     new Set(),
   );
   const ctx = getDeviceContext();
-
-  const fetchHistory = useCallback(async () => {
-    const token = await getAccessToken();
-    if (!token) return;
-    try {
-      const res = await fetch(
-        `/api/devices/jobs?deviceId=${ctx.deviceId ?? ""}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (res.ok) {
-        const data = (await res.json()) as { jobs: DeviceJobView[] };
-        setHistory(data.jobs);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [getAccessToken, ctx.deviceId]);
-
-  useEffect(() => {
-    fetchHistory();
-    const t = setInterval(fetchHistory, 5000);
-    return () => clearInterval(t);
-  }, [fetchHistory]);
 
   const running = agent.status === "polling" || agent.status === "running";
 
@@ -174,11 +151,11 @@ export function MobileAgent() {
         }),
       });
       setCommand("");
-      fetchHistory();
+      void refreshNow();
     } catch {
       /* ignore */
     }
-  }, [command, ctx.deviceId, getAccessToken, fetchHistory]);
+  }, [command, ctx.deviceId, getAccessToken, refreshNow]);
 
   // ── Bulk approval handlers ──
 
@@ -200,22 +177,20 @@ export function MobileAgent() {
   }, []);
 
   const bulkApprove = useCallback(async () => {
-    const token = await getAccessToken();
-    if (!token || selectedApprovals.size === 0) return;
+    if (selectedApprovals.size === 0) return;
     const ids = Array.from(selectedApprovals);
     await Promise.all(ids.map((id) => agent.approveJob(id, true)));
     setSelectedApprovals(new Set());
-    fetchHistory();
-  }, [selectedApprovals, agent, getAccessToken, fetchHistory]);
+    void refreshNow();
+  }, [selectedApprovals, agent, refreshNow]);
 
   const bulkReject = useCallback(async () => {
-    const token = await getAccessToken();
-    if (!token || selectedApprovals.size === 0) return;
+    if (selectedApprovals.size === 0) return;
     const ids = Array.from(selectedApprovals);
     await Promise.all(ids.map((id) => agent.approveJob(id, false)));
     setSelectedApprovals(new Set());
-    fetchHistory();
-  }, [selectedApprovals, agent, getAccessToken, fetchHistory]);
+    void refreshNow();
+  }, [selectedApprovals, agent, refreshNow]);
 
   return (
     <div className="flex h-full flex-col">
@@ -249,10 +224,10 @@ export function MobileAgent() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
-                void agent.refreshPending();
-                fetchHistory();
+                void refreshNow();
               }}
               className="rounded-lg bg-white/5 p-1.5 text-text-dim hover:bg-white/10 hover:text-text-primary transition"
+              title="Atualizar"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>

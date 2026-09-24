@@ -4,15 +4,14 @@ import { useState, useEffect } from "react";
 import { Sparkles, ExternalLink } from "lucide-react";
 import { ReleaseNotes } from "./ReleaseNotes";
 import { DownloadCards } from "./DownloadCards";
-import type { UpdateInfo } from "../lib/update-client";
+import { fetchUpdates, type UpdateInfo } from "../lib/update-client";
 
 export function VersionBadge() {
   const [info, setInfo] = useState<UpdateInfo | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/updates", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
+    fetchUpdates()
       .then((d) => setInfo(d))
       .catch(() => {});
   }, []);

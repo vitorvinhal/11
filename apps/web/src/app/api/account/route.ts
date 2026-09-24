@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadRootEnv } from "../../../lib/server-env";
-import { getServerClient, getAuthClient } from "../../../lib/server-supabase";
+import { getServerClient } from "../../../lib/server-supabase";
+import { requireUser } from "../../../lib/auth-unify";
 
 loadRootEnv();
 
@@ -14,15 +15,14 @@ export const dynamic = "force-dynamic";
  */
 export async function DELETE(req: Request) {
   try {
-    const auth = getAuthClient(req);
-    const { data: userData, error: userErr } = await auth.auth.getUser();
-    if (userErr || !userData?.user) {
+    const session = await requireUser(req);
+    if (!session) {
       return NextResponse.json(
         { ok: false, error: "Não autenticado" },
         { status: 401 },
       );
     }
-    const userId = userData.user.id;
+    const userId = session.userId;
 
     const admin = getServerClient();
     if (!admin) {

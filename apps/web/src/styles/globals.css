@@ -12,6 +12,24 @@
   --text-primary: #ececf1;
   --text-muted: rgba(236, 236, 241, 0.55);
   --text-dim: rgba(236, 236, 241, 0.32);
+
+  /* ── Design tokens: glass (variantes consolidadas) ── */
+  --glass-blur-sm: blur(12px);
+  --glass-blur-md: blur(18px);
+  --glass-blur-lg: blur(22px);
+  --glass-blur-xl: blur(26px);
+  --glass-sat-md: saturate(150%);
+  --glass-sat-lg: saturate(160%);
+  --glass-sat-sm: saturate(140%);
+  --glass-bg-base: var(--surface);
+  --glass-bg-chip: rgba(255, 255, 255, 0.05);
+  --glass-bg-card: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  --glass-bg-astra: rgba(255, 255, 255, 0.028);
+  --glass-bg-strong: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  --glass-border: 1px solid rgba(255, 255, 255, 0.07);
+  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.09);
+  --glass-radius: 1rem;
+  --glass-space: 1rem;
 }
 
 /* Dark mode (default) */
@@ -81,9 +99,20 @@ main, p, h1, h2, h3, span, button, div {
   color: #fff;
 }
 
-/* ── Camadas de fundo fixas ─────────────────────── */
-.aurora-bg {
+/* ── Camadas de fundo — consolidadas no container .bg-stack (layout.tsx) ──
+   A stack é um único fixed full-screen (z-0) com stacking context próprio:
+   aurora (-2) → vignette (-1) → AstroSphere (0) → noise. O conteúdo da app
+   (z-10) fica sempre acima; camadas não competem mais por z-index global. */
+.bg-stack {
   position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  contain: layout paint;
+}
+
+.aurora-bg {
+  position: absolute;
   inset: 0;
   z-index: -2;
   background:
@@ -105,30 +134,39 @@ main, p, h1, h2, h3, span, button, div {
 }
 
 .vignette {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background: radial-gradient(ellipse 80% 70% at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.55) 100%);
 }
 
-/* ── Glass – sem bordas ──────────────────────────── */
+/* ── Glass – tokens consolidados + isolamento de compositing ──
+   `contain: layout paint` isola a camada de blur (sem recompor a árvore
+   WebGL por frame) e `will-change: backdrop-filter` promove a camada.
+   Blur REAL preservado (ZERO degradation — fallback estático proibido). */
 .glass {
-  background: var(--surface);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  background: var(--glass-bg-base);
+  backdrop-filter: var(--glass-blur-lg) var(--glass-sat-md);
+  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-sat-md);
+  contain: layout paint;
+  will-change: backdrop-filter;
 }
 
 .glass-card {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
-  backdrop-filter: blur(26px) saturate(160%);
-  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  background: var(--glass-bg-card);
+  backdrop-filter: var(--glass-blur-xl) var(--glass-sat-lg);
+  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-sat-lg);
+  contain: layout paint;
+  will-change: backdrop-filter;
 }
 
 .glass-chip {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--glass-bg-chip);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  contain: layout paint;
+  will-change: backdrop-filter;
 }
 
 /* ── Scrollbar ────────────────────────────────────── */
@@ -182,19 +220,23 @@ main, p, h1, h2, h3, span, button, div {
 
   /* Modo Astra — glassmorphic border + fundo absoluto */
   .glassmorph {
-    background: rgba(255, 255, 255, 0.028);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border-radius: 1rem;
+    background: var(--glass-bg-astra);
+    border: var(--glass-border);
+    backdrop-filter: var(--glass-blur-md) var(--glass-sat-sm);
+    -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-sat-sm);
+    border-radius: var(--glass-radius);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 40px rgba(0, 0, 0, 0.35);
+    contain: layout paint;
+    will-change: backdrop-filter;
   }
   .glassmorph-strong {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border-radius: 1rem;
+    background: var(--glass-bg-strong);
+    border: var(--glass-border-strong);
+    backdrop-filter: var(--glass-blur-lg) var(--glass-sat-lg);
+    -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-sat-lg);
+    border-radius: var(--glass-radius);
+    contain: layout paint;
+    will-change: backdrop-filter;
   }
   .border-glow-cyan {
     border-color: rgba(0, 209, 255, 0.28);

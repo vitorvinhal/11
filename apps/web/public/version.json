@@ -1,9 +1,9 @@
 {
-  "version": "2.17.0-alpha",
-  "versionCode": 34,
+  "version": "2.18.0-alpha",
+  "versionCode": 35,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Patch consolidado 2.17.0-alpha: unificacao auth requireUser, fixes Orca sandbox, IA local Ollama, integracao multi-agente, docs PRD/ADR/SPEC/PLAN + MCPs"
+    "Ciclo 2 consolidado: auth 10 rotas requireUser, redesign UI ChatGPT/Claude + perf AstroSphere, CI regressao seguranca (+43 testes), orca cwd sandbox, Android SDK fix, version.js Cargo sync"
   ]
 }

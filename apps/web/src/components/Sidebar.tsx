@@ -21,6 +21,7 @@ import {
   ScrollText,
   Wallet,
   Smartphone,
+  PanelLeft,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { usePlatform, Platform } from "../lib/platform";
@@ -117,40 +118,6 @@ export function Sidebar({
     await signOut();
     setBusySignout(false);
   };
-
-  if (collapsed) {
-    return (
-      <aside className="flex h-full w-[60px] flex-col items-center gap-2 bg-[#0a0d12] py-4">
-        <button
-          onClick={() => setCollapsed(false)}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-white/5 text-text-muted hover:text-text-primary transition"
-          title="Menu"
-        >
-          <MessageSquare className="h-4 w-4" />
-        </button>
-        <button
-          onClick={onNewChat}
-          className="mt-1 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#7dd3fc]/20 to-[#e879f9]/20 text-primary hover:brightness-110 transition"
-          title="Nova conversa"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-        <div className="mt-auto flex flex-col items-center gap-2">
-          {user?.user_metadata?.avatar_url ? (
-            <img
-              src={user.user_metadata.avatar_url}
-              alt="Avatar"
-              className="h-9 w-9 rounded-full object-cover"
-            />
-          ) : (
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
-              {initials}
-            </div>
-          )}
-        </div>
-      </aside>
-    );
-  }
 
   const allNavItems: Array<{
     id: NavTab;
@@ -252,6 +219,65 @@ export function Sidebar({
     (item) => !item.platforms || item.platforms.includes(platform),
   );
 
+  // Rail retrátil (estilo ChatGPT/Claude): ícones das abas principais
+  // continuam acessíveis — antes, colapsar perdia toda a navegação.
+  if (collapsed) {
+    return (
+      <aside className="flex h-full w-[60px] shrink-0 flex-col items-center gap-1.5 bg-[#0a0d12] py-4">
+        <button
+          onClick={() => setCollapsed(false)}
+          className="grid h-9 w-9 place-items-center rounded-xl bg-white/5 text-text-muted transition hover:text-text-primary"
+          title="Expandir menu"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onNewChat}
+          className="mt-1 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#7dd3fc]/20 to-[#e879f9]/20 text-primary transition hover:brightness-110"
+          title="Nova conversa"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <nav className="mt-2 flex w-full flex-col items-center gap-1">
+          {navItems.slice(0, 8).map((ni) => (
+            <button
+              key={ni.id}
+              onClick={() => onNavChange(ni.id)}
+              title={ni.label}
+              className={`grid h-9 w-9 place-items-center rounded-xl transition ${
+                activeNav === ni.id
+                  ? "bg-white/[0.08] text-text-primary"
+                  : "text-text-dim hover:bg-white/[0.04] hover:text-text-primary"
+              }`}
+            >
+              <ni.icon className="h-4 w-4" />
+            </button>
+          ))}
+        </nav>
+        <div className="mt-auto flex flex-col items-center gap-2">
+          <button
+            onClick={() => onOpenSettings?.()}
+            className="grid h-9 w-9 place-items-center rounded-xl text-text-dim transition hover:bg-white/[0.04] hover:text-text-primary"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+          {user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt="Avatar"
+              className="h-9 w-9 rounded-full object-cover"
+            />
+          ) : (
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7dd3fc] to-[#e879f9] text-[11px] font-bold text-black">
+              {initials}
+            </div>
+          )}
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="flex h-full w-[272px] shrink-0 flex-col bg-[#0d0f15]">
       <div className="flex items-center justify-between px-4 py-3.5">
@@ -270,7 +296,7 @@ export function Sidebar({
               else setCollapsed(true);
             }}
             className="p-1.5 rounded-lg text-text-dim hover:bg-white/5 hover:text-text-primary transition"
-            title="Fechar"
+            title="Recolher menu"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -297,7 +323,11 @@ export function Sidebar({
               )}
               <button
                 onClick={() => onNavChange(ni.id)}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition ${activeNav === ni.id ? "bg-white/6 text-text-primary" : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"}`}
+                className={`relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition ${
+                  activeNav === ni.id
+                    ? "bg-white/[0.07] text-text-primary before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r before:bg-primary"
+                    : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"
+                }`}
               >
                 <ni.icon className="h-3.5 w-3.5 opacity-70" /> {ni.label}
               </button>
@@ -319,7 +349,11 @@ export function Sidebar({
                     <div
                       key={c.id}
                       onClick={() => onSelectChat(c.id)}
-                      className={`group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] transition ${activeChat === c.id ? "bg-white/5 text-text-primary" : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"}`}
+                      className={`group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] transition ${
+                        activeChat === c.id
+                          ? "bg-white/[0.07] text-text-primary"
+                          : "text-text-muted hover:bg-white/[0.03] hover:text-text-primary"
+                      }`}
                     >
                       <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-50" />
                       <span className="flex-1 truncate">{c.title}</span>

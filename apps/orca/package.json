@@ -1,11 +1,14 @@
 {
   "name": "orca",
-  "version": "2.17.0-alpha",
+  "version": "2.18.0-alpha",
   "private": true,
   "main": "src/server.ts",
   "types": "src/server.ts",
   "scripts": {
-    "start": "ts-node src/server.ts"
+    "start": "ts-node src/server.ts",
+    "serve": "ts-node src/serve.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "jest"
   },
   "dependencies": {
     "express": "^5.2.1",
