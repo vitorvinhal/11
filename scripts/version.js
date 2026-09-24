@@ -12,8 +12,11 @@
  *   - Parses current version from apps/web/public/version.json
  *   - Bumps semver (major/minor/patch) preserving the pre-release tag (default alpha)
  *   - Writes version.json + all workspace package.json files
+ *   - Also syncs apps/desktop/src-tauri/Cargo.toml [package].version and
+ *     apps/desktop/src-tauri/tauri.conf.json "version" (same bump)
  *   - Collects change lines from --change "..." arguments
  *   - Prepends a new section to CHANGELOG.md
+ *   - --dry-run: computes and prints everything without writing any file
  */
 
 const fs = require('fs');
@@ -22,6 +25,8 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const VERSION_FILE = path.join(ROOT, 'apps/web/public/version.json');
 const CHANGELOG = path.join(ROOT, 'CHANGELOG.md');
+const CARGO_TOML = path.join(ROOT, 'apps/desktop/src-tauri/Cargo.toml');
+const TAURI_CONF = path.join(ROOT, 'apps/desktop/src-tauri/tauri.conf.json');
 
 function fail(msg) {
   console.error(`❌ ${msg}`);
@@ -70,8 +75,51 @@ function writeJson(file, obj) {
   fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n', 'utf8');
 }
 
+// Sincroniza a MESMA versão no Cargo.toml (só a linha version do [package])
+// e no tauri.conf.json (campo "version" de topo). Sem tocar em schemas gerados.
+function updateDesktopTauriVersion(nextVersion, dryRun) {
+  const bare = nextVersion.replace('v', '');
+  const results = [];
+
+  if (fs.existsSync(CARGO_TOML)) {
+    const before = fs.readFileSync(CARGO_TOML, 'utf8');
+    const currentMatch = /^\[package\][^[]*?^version\s*=\s*"([^"]*)"/ms.exec(before);
+    const after = before.replace(
+      /^(\[package\][^[]*?^version\s*=\s*)"[^"]*"/ms,
+      `$1"${bare}"`,
+    );
+    if (after === before) {
+      console.warn(`⚠️  Cargo.toml: linha version do [package] não encontrada (pulado)`);
+    } else if (dryRun) {
+      results.push(`Cargo.toml: ${currentMatch ? currentMatch[1] : '?'} → ${bare} (dry-run, não gravado)`);
+    } else {
+      fs.writeFileSync(CARGO_TOML, after, 'utf8');
+      results.push(`Cargo.toml: ${currentMatch ? currentMatch[1] : '?'} → ${bare}`);
+    }
+  }
+
+  if (fs.existsSync(TAURI_CONF)) {
+    let conf;
+    try { conf = JSON.parse(fs.readFileSync(TAURI_CONF, 'utf8')); } catch { conf = null; }
+    if (conf && typeof conf.version === 'string') {
+      if (dryRun) {
+        results.push(`tauri.conf.json: ${conf.version} → ${bare} (dry-run, não gravado)`);
+      } else {
+        conf.version = bare;
+        writeJson(TAURI_CONF, conf);
+        results.push(`tauri.conf.json → ${bare}`);
+      }
+    } else {
+      console.warn('⚠️  tauri.conf.json: campo version ausente/inválido (pulado)');
+    }
+  }
+
+  for (const r of results) console.log(`   ${r}`);
+}
+
 function main() {
   const args = process.argv.slice(2);
+  const dryRun = args.includes('--dry-run');
   const kind = args.find((a) => ['major', 'minor', 'patch'].includes(a)) || 'patch';
 
   // Optional explicit version override
@@ -95,6 +143,14 @@ function main() {
   let next = bump(current, kind);
   // Reconstrói a versão com o pre-release correto (sem replace frágil).
   let nextVersion = `v${next.major}.${next.minor}.${next.patch}-${preTag || next.pre}`;
+
+  if (dryRun) {
+    console.log(`🔍 dry-run: ${versionJson.version} → ${nextVersion.replace('v', '')} (nenhum arquivo será gravado)`);
+    updateDesktopTauriVersion(nextVersion, true);
+    if (changes.length) console.log(`   CHANGELOG (+${changes.length} entrada(s)) — não gravado`);
+    console.log('Dry-run OK — nenhum arquivo alterado.');
+    return;
+  }
 
   // 1. Update version.json (changelog -> fresh list for this release)
   writeJson(VERSION_FILE, {
@@ -133,6 +189,9 @@ function main() {
     // Heartbeat
     if (f === pkgFiles[0]) console.log(`   package.json (root): ${oldV} → ${pkg.version}`);
   }
+
+  // 2b. Sync desktop Tauri (Cargo.toml + tauri.conf.json) — MESMO bump
+  updateDesktopTauriVersion(nextVersion, false);
 
   // 3. Update CHANGELOG.md
   let changelog = '';
