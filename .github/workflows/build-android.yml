@@ -42,7 +42,8 @@ jobs:
 
       - name: Build APK release
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        # gradlew pode perder +x em checkout antigo — chmod defensivo
+        run: chmod +x ./gradlew && ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
