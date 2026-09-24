@@ -20,28 +20,42 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
-## Unreleased
+## v2.18.0-alpha — 2026-09-24
 
-> Draft consolidado (SEM bump — Brain faz o release). TASK-UI-PERF-001 (AG4).
+Ciclo 2 consolidado — branches AG1-4 + Brain em `integration/agents-20260924`:
+
+### Security
+
+- **AUTH-GAPS-002 (AG4):** `requireUser()` em 10 rotas que estavam abertas — `stt`, `tts`, `media` (GET/POST/DELETE/PATCH), `system`, `updates`, `account` (DELETE), `connectors/{github,google,notion,slack}`; callbacks OAuth públicas por design (comentado); testes de regressão (401 sem sessão)
+- **ORCA-PAIR-002 (AG1):** sandbox de `cwd` em `apps/orca` — `ORCA_ALLOWED_ROOTS` (default = raiz do monorepo), validação via `path.relative` (nunca `startsWith`), metacaracteres + bind `127.0.0.1` preservados; 19 testes unitários (escape `../..`, absoluto fora, sibling, válido)
+- **CI-MIN-001 (AG3):** suíte de regressão de segurança — `traversal` (13), `injection` (18), `auth-gaps` (7), `ssrf` (5) = **+43 testes**; workflow `security-regression.yml` dedicado (push/PR → main, só testes de segurança)
 
 ### ✨ UI/UX
 
-- **Sidebar estilo ChatGPT/Claude:** rail retrátil agora mantém acesso a todas as abas (ícones + Settings — antes, colapsar perdia a navegação); indicador ativo com barra de destaque; conversas com estado ativo mais legível.
-- **ChatPanel:** render de markdown nativo (`MarkdownLite`) — headings, listas, blockquote, **negrito**, _itálico_, `inline code` e links (http/https apenas, sem `dangerouslySetInnerHTML`); balão no estilo ChatGPT/Claude para mensagens do usuário.
-- **Blocos de código:** botão **Copiar** funcional (antes era botão morto) com feedback "Copiado"; "Abrir no Code" preservado.
-- **Code-split dos painéis:** Skills, Projects, Neural, Connectors, Plugins, Artifacts, Eleven Code, Mídia, Agente PC, Agente Mobile, Memória, FinOps e Canvas agora carregam via chunk separado só quando a aba abre (`lazyLoad`); bundle inicial fica com shell + chat.
+- **Sidebar estilo ChatGPT/Claude:** rail retrátil com acesso a todas as abas; indicador ativo com barra de destaque
+- **ChatPanel:** markdown nativo (`MarkdownLite`) — headings, listas, blockquote, negrito, itálico, inline code, links http/https (sem `dangerouslySetInnerHTML`); balão estilo ChatGPT/Claude
+- **Blocos de código:** botão **Copiar** funcional com feedback "Copiado"
+- **Code-split dos 13 painéis** via `lazyLoad` — bundle inicial só shell + chat
 
 ### ⚡ Performance
 
-- **AstroSphere 3D pausa o render** com menu/modal/drawer abertos ou aba em background (`visibilitychange` + MutationObserver + sweep 500ms) e **retoma sem resetar o clock** (`elapsedTime` preservado — sem pulso/pop ao voltar).
-- **Blur/glass com tokens** (`--glass-blur-*`, `--glass-bg-*`, bordas, raios) + `contain: layout paint` + `will-change: backdrop-filter` nas variantes glass — menos repaint, mesmo blur visual (light mode preservado via `--glass-bg-base: var(--surface)`).
-- **Camadas de fundo consolidadas** em `.bg-stack` (aurora → vignette → AstroSphere → noise) com z-index otimizado.
-- **Polling unificado:** `/api/devices/jobs` passou a ter **um único timer de 5s** compartilhado via `DeviceJobsProvider` (antes: até 3 requisições paralelas — MobileDevicePanel + MobileAgent + refresh do `useDeviceAgent`; o poll de 2.5s do job ativo foi mantido).
-- **Medição:** FPS na landing (Playwright headless, rAF 3s × 2, mediana): **23.2 → 25.9** (mesmo método).
+- **AstroSphere 3D pausa o render** com menu/modal aberto ou aba em background e **retoma sem resetar o clock** (`elapsedTime` preservado)
+- **Blur/glass com tokens** + `contain: layout paint` + `will-change: backdrop-filter` — menos repaint, mesmo blur visual
+- **Camadas de fundo consolidadas** em `.bg-stack` (aurora → vignette → AstroSphere → noise)
+- **Polling unificado:** um único timer de 5s via `DeviceJobsProvider` (antes: até 3 paralelos)
+- **FPS medido:** 23.2 → 25.9 (+11,6%) — Playwright headless, rAF 3s × 2, mediana
 
 ### 🔧 Fix
 
-- `AstroSphere.isViewportCovered`: iteração de `NodeList` compatível com `target` ES5 do Next (`for…of` → `forEach`).
+- `AstroSphere.isViewportCovered`: `NodeList` compatível com ES5 do Next
+- **Android SDK packages** (workflow): separador espaço em vez de vírgula em `sdkmanager`
+- **`scripts/version.js`:** agora sincroniza também `Cargo.toml` + `tauri.conf.json` (dry-run `--dry-run`)
+- **Orca pairing:** wrapper CLI `orca serve --pairing-address --json` (`src/serve.ts`) + README com fluxo manual
+
+### QA
+
+- Gate integração: `pnpm -r lint` 0 erros · `pnpm -r test` **492/38 suites** (baseline 415 → +77) · `pnpm -r build` OK
+- FPS baseline → após: 23.2 → 25.9
 
 ---
 
