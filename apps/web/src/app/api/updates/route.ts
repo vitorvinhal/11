@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { loadRootEnv } from "../../../lib/server-env";
+import { requireUser } from "../../../lib/auth-unify";
 
 loadRootEnv();
 
@@ -33,7 +34,10 @@ function findVersionJson(): VersionJson | null {
   return null;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const session = await requireUser(req);
+  if (!session)
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const data: VersionJson = findVersionJson() ?? {
     version: "0.0.0",
     versionCode: 0,

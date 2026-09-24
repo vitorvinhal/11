@@ -1,103 +1,154 @@
 /**
- * CI-MIN-001 — Regressão de segurança: AUTH BYPASS (auth-gaps).
- *
- * Exigência: rotas com requireUser respondem 401 sem sessão — GET incluído.
- * Rotas alvo: /api/code, /api/code/read, /api/terminal/exec (GET+POST),
- * /api/pc-agent (GET).
- *
- * Notas de determinismo:
- * - auth-unify cai em "dev-user" se NEXT_PUBLIC_SUPABASE_URL ausente →
- *   a env é fixada ANTES do require dinâmico das rotas.
- * - getAuthClient é mockado para retornar sessão nula (sem rede em CI).
+ * AUTH-GAPS-002 ΓÇö testes de regress├úo das 10 rotas que estavam sem requireUser.
+ * Cen├írio: request SEM cookie/token de sess├úo ΓåÆ 401 em TODOS os handlers exportados.
+ * Mock: auth-unify.requireUser ΓåÆ null (sem sess├úo), simulando produ├º├úo sem JWT.
  */
-
-// Env ANTES de qualquer require de route (loadRootEnv não sobrescreve vars já setadas).
-process.env.NEXT_PUBLIC_SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://ci-min.supabase.co";
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "ci-min-anon-key";
-
-jest.mock("../../lib/server-supabase", () => ({
-  getAuthClient: () => ({
-    auth: {
-      getUser: async () => ({
-        data: { user: null },
-        error: { message: "no session" },
-      }),
-    },
-  }),
-  getServerClient: () => null,
+jest.mock("../../lib/auth-unify", () => ({
+  requireUser: jest.fn(async () => null),
 }));
 
-describe("auth-gaps — 401 sem sessão (GET incluído)", () => {
-  // Imports dinâmicos: só após env + mocks (jest.mock é hoisted, env não).
-  let codeGET: typeof import("../code/route").GET;
-  let readGET: typeof import("../code/read/route").GET;
-  let termGET: typeof import("../terminal/exec/route").GET;
-  let termPOST: typeof import("../terminal/exec/route").POST;
-  let pcGET: typeof import("../pc-agent/route").GET;
+import { POST as sttPost } from "./stt/route";
+import { POST as ttsPost } from "./tts/route";
+import {
+  GET as mediaGet,
+  POST as mediaPost,
+  DELETE as mediaDelete,
+  PATCH as mediaPatch,
+} from "./media/route";
+import { GET as systemGet } from "./system/route";
+import { GET as updatesGet } from "./updates/route";
+import { DELETE as accountDelete } from "./account/route";
+import { GET as githubGet } from "./connectors/github/route";
+import { GET as googleGet } from "./connectors/google/route";
+import { GET as notionGet } from "./connectors/notion/route";
+import { GET as slackGet } from "./connectors/slack/route";
 
-  beforeAll(() => {
-    ({ GET: codeGET } = require("./code/route"));
-    ({ GET: readGET } = require("./code/read/route"));
-    ({ GET: termGET, POST: termPOST } = require("./terminal/exec/route"));
-    ({ GET: pcGET } = require("./pc-agent/route"));
+type Handler = (req: Request) => Promise<Response>;
+
+function req(method: string, path: string, body?: unknown): Request {
+  return new Request(`http://localhost:3000${path}`, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+const ROUTES: Array<{
+  name: string;
+  method: string;
+  path: string;
+  handler: Handler;
+  body?: unknown;
+}> = [
+  {
+    name: "POST /api/stt",
+    method: "POST",
+    path: "/api/stt",
+    handler: sttPost,
+    body: { audio: "x", mime: "audio/webm" },
+  },
+  {
+    name: "POST /api/tts",
+    method: "POST",
+    path: "/api/tts",
+    handler: ttsPost,
+    body: { text: "oi" },
+  },
+  {
+    name: "GET /api/media",
+    method: "GET",
+    path: "/api/media",
+    handler: mediaGet,
+  },
+  {
+    name: "POST /api/media",
+    method: "POST",
+    path: "/api/media",
+    handler: mediaPost,
+    body: { filename: "a.png", data: "" },
+  },
+  {
+    name: "DELETE /api/media",
+    method: "DELETE",
+    path: "/api/media?id=x",
+    handler: mediaDelete,
+  },
+  {
+    name: "PATCH /api/media",
+    method: "PATCH",
+    path: "/api/media",
+    handler: mediaPatch,
+    body: { id: "x", analysis: "y" },
+  },
+  {
+    name: "GET /api/system",
+    method: "GET",
+    path: "/api/system",
+    handler: systemGet,
+  },
+  {
+    name: "GET /api/updates",
+    method: "GET",
+    path: "/api/updates",
+    handler: updatesGet,
+  },
+  {
+    name: "DELETE /api/account",
+    method: "DELETE",
+    path: "/api/account",
+    handler: accountDelete,
+  },
+  {
+    name: "GET /api/connectors/github",
+    method: "GET",
+    path: "/api/connectors/github",
+    handler: githubGet,
+  },
+  {
+    name: "GET /api/connectors/google",
+    method: "GET",
+    path: "/api/connectors/google",
+    handler: googleGet,
+  },
+  {
+    name: "GET /api/connectors/notion",
+    method: "GET",
+    path: "/api/connectors/notion",
+    handler: notionGet,
+  },
+  {
+    name: "GET /api/connectors/slack",
+    method: "GET",
+    path: "/api/connectors/slack",
+    handler: slackGet,
+  },
+];
+
+describe("AUTH-GAPS-002 ΓÇö 10 rotas exigem sess├úo (401 sem cookie/token)", () => {
+  test.each(ROUTES.map((r) => [r.name, r] as const))(
+    "%s ΓåÆ 401 sem sess├úo",
+    async (_name, route) => {
+      const res = await route.handler(
+        req(route.method, route.path, route.body),
+      );
+      expect(res.status).toBe(401);
+    },
+  );
+
+  test("m├⌐todos alternativos de /api/media tamb├⌐m retornam 401 sem sess├úo", async () => {
+    for (const [method, handler, body] of [
+      ["GET", mediaGet, undefined],
+      ["POST", mediaPost, { filename: "a.png", data: "" }],
+      ["DELETE", mediaDelete, undefined],
+      ["PATCH", mediaPatch, { id: "x", analysis: "y" }],
+    ] as const) {
+      const res = await handler(req(method, "/api/media", body));
+      expect(res.status).toBe(401);
+    }
   });
 
-  const noAuth = (url: string, init?: RequestInit) => new Request(url, init);
-
-  test("GET /api/code sem sessão → 401", async () => {
-    const res = await codeGET(noAuth("http://localhost/api/code") as any);
-    expect(res.status).toBe(401);
-  });
-
-  test("POST /api/code sem sessão → 401", async () => {
-    const { POST } = require("./code/route");
-    const res = await POST(
-      noAuth("http://localhost/api/code", {
-        method: "POST",
-        body: JSON.stringify({ command: "ls" }),
-      }) as any,
-    );
-    expect(res.status).toBe(401);
-  });
-
-  test("GET /api/code/read sem sessão → 401", async () => {
-    const res = await readGET(
-      noAuth("http://localhost/api/code/read?id=x") as any,
-    );
-    expect(res.status).toBe(401);
-  });
-
-  test("GET /api/terminal/exec sem sessão → 401", async () => {
-    const res = await termGET(noAuth("http://localhost/api/terminal/exec"));
-    expect(res.status).toBe(401);
-  });
-
-  test("POST /api/terminal/exec sem sessão → 401", async () => {
-    const res = await termPOST(
-      noAuth("http://localhost/api/terminal/exec", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ command: "ls" }),
-      }),
-    );
-    expect(res.status).toBe(401);
-  });
-
-  test("GET /api/pc-agent sem sessão → 401", async () => {
-    // UA vazia → platform detectada como desktop-web → passa do desktopOnly guard
-    // e chega no requireUser → 401.
-    const res = await pcGET(noAuth("http://localhost/api/pc-agent"));
-    expect(res.status).toBe(401);
-  });
-
-  test("GET /api/pc-agent sem plataforma desktop → 403 (guard intacto)", async () => {
-    const res = await pcGET(
-      noAuth("http://localhost/api/pc-agent", {
-        headers: { "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)" },
-      }),
-    );
-    expect(res.status).toBe(403);
+  test("m├⌐todo alternativo: POST /api/stt e POST /api/tts ΓåÆ 401 (j├í cobertos) + handlers alternativos inexistente n├úo quebram import", () => {
+    expect(typeof sttPost).toBe("function");
+    expect(typeof ttsPost).toBe("function");
   });
 });

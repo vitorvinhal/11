@@ -20,6 +20,31 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## Unreleased
+
+> Draft consolidado (SEM bump — Brain faz o release). TASK-UI-PERF-001 (AG4).
+
+### ✨ UI/UX
+
+- **Sidebar estilo ChatGPT/Claude:** rail retrátil agora mantém acesso a todas as abas (ícones + Settings — antes, colapsar perdia a navegação); indicador ativo com barra de destaque; conversas com estado ativo mais legível.
+- **ChatPanel:** render de markdown nativo (`MarkdownLite`) — headings, listas, blockquote, **negrito**, _itálico_, `inline code` e links (http/https apenas, sem `dangerouslySetInnerHTML`); balão no estilo ChatGPT/Claude para mensagens do usuário.
+- **Blocos de código:** botão **Copiar** funcional (antes era botão morto) com feedback "Copiado"; "Abrir no Code" preservado.
+- **Code-split dos painéis:** Skills, Projects, Neural, Connectors, Plugins, Artifacts, Eleven Code, Mídia, Agente PC, Agente Mobile, Memória, FinOps e Canvas agora carregam via chunk separado só quando a aba abre (`lazyLoad`); bundle inicial fica com shell + chat.
+
+### ⚡ Performance
+
+- **AstroSphere 3D pausa o render** com menu/modal/drawer abertos ou aba em background (`visibilitychange` + MutationObserver + sweep 500ms) e **retoma sem resetar o clock** (`elapsedTime` preservado — sem pulso/pop ao voltar).
+- **Blur/glass com tokens** (`--glass-blur-*`, `--glass-bg-*`, bordas, raios) + `contain: layout paint` + `will-change: backdrop-filter` nas variantes glass — menos repaint, mesmo blur visual (light mode preservado via `--glass-bg-base: var(--surface)`).
+- **Camadas de fundo consolidadas** em `.bg-stack` (aurora → vignette → AstroSphere → noise) com z-index otimizado.
+- **Polling unificado:** `/api/devices/jobs` passou a ter **um único timer de 5s** compartilhado via `DeviceJobsProvider` (antes: até 3 requisições paralelas — MobileDevicePanel + MobileAgent + refresh do `useDeviceAgent`; o poll de 2.5s do job ativo foi mantido).
+- **Medição:** FPS na landing (Playwright headless, rAF 3s × 2, mediana): **23.2 → 25.9** (mesmo método).
+
+### 🔧 Fix
+
+- `AstroSphere.isViewportCovered`: iteração de `NodeList` compatível com `target` ES5 do Next (`for…of` → `forEach`).
+
+---
+
 ## v2.17.0-alpha — 2026-09-23
 
 Patch consolidado (alpha → BETA track) — branches AG1-4 + Brain integradas em `integration/agents-20260923`:

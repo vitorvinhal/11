@@ -4,19 +4,8 @@ import { useEffect, useState } from "react";
 import { Sidebar, SidebarChat, NavTab } from "./Sidebar";
 import { ChatPanel, ChatMessage } from "./ChatPanel";
 import { ProfileDialog } from "./ProfileDialog";
-import { SkillsPanel } from "./SkillsPanel";
-import { ProjectsPanel } from "./ProjectsPanel";
-import { NeuralGraph } from "./NeuralGraph";
-import ConnectorsPanel from "./ConnectorsPanel";
-import { PluginsPanel } from "./PluginsPanel";
-import { ArtifactsPanel } from "./ArtifactsPanel";
-import ElevenOrca from "./ElevenOrca";
-import { MediaGallery } from "./MediaGallery";
-import { MobileAgent } from "./MobileAgent";
-import { MobileDevicePanel } from "./MobileDevicePanel";
-import { MemoriaPanel } from "./MemoriaPanel";
-import { FinOpsPanel } from "./FinOpsPanel";
-import { CanvasPanel } from "./CanvasPanel";
+import { lazyLoad } from "./LazyLoad";
+import { DeviceJobsProvider } from "../lib/device-poll-context";
 import { useAuth } from "../lib/auth";
 import { getPlatform } from "../lib/platform";
 import {
@@ -27,6 +16,44 @@ import {
   type UpdateInfo,
 } from "../lib/update-client";
 import { Menu, Sparkles, Download } from "lucide-react";
+
+// Code-split dos painéis secundários: só baixam o chunk quando o usuário
+// abre a aba correspondente (o bundle inicial fica com shell + chat).
+const SkillsPanel = lazyLoad(() =>
+  import("./SkillsPanel").then((m) => ({ default: m.SkillsPanel })),
+);
+const ProjectsPanel = lazyLoad(() =>
+  import("./ProjectsPanel").then((m) => ({ default: m.ProjectsPanel })),
+);
+const NeuralGraph = lazyLoad(() =>
+  import("./NeuralGraph").then((m) => ({ default: m.NeuralGraph })),
+);
+const ConnectorsPanel = lazyLoad(() => import("./ConnectorsPanel"));
+const PluginsPanel = lazyLoad(() =>
+  import("./PluginsPanel").then((m) => ({ default: m.PluginsPanel })),
+);
+const ArtifactsPanel = lazyLoad(() =>
+  import("./ArtifactsPanel").then((m) => ({ default: m.ArtifactsPanel })),
+);
+const ElevenOrca = lazyLoad(() => import("./ElevenOrca"));
+const MediaGallery = lazyLoad(() =>
+  import("./MediaGallery").then((m) => ({ default: m.MediaGallery })),
+);
+const MobileAgent = lazyLoad(() =>
+  import("./MobileAgent").then((m) => ({ default: m.MobileAgent })),
+);
+const MobileDevicePanel = lazyLoad(() =>
+  import("./MobileDevicePanel").then((m) => ({ default: m.MobileDevicePanel })),
+);
+const MemoriaPanel = lazyLoad(() =>
+  import("./MemoriaPanel").then((m) => ({ default: m.MemoriaPanel })),
+);
+const FinOpsPanel = lazyLoad(() =>
+  import("./FinOpsPanel").then((m) => ({ default: m.FinOpsPanel })),
+);
+const CanvasPanel = lazyLoad(() =>
+  import("./CanvasPanel").then((m) => ({ default: m.CanvasPanel })),
+);
 
 export function AppShell({
   initialNav = "conversas" as NavTab,
@@ -101,165 +128,167 @@ export function AppShell({
   }
 
   return (
-    <main className="relative z-10 flex h-screen flex-col overflow-hidden bg-[#05050A]">
-      {drawerOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/60 md:hidden"
-          onClick={() => setDrawerOpen(false)}
-        />
-      )}
-      {hasUpdate && updateInfo && (
-        <button
-          onClick={openUpdates}
-          className="fixed bottom-4 right-4 z-50 flex max-w-[92vw] items-center gap-2.5 rounded-2xl border border-primary/25 bg-[#0d1020]/95 px-4 py-3 text-left shadow-2xl backdrop-blur transition hover:border-primary/50"
-        >
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15">
-            <Download className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <p className="text-[12px] font-semibold text-text-primary">
-              Nova versão v{updateInfo.version}
-            </p>
-            <p className="text-[10px] text-text-dim">
-              Toque para abrir o perfil e atualizar
-            </p>
-          </div>
-        </button>
-      )}
-      <div className="flex h-full">
-        <div className="hidden md:block">
-          <Sidebar
-            chats={chats}
-            activeChat={activeChat}
-            onSelectChat={selectChat}
-            onNewChat={newChat}
-            onDeleteChat={deleteChat}
-            activeNav={activeNav}
-            onNavChange={setActiveNav}
-            onOpenSettings={() => setSettingsOpen(true)}
+    <DeviceJobsProvider>
+      <main className="relative z-10 flex h-screen flex-col overflow-hidden bg-[#05050A]">
+        {drawerOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/60 md:hidden"
+            onClick={() => setDrawerOpen(false)}
           />
-        </div>
-        <div
-          className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:hidden ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
-        >
-          <Sidebar
-            chats={chats}
-            activeChat={activeChat}
-            onSelectChat={selectChat}
-            onNewChat={newChat}
-            onDeleteChat={deleteChat}
-            onClose={() => setDrawerOpen(false)}
-            activeNav={activeNav}
-            onNavChange={(n) => {
-              setActiveNav(n);
-              setDrawerOpen(false);
-            }}
-            onOpenSettings={() => {
-              setSettingsOpen(true);
-              setDrawerOpen(false);
-            }}
-          />
-        </div>
+        )}
+        {hasUpdate && updateInfo && (
+          <button
+            onClick={openUpdates}
+            className="fixed bottom-4 right-4 z-50 flex max-w-[92vw] items-center gap-2.5 rounded-2xl border border-primary/25 bg-[#0d1020]/95 px-4 py-3 text-left shadow-2xl backdrop-blur transition hover:border-primary/50"
+          >
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15">
+              <Download className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-text-primary">
+                Nova versão v{updateInfo.version}
+              </p>
+              <p className="text-[10px] text-text-dim">
+                Toque para abrir o perfil e atualizar
+              </p>
+            </div>
+          </button>
+        )}
+        <div className="flex h-full">
+          <div className="hidden md:block">
+            <Sidebar
+              chats={chats}
+              activeChat={activeChat}
+              onSelectChat={selectChat}
+              onNewChat={newChat}
+              onDeleteChat={deleteChat}
+              activeNav={activeNav}
+              onNavChange={setActiveNav}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+          </div>
+          <div
+            className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 md:hidden ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+          >
+            <Sidebar
+              chats={chats}
+              activeChat={activeChat}
+              onSelectChat={selectChat}
+              onNewChat={newChat}
+              onDeleteChat={deleteChat}
+              onClose={() => setDrawerOpen(false)}
+              activeNav={activeNav}
+              onNavChange={(n) => {
+                setActiveNav(n);
+                setDrawerOpen(false);
+              }}
+              onOpenSettings={() => {
+                setSettingsOpen(true);
+                setDrawerOpen(false);
+              }}
+            />
+          </div>
 
-        <div className="flex min-w-0 flex-1 flex-col md:ml-0">
-          <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3">
-            <div className="flex items-center gap-3 md:hidden">
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-white/70 hover:text-white transition"
-                aria-label="Abrir menu"
-              >
-                <Menu className="h-4 w-4" />
-              </button>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-mono text-xs font-semibold tracking-[0.25em] text-text-primary/90">
-                  ELEVEN
-                </span>
+          <div className="flex min-w-0 flex-1 flex-col md:ml-0">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-3">
+              <div className="flex items-center gap-3 md:hidden">
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-white/70 hover:text-white transition"
+                  aria-label="Abrir menu"
+                >
+                  <Menu className="h-4 w-4" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="font-mono text-xs font-semibold tracking-[0.25em] text-text-primary/90">
+                    ELEVEN
+                  </span>
+                </div>
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <ProfileDialog
+                  open={settingsOpen}
+                  onOpenChange={setSettingsOpen}
+                  initialTab={settingsInitialTab}
+                  updateBadge={hasUpdate}
+                />
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              <ProfileDialog
-                open={settingsOpen}
-                onOpenChange={setSettingsOpen}
-                initialTab={settingsInitialTab}
-                updateBadge={hasUpdate}
-              />
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+              {activeNav === "conversas" && (
+                <ChatPanel messages={messages} setMessages={setMessages} />
+              )}
+              {activeNav === "projetos" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <ProjectsPanel />
+                </div>
+              )}
+              {activeNav === "skills" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <SkillsPanel />
+                </div>
+              )}
+              {activeNav === "connectors" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <ConnectorsPanel userId={user.id} />
+                </div>
+              )}
+              {activeNav === "plugins" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <PluginsPanel />
+                </div>
+              )}
+              {activeNav === "artifacts" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <ArtifactsPanel />
+                </div>
+              )}
+              {activeNav === "code" && (
+                <div className="h-full">
+                  <ElevenOrca />
+                </div>
+              )}
+              {activeNav === "media" && (
+                <div className="mx-auto max-w-2xl pt-8">
+                  <MediaGallery />
+                </div>
+              )}
+              {activeNav === "agent" && (
+                <div className="h-full">
+                  <MobileAgent />
+                </div>
+              )}
+              {activeNav === "mobile" && (
+                <div className="h-full">
+                  <MobileDevicePanel />
+                </div>
+              )}
+              {activeNav === "neural" && (
+                <div className="h-full min-h-[420px]">
+                  <NeuralGraph />
+                </div>
+              )}
+              {activeNav === "canvas" && (
+                <div className="mx-auto max-w-5xl pt-8">
+                  <CanvasPanel />
+                </div>
+              )}
+              {activeNav === "memoria" && (
+                <div className="mx-auto max-w-4xl pt-8">
+                  <MemoriaPanel />
+                </div>
+              )}
+              {activeNav === "finops" && (
+                <div className="mx-auto max-w-5xl pt-8">
+                  <FinOpsPanel />
+                </div>
+              )}
             </div>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 md:px-8 pb-8">
-            {activeNav === "conversas" && (
-              <ChatPanel messages={messages} setMessages={setMessages} />
-            )}
-            {activeNav === "projetos" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <ProjectsPanel />
-              </div>
-            )}
-            {activeNav === "skills" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <SkillsPanel />
-              </div>
-            )}
-            {activeNav === "connectors" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <ConnectorsPanel userId={user.id} />
-              </div>
-            )}
-            {activeNav === "plugins" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <PluginsPanel />
-              </div>
-            )}
-            {activeNav === "artifacts" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <ArtifactsPanel />
-              </div>
-            )}
-            {activeNav === "code" && (
-              <div className="h-full">
-                <ElevenOrca />
-              </div>
-            )}
-            {activeNav === "media" && (
-              <div className="mx-auto max-w-2xl pt-8">
-                <MediaGallery />
-              </div>
-            )}
-            {activeNav === "agent" && (
-              <div className="h-full">
-                <MobileAgent />
-              </div>
-            )}
-            {activeNav === "mobile" && (
-              <div className="h-full">
-                <MobileDevicePanel />
-              </div>
-            )}
-            {activeNav === "neural" && (
-              <div className="h-full min-h-[420px]">
-                <NeuralGraph />
-              </div>
-            )}
-            {activeNav === "canvas" && (
-              <div className="mx-auto max-w-5xl pt-8">
-                <CanvasPanel />
-              </div>
-            )}
-            {activeNav === "memoria" && (
-              <div className="mx-auto max-w-4xl pt-8">
-                <MemoriaPanel />
-              </div>
-            )}
-            {activeNav === "finops" && (
-              <div className="mx-auto max-w-5xl pt-8">
-                <FinOpsPanel />
-              </div>
-            )}
           </div>
         </div>
-      </div>
-      <button type="button" className="hidden" aria-hidden />
-    </main>
+        <button type="button" className="hidden" aria-hidden />
+      </main>
+    </DeviceJobsProvider>
   );
 }

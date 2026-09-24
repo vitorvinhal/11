@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { requireUser } from "../../../lib/auth-unify";
 
 /**
  * GET /api/system — Informações detalhadas do sistema
- * Não requer auth (para debug/monitoring)
+ * Requer sessão (AUTH-GAPS-002): expõe runtime/memória do host.
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const session = await requireUser(req);
+    if (!session)
+      return NextResponse.json(
+        { ok: false, error: "Não autenticado" },
+        { status: 401 },
+      );
     const versionPath = resolve(process.cwd(), "public/version.json");
     const versionData = JSON.parse(readFileSync(versionPath, "utf8"));
 

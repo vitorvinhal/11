@@ -60,9 +60,30 @@ export function primeVersionCheck(code: number): void {
   acknowledgeVersion(code);
 }
 
+/**
+ * Lê o access_token da sessão Supabase persistida em localStorage
+ * (storageKey `eleven-sb-auth`, ver lib/auth.tsx). Usado por chamadas
+ * fetch que rodam fora de componentes React (ex.: fetchUpdates).
+ */
+export function getStoredAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem("eleven-sb-auth");
+    if (!raw) return null;
+    const session = JSON.parse(raw) as { access_token?: string };
+    return session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchUpdates(): Promise<UpdateInfo | null> {
   try {
-    const res = await fetch("/api/updates", { cache: "no-store" });
+    const token = getStoredAccessToken();
+    const res = await fetch("/api/updates", {
+      cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!res.ok) return null;
     return (await res.json()) as UpdateInfo;
   } catch {
