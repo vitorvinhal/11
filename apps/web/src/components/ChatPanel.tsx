@@ -618,9 +618,13 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
           setInterim("");
           setListening(false);
           try {
+            const sttToken = await getAccessToken();
             const res = await fetch("/api/stt", {
               method: "POST",
-              headers: { "content-type": "application/json" },
+              headers: {
+                "content-type": "application/json",
+                ...(sttToken ? { Authorization: `Bearer ${sttToken}` } : {}),
+              },
               body: JSON.stringify({
                 audio: String(reader.result),
                 mime: "audio/webm",
@@ -644,7 +648,7 @@ export function ChatPanel({ messages, setMessages }: ChatViewProps) {
     } catch {
       setListening(false);
     }
-  }, []);
+  }, [getAccessToken]);
 
   const toggleVoice = useCallback(() => {
     if (listening) {

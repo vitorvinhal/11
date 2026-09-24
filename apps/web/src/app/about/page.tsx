@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { DownloadCards } from "../../components/DownloadCards";
 import { ReleaseNotes } from "../../components/ReleaseNotes";
-import type { UpdateInfo } from "../../lib/update-client";
+import { fetchUpdates, type UpdateInfo } from "../../lib/update-client";
 
 const SECTIONS = [
   { id: "visao-geral", label: "Visão geral" },
@@ -114,8 +114,7 @@ export default function AboutPage() {
   const [upd, setUpd] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
-    fetch("/api/updates", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
+    fetchUpdates()
       .then((d) => setUpd(d))
       .catch(() => {});
   }, []);
