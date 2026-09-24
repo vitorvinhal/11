@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "2.18.0-alpha"
+version = "2.18.2-alpha"
 edition = "2021"
 description = "11 — Inteligência Autônoma (Desktop)"
 authors = ["11"]

@@ -1,9 +1,9 @@
 {
-  "version": "2.18.0-alpha",
-  "versionCode": 35,
+  "version": "2.18.2-alpha",
+  "versionCode": 37,
   "name": "11 — Inteligência Autônoma",
   "channel": "alpha",
   "changelog": [
-    "Ciclo 2 consolidado: auth 10 rotas requireUser, redesign UI ChatGPT/Claude + perf AstroSphere, CI regressao seguranca (+43 testes), orca cwd sandbox, Android SDK fix, version.js Cargo sync"
+    "Fix path traversal POSIX em validateFileArgs (path.resolve) — CI verde; bumps 2.18.1+2.18.2 consolidados"
   ]
 }

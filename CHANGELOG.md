@@ -20,6 +20,12 @@ node scripts/version.js minor --change "Multi-tenancy: auth reutiliz├ível + o
 
 ---
 
+## v2.18.2-alpha — 2026-09-24
+
+### Security
+
+- **CI-TRAV-001:** fix de path traversal em POSIX em `validateFileArgs` (`apps/web/src/lib/terminal-validate.ts`) — join manual com `\` substituído por `path.resolve(cwd, arg)`; no Linux `cat ../../etc/passwd` retornava `ok: true` (falso “dentro da raiz”). Bump 2.18.1+2.18.2 consolidado aqui.
+
 ## v2.18.0-alpha — 2026-09-24
 
 Ciclo 2 consolidado — branches AG1-4 + Brain em `integration/agents-20260924`:

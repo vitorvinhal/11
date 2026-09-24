@@ -314,11 +314,12 @@ export function validateFileArgs(
       arg.startsWith("~") ||
       /^[A-Za-z]:/.test(arg)
     ) {
-      const resolved = arg.startsWith("~")
-        ? arg.replace("~", cwd)
-        : arg.startsWith("/") || /^[A-Za-z]:/.test(arg)
-          ? arg
-          : `${cwd}\\${arg}`.replace(/[\\/]+/g, "\\");
+      // path.resolve é cross-platform: em POSIX, o join antigo com `\`
+      // virava um único segmento de filename e furava o bloqueio de ../..
+      const resolved = resolve(
+        cwd,
+        arg.startsWith("~") ? arg.replace(/^~/, cwd) : arg,
+      );
 
       if (!isUnderRoot(resolved)) {
         return {
