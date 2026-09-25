@@ -50,10 +50,12 @@
 
 ### FASE 0/1 — Discovery & Auditoria (obrigatórias antes de código)
 
-- [ ] `docs/architecture/system-map.md` — inventário: arquitetura, módulos, dependências, agentes,
+- [x] `docs/architecture/system-map.md` — inventário: arquitetura, módulos, dependências, agentes,
       skills, MCP, ModelGateway, auth/tenant/permissões, execução, memória, auditoria, frontend,
       backend, testes — cada componente classificado IMPLEMENTED/PARTIAL/MISSING/DUPLICATED/BROKEN/UNKNOWN
+      (FEITO 2026-09-25: 2 varreduras explore; 7 artefatos PHASE 1 dentro do doc; evidência = caminhos citados)
 - [ ] Relatório de conflitos/duplicações/mocks/stubs (FOUND/NOT_FOUND/PARTIAL) + Implementation Plan
+      (PARCIAL: seção 6/7 do system-map cobrem conflitos+plano; decidir se vira doc separado)
 
 ### FASE 2/3/4 — Sistema documental (prompt 3 + 7)
 
@@ -74,7 +76,7 @@
 - [ ] `agents/` — `README.md` + `developer.md`/`tester.md`/`reviewer.md` (+ avaliar architect/researcher/
       planner/security-reviewer) com YAML: name/role/inputs/outputs/permissions/forbidden/skills/mcp/workflow/completion/escalation
 - [ ] Loop Developer→Tester→Reviewer documentado com MAX_ITERATIONS=5 → BLOCKED + `iteration_id/timestamp/
-    agent/status/reason/evidence`
+  agent/status/reason/evidence`
 
 ### Aba ADM — Desenvolvedor (pedido do usuário 2026-09-25)
 
