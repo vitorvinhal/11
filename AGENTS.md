@@ -15,6 +15,27 @@ Todos os textos, mensagens e respostas da IA devem ser em pt‑BR.
 
 ---
 
+## 📅 REGRA DO `docs/plan/PLAN.md` — FONTE-MESTRA DO CALENDÁRIO (2026-09-25)
+
+O `docs/plan/PLAN.md` é o **arquivo de orquestração obrigatório** do projeto. Nenhum prompt de
+implementação do usuário pode virar código antes de virar item no PLAN.
+
+- **Todo prompt recebido** → Brain registra no PLAN sob a versão-alvo (`2.19.0-alpha`, `2.20.0-alpha`…)
+  antes de qualquer edição de código ou dispatch de agente.
+- **Calendário por versão:** o PLAN mantém seção por versão com status (Em montagem / Em andamento /
+  No ar / Backlog), seguindo o sistema de versionamento do repo (`v0.{MAJOR}.{MINOR}` + suffixo alpha).
+- **Checklist com estados:** cada item usa `[ ]` falta · `[-]` em andamento · `[x]` adicionado ·
+  `[!]` bloqueado · `[?]` decisão · `[~]` adiado. Itens adiados DEVEM ser re-lozalizados na seção
+  da versão futura — nunca somem do documento.
+- **Fechamento de versão:** só com todos os itens `[x]` + gate verde (`pnpm -r lint && pnpm -r build &&
+pnpm -r test`) + FASE D do Brain concluída (deploy no ar). Aí a versão vira ✅ no calendário.
+- **Atualização em tempo real:** estados mudam no PLAN conforme o trabalho avança (mesma cadência do
+  `.task_state.md`); todo commit que altera funcionalidade atualiza o PLAN junto com bump + CHANGELOG.
+- Multi-ferramenta: a mesma regra vale para `CLAUDE.md` e `.github/` (Copilot) — se um documento
+  mudar, os outros espelham.
+
+---
+
 ## 🗂️ ESTRUTURA DE DOCUMENTAÇÃO (PADRÃO PRD/ADR/SPEC/PLAN)
 
 Mapa completo em `docs/README.md`. Resumo do fluxo obrigatório:
@@ -23,7 +44,7 @@ Mapa completo em `docs/README.md`. Resumo do fluxo obrigatório:
 docs/prd/PRD.md          → porquê do produto (negócio, sem técnico)
 docs/adr/                → decisão arquitetural (só quando houver impacto real)
 docs/specs/              → especificação linha-a-linha ANTES de desenvolver feature
-docs/plan/PLAN.md        → checklist vivo do patch (feito/andamento/pendência)
+docs/plan/PLAN.md        → FONTE-MESTRA: calendário por versão + checklist vivo (ver "REGRA DO PLAN.md" acima)
 docs/agents/             → papéis + loop developer→tester→reviewer
 relatorios_agente/       → relatório pré/pós de cada tarefa (BRAIN_SYNC)
 ```
